@@ -1,0 +1,1 @@
+pyside6-uic start_panel_buttons_window.ui -o start_panel_buttons_window.py

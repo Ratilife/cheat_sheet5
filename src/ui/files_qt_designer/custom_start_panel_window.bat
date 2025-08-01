@@ -1,0 +1,1 @@
+pyside6-uic customization_start_panel_window.ui -o customization_start_panel_window.py

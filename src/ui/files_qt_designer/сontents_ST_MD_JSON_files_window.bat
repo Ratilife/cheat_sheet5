@@ -1,0 +1,1 @@
+pyside6-uic сontents_ST_MD_JSON_files_window.ui -o сontents_ST_MD_JSON_files_window.py
