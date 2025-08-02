@@ -14,4 +14,4 @@ if __name__ == "__name__":
 
     window = StartPanelButtons()
     window.show()
-    sys.exit(app.exit())
+    sys.exit(app.exec())
