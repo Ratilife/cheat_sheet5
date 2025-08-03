@@ -137,6 +137,13 @@ class FileManager:
 
         return target_path
 
+    def should_overwrite_existing_file(self, json_file: Path) -> bool:
+        """Проверяет нужно ли перезаписывать существующий файл."""
+        if not json_file.exists():
+            return True
+        else:
+            return False
+
     def _load_json_file(self, file_path: Path) -> dict:
         """
         Загружает данные из JSON-файла с обработкой ошибок.
@@ -158,3 +165,7 @@ class FileManager:
             raise RuntimeError(f"Нет прав на чтение файла: {file_path}")
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Ошибка парсинга JSON в файле {file_path}: {str(e)}")
+
+    def save_data_to_json(self, json_file: Path, data: dict) -> None:
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)

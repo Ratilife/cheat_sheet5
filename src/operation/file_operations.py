@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 
@@ -54,5 +55,16 @@ class FileOperations:
          :param target_name: - назване папки куда будет осуществлятся запись
          :return:  Сообщение для пользователя
          '''
-         pass
+         name_lile = "root_folder_path.json"
+         target_folder = self.file_manager.check_path_exists(root_path,"for_program")
+         json_file = target_folder / name_lile
+
+         if self.file_manager.should_overwrite_existing_file(json_file):
+             data = {
+                 "path": root_path,
+                 "date": datetime.now().strftime("%Y-%m-%d")
+             }
+             self.file_manager.save_data_to_json(json_file, data)
+
+         return None
 
