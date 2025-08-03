@@ -1,4 +1,4 @@
-
+from pathlib import Path
 from src.managers.file_manager import FileManager
 
 class FileOperations:
@@ -30,15 +30,29 @@ class FileOperations:
             [Откроется диалог выбора папки]
             Структура папок 'my_project' успешно создана!
         """
+        # ✅ Реализовано: 03.08.2025
+            # task: Создание корневой папки
         path_folder = self.file_manager.get_create_folder_path("Создайте корнивую папку")
         if not path_folder:
             print("Отменено: папка не выбрана.")
             return
         try:
-            self.file_manager.create_root_folder_structure("root_folder_structure_basic.json",path_folder)
+            # Получаем путь к JSON-файлу относительно текущего модуля
+            json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
+            root_folder_path =  self.file_manager.create_root_folder_structure(json_path,path_folder)
+            return root_folder_path
         except FileNotFoundError:
             print("Ошибка: JSON-файл конфигурации не найден!")
 
-        return path_folder
 
+    def save_path_root_folder(self,root_path: str, target_name: str):
+         # TODO 🚧 В разработке: 03.08.2025
+            # task: Работа с окном Настройка для стартовой панели
+         '''
+         Если should_overwrite_existing_file = True - Создаем файл json
+         :param root_path: - путь к корневой папке
+         :param target_name: - назване папки куда будет осуществлятся запись
+         :return:  Сообщение для пользователя
+         '''
+         pass
 
