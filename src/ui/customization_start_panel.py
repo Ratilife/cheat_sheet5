@@ -15,6 +15,7 @@ class CostStartPanel(QMainWindow):
         self.ui.but_close_window.clicked.connect(self.close) # Закрытие окна
         self.ui.but_close_save_minutes.clicked.connect(self._on_save_and_close)
 
+        # Загружаем сохраненный путь при старте
         root_data = get_root_folder()
         if root_data["path"]:
             self.ui.path_root_folder.setText(str(root_data["path"]))
@@ -33,7 +34,7 @@ class CostStartPanel(QMainWindow):
         root_path = self._get_root_path()
         if not root_path:
             return
-        update_root_folder(root_path)
+        update_root_folder(root_path)  # Сохранит в глобальную переменную И в файл
         self.close()
         #self.file_operation.save_path_root_folder(root_path,"for_program")
 
