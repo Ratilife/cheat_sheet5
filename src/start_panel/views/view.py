@@ -291,13 +291,14 @@ class MainWindow(QMainWindow):
         """
         Обработчик нажатия на кнопку "Удалить".
         """
+        # TODO 🚧 В разработке: 04.08.2025
         # Создаем модель, ViewModel и диалог
         view_model = DeleteButtonsViewModel(self.view_model._model)  # Передаем ButtonListModel
         dialog = DeleteButtonsDialog(view_model, self)
         # Показываем диалог
         if dialog.exec() == QDialog.Accepted:
             # Удаляем отмеченные кнопки
-            selected_indices = dialog.get_selected_indices()  # TODO определен как мертвый код ПРОВЕРИТЬ
+            selected_indices = dialog.get_selected_buttons()
             self.view_model.remove_button(selected_indices)
 
     # Обработчик нажатия на кнопку Открыть Менеджер структуры проекта
