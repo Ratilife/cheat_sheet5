@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
-from src.ui.config import update_root_folder
+from src.global_var.config import update_root_folder
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
