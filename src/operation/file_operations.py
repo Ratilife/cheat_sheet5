@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
+from src.ui.config import update_root_folder
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
@@ -52,7 +53,7 @@ class FileOperations:
          # TODO 🚧 В разработке: 03.08.2025 - нужно проверить работу и протестировать
             # task: Работа с окном Настройка для стартовой панели
          '''
-         Если should_overwrite_existing_file = True - Создаем файл json
+         Если is_path_already_exists = True - Создаем файл json
          :param root_path: - путь к корневой папке
          :param target_name: - назване папки куда будет осуществлятся запись
          :return:  Сообщение для пользователя
@@ -62,7 +63,7 @@ class FileOperations:
          json_file = target_folder / name_lile
          data = {
              "path": root_path,
-             "date": datetime.now().strftime("%Y-%m-%d")
+             "date": datetime.now().strftime("%d-%m-%Y")
          }
 
          if self.file_manager.is_path_already_exists(json_file):
@@ -75,14 +76,20 @@ class FileOperations:
                  f"Хотите перезаписать его новыми данными?"
              )
              if self.messenger.show_question("Подтверждение перезаписи", message):
+                 update_root_folder(root_path)  # Обновляем глобальную переменную
                  self.file_manager.save_data_to_json(json_file, data)
                  self.messenger.show_info("Файл успешно перезаписан",timeout_ms=5000)
              else:
                  self.messenger.show_info("Операция отменена пользователем", timeout_ms=5000)
          else:
              # Файла нет - просто создаем новый
+             update_root_folder(root_path)  # Обновляем глобальную переменную
              self.file_manager.save_data_to_json(json_file, data)
              self.messenger.show_info("Файл успешно создан", timeout_ms=5000)
 
 
-
+    def get_path_root_folder(self,json_file):
+        # TODO 🚧 В разработке: 04.08.2025
+            # task: Работа с окном Настройка для стартовой панели
+        if self.file_manager.is_path_already_exists(json_file):
+            pass

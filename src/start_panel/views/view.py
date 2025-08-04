@@ -7,6 +7,8 @@ from src.start_panel.view_models.view_model_delete_buttons import DeleteButtonsV
 from src.start_panel.view_models.view_model import ButtonViewModel, IButtonViewModel
 import base64
 import sys
+from src.ui.customization_start_panel import CostStartPanel
+
 
 class MainWindow(QMainWindow):
     def __init__(self, view_model: IButtonViewModel):
@@ -300,8 +302,12 @@ class MainWindow(QMainWindow):
 
     # Обработчик нажатия на кнопку Открыть Менеджер структуры проекта
     def open_structure_manager_clicked(self):
+        """Открыть окно Менеджера структуры проекта"""
         #TODO 🚧 В разработке: 04.08.2025
-        pass
+        if not hasattr(self,'_structure_manager_window'):
+            self._structure_manager_window = CostStartPanel()
+
+        self._structure_manager_window.show()
 
     # Обработчик нажатия на кнопку Открыть боковую панель
     def open_side_panel(self):
