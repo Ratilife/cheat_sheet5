@@ -1,8 +1,15 @@
 import json
-
+from dataclasses import dataclass
 from PySide6.QtWidgets import QFileDialog
 from pathlib import Path
 from typing import Dict, List, Union
+
+@dataclass
+class FolderCreationResult:
+    success: bool
+    root_path: str | None  # Путь к созданной папке (если успех)
+    error: str | None      # Сообщение об ошибке (если failure)
+    already_exists: bool   # Флаг "папка уже существует"
 
 class FileManager:
     @staticmethod
@@ -37,7 +44,8 @@ class FileManager:
         )
         return folder_path if folder_path else None
 
-    def create_root_folder_structure(self, config_path: Union[str, Path],folder_path: Union[str, Path, None] = None) -> str:
+    def create_root_folder_structure(self, config_path: Union[str, Path],
+                                     folder_path: Union[str, Path, None] = None) -> FolderCreationResult:
         """Создает иерархическую структуру папок на основе JSON-конфигурации и возвращает абсолютный путь к корневой папке.
 
             Параметры:
@@ -79,7 +87,7 @@ class FileManager:
                 Создана структура в: /absolute/path/to/my_project
             """
 
-        # ✅ Реализовано: 03.08.2025
+        #TODO 🚧 В разработке: 03.08.2025 -
                 # task: Создание корневой папки
 
         # Обработка базового пути
@@ -91,7 +99,17 @@ class FileManager:
             config: Dict[str, Union[str, Dict[str, List[str]]]] = json.load(f)
 
         # Создание корневой папки (относительно base_path)
-        root_path = base_path / config['root_folder']
+        root_folder_name = config['root_folder']
+        root_path = base_path / root_folder_name
+
+        if self.is_path_already_exists(Path(root_path)):
+            return FolderCreationResult(
+                success=False,
+                root_path=root_path,
+                error=f"Папка '{root_folder_name}' уже существует",
+                already_exists=True
+            )
+
         root_path.mkdir(parents=True, exist_ok=True)
 
         # Создание подпапок
@@ -105,7 +123,12 @@ class FileManager:
                 subfolder_full_path.mkdir(exist_ok=True)
 
         print(f"Структура папок '{root_path}' успешно создана в '{base_path}'!")
-        return str(root_path.resolve())  # Возвращаем абсолютный путь к корневой папке
+        return FolderCreationResult(
+                success=True,
+                root_path=str(root_path.resolve()),
+                error=None,
+                already_exists=False
+            )
 
     def check_path_exists(self, root_path: str, target_name: str) -> Path:
         """
@@ -137,14 +160,21 @@ class FileManager:
 
         return target_path
 
-    def should_overwrite_existing_file(self, json_file: Path) -> bool:
-        """Проверяет нужно ли перезаписывать существующий файл."""
-        # TODO 🚧 В разработке: 03.08.2025 - нужно проверить работу и протестировать
+
+    def is_path_already_exists(self, path: Path) -> bool:
+        """Проверяет, существует ли указанный путь (файл или папка) в файловой системе.
+        Args:
+            path: Путь к файлу или папке для проверки
+        Returns:
+            bool: True если путь существует (независимо файл это или папка), False если не существует
+        Пример использования:
+            if project_manager.is_path_already_exists(Path("my_folder")):
+                print("Объект уже существует")
+        """
+        # TODO 🚧 В разработке: 04.08.2025 - нужно проверить работу и протестировать
             # task: Работа с окном Настройка для стартовой панели
-        if not json_file.exists():
-            return True
-        else:
-            return False
+            # task: Создание корневой папки
+        return path.exists()
 
     def load_json_file(self, file_path: Path) -> dict:
         """

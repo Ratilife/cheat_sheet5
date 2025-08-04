@@ -1,40 +1,19 @@
-import datetime
+from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
-from src.dialogs.dialog_manager import DialogManager, MessageType
+from src.dialogs.dialog_manager import DialogManager
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
         self.file_manager = FileManager()
-        self.messenger = DialogManager(console_output=True, gui_output=False)
+        self.messenger = DialogManager(console_output=False, gui_output= True)
     def create_root_folder(self):
         """Создает корневую папку проекта на основе JSON-конфигурации.
 
-        Метод выполняет следующие действия:
-        1. Запрашивает у пользователя выбор корневой папки через диалоговое окно
-        2. Создает иерархию папок согласно конфигурации из файла 'root_folder_structure_basic.json'
-        3. Обрабатывает возможные ошибки в процессе выполнения
-
-        Возвращает:
-            None
-
-        Исключения:
-            FileNotFoundError: если JSON-файл конфигурации не найден
-            (другие исключения обрабатываются внутри file_manager)
-
-        Логика работы:
-            - При отмене выбора папки выводит сообщение и завершает работу
-            - При успешном выполнении структура создается через file_manager
-            - При ошибках выводит соответствующее сообщение в консоль
-
-        Пример использования:
-             project_manager = ProjectManager()
-             project_manager.create_root_folder()
-            [Откроется диалог выбора папки]
-            Структура папок 'my_project' успешно создана!
         """
-        # ✅ Реализовано: 03.08.2025
+        # TODO 🚧 В разработке: 03.08.2025 - нужна проверка на уже созданную папку
             # task: Создание корневой папки
+
         path_folder = self.file_manager.get_create_folder_path("Создайте корнивую папку")
         if not path_folder:
             self.messenger.show_warning("Отменено: папка не выбрана.")
@@ -42,12 +21,21 @@ class FileOperations:
         try:
             # Получаем путь к JSON-файлу относительно текущего модуля
             json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
-            root_folder_path =  self.file_manager.create_root_folder_structure(json_path,path_folder)
+
+            root_folder_path = self.file_manager.create_root_folder_structure(json_path, path_folder)
+
+            if not root_folder_path.success:
+                if root_folder_path.already_exists:
+                    self.messenger.show_warning("Ошибка", f"Папка уже существует: {root_folder_path.error}")
+                else:
+                    self.messenger.show_error("Ошибка", root_folder_path.error)
+                return root_folder_path.root_path
+
             self.messenger.show_success(
                 f"Структура папок успешно создана",
-                f"Путь: {root_folder_path}"
+                f"Путь: {root_folder_path.root_path}"
             )
-            return root_folder_path
+            return root_folder_path.root_path
         except FileNotFoundError as e:
             self.messenger.show_error(
                 "JSON-файл конфигурации не найден",
@@ -77,7 +65,7 @@ class FileOperations:
              "date": datetime.now().strftime("%Y-%m-%d")
          }
 
-         if self.file_manager.should_overwrite_existing_file(json_file):
+         if self.file_manager.is_path_already_exists(json_file):
              # Файл существует - читаем его и спрашиваем подтверждение
              existing_data = self.file_manager.load_json_file(json_file)
              message = (
