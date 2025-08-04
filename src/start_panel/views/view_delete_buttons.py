@@ -48,6 +48,7 @@ class DeleteButtonsDialog(QDialog):
 
     def update_table(self):
         """Обновляет содержимое таблицы"""
+        # TODO 🚧 В разработке: 04.08.2025 - не работает метод update_table()
         self.table.setRowCount(0)  # Очищаем перед обновлением
 
         buttons = self.view_model.get_all_buttons()

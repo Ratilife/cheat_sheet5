@@ -33,8 +33,8 @@ def run_cost_start_panel():
     sys.exit(app.exec())
 
 if __name__ == '__main__':
-    #start()
+    start()
     #run_start_panel_buttons()
-    run_cost_start_panel()
+    #run_cost_start_panel()
 
 
