@@ -201,7 +201,7 @@ class FileManager:
             raise RuntimeError(f"Ошибка парсинга JSON в файле {file_path}: {str(e)}")
 
     def save_data_to_json(self, json_file: Path, data: dict) -> None:
-        # TODO 🚧 В разработке: 03.08.2025 - нужно проверить работу и протестировать
-            # task: Работа с окном Настройка для стартовой панели
+        # TODO 🚧 В разработке: 03.08.2025 - метод save_data_to_json Мертвый код, пока не удалять
+
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
