@@ -1,9 +1,12 @@
 # config.py
+# TODO 🚧 В разработке: 04.08.2025
+            # task: Работа с окном Настройка для стартовой панели
+
 from datetime import datetime
 from typing import Dict, Optional
 import json
 from pathlib import Path
-from typing import Dict, Optional
+
 
 # Путь к файлу конфигурации (в папке пользователя или рядом с программой)
 CONFIG_FILE = Path.home() / "root_folder_path.json"
