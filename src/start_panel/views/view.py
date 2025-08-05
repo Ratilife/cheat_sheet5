@@ -1,5 +1,7 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QInputDialog, QHBoxLayout, QStyle, QDialog
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton,
+                               QMenu, QWidget, QInputDialog,
+                               QHBoxLayout, QStyle, QDialog)
+from PySide6.QtGui import QIcon, QPixmap, QAction
 from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QSize, Qt, QPoint
 from src.start_panel.models.model import ButtonListModel
 from src.start_panel.views.view_delete_buttons import DeleteButtonsDialog
@@ -52,6 +54,7 @@ class MainWindow(QMainWindow):
         # Устанавливаем фиксированную высоту окна (например, 40 пикселей)
         self.setFixedHeight(40)
 
+
         # Основной виджет
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -62,6 +65,9 @@ class MainWindow(QMainWindow):
         self.main_layout.setSpacing(2)  # Уменьшаем отступ между кнопками
         self.main_layout.setContentsMargins(2, 2, 2, 2)  # Уменьшаем отступы вокруг layout
         self.central_widget.setLayout(self.main_layout)
+
+        # Инициализация контекстного меню для управления позицией
+        self._init_position_menu()
 
         # Панель для кнопок 
         self.buttons_layout = QHBoxLayout()
@@ -143,6 +149,33 @@ class MainWindow(QMainWindow):
 
         # Устанавливаем начальную позицию окна вверху экрана
         self.set_initial_position()
+
+    def _init_position_menu(self):
+        # TODO 🚧 В разработке: 05.08.2025
+            #task: Контекстное меню стартовой панели кнопка поверх окон:
+        # Создаем меню с заголовком
+        self.position_menu = QMenu("Позиция панели", self)
+        # Создаем действие "Поверх окон"
+        self.top_windows = QAction("Поверх окон", self, checkable=True)
+        # Подключаем обработчик
+        self.top_windows.triggered.connect(self._display_top_windows)
+        # Добавляем действия в меню
+        self.position_menu.addActions([self.top_windows])
+        # Устанавливаем политику контекстного меню
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        # Подключаем обработчик показа контекстного меню
+        self.customContextMenuRequested.connect(self.show_context_menu)
+    def _display_top_windows(self):
+        # TODO 🚧 В разработке: 05.08.2025
+            # task: Контекстное меню стартовой панели кнопка поверх окон:
+        pass
+
+        # Метод показа контекстного меню
+    def show_context_menu(self, pos):
+        # TODO 🚧 В разработке: 05.08.2025
+            # task: Контекстное меню стартовой панели кнопка поверх окон:
+        # Показываем меню в указанной позиции
+        self.position_menu.exec(self.mapToGlobal(pos))
 
     def add_button_clicked(self):
         """
@@ -343,6 +376,8 @@ class MainWindow(QMainWindow):
     def open_side_panel(self):
         #TODO 🚧 В разработке: 04.08.2025
         pass
+
+    # Метод инициализации контекстного меню
 
 # Иконка в формате base64
 add_icon = b'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAACVklEQVR4nO1ZvW4TQRBeQaCgJFDx8xIRUVK5Q5F20MwVJxD0vAIojbuEPkROxBsY3YzkAA0FzwCCB4CkIj91jgY0Z8cSVpD3btd3e+g+aSVLJ9vfNzuz+82cMR06dPBGOkyvAtO6FdwEwcwyfQOmMxD8VSymM8v0tXgmuPkoS9b6/f4V0zRQ8B4wvQKmIxD6XW7hoRXc3siSu7UT3ximt0Fo3wrm5Yn/vaxgbgUHMIJbtZAHwacgeOpL/BIhJzZLniyM+Mr+82uW6U1o4jArhGlP/ysoeRjBDSv4YdHk4WIxvdf/DBf5OsnLVMTHdJhe9xZQR9rAv+ti4Ec+S541RR6mCx9XIk9My5bpOAIBp5WOWD3nmydP41Ri2i1FXm9H30tqFp61kMMI7rtHX+2BZ9RCCoCxiG0n8mqy1KfEJgCYjtQ0ukR/PUTeBhcgRS2szhUwtsRxCgCmly47wBELeDt/B4rGI1oBX+bvQAmrHArgXgPHLjWQxyoAmM7/fwHQ+hTithcxt/0YlXgvMiv4Yq4AHTrFKgCy5IGTmbNMP2ITYJm+O0/z1LrGJgAEt0xbGxpgOrcH9o6zgMkuDILkbZCFO6YsHg7TmzE09VbwpPLcVGeVjQvgJK1EfiqCaa/B6L82vtA+1DJJA3n/rvept2RCQAetxcC1vsgfBBvuzgx5B3WkTS9U5C+DzioXczrhT++CLTk33dULxps462/gjh7bpm7o7ai2o4p3Gn8Ht0rfsIvAxACu6txGPbs2HtrZTV7g5cVnps/6TC2xusooXrN26GDajz+jYGvHi7pQwQAAAABJRU5ErkJggg=='  
