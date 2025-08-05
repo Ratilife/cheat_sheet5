@@ -1,15 +1,19 @@
 import sys
+import os
 from PySide6.QtWidgets import QApplication
 from src.start_panel.views.view import MainWindow
 from src.start_panel.view_models.view_model import ButtonViewModel
 from src.start_panel.models.model import ButtonListModel
 from src.ui.start_panel_buttons import StartPanelButtons
 from src.ui.customization_start_panel import CostStartPanel
+from src.global_var.config import get_root_folder
 def start():
     app = QApplication([])
 
+    #task: Сохранить buttons.json в папке for_program корневого католога:
+    root_folder_path = get_root_folder()
     # Создаем Model
-    model = ButtonListModel()
+    model = ButtonListModel(os.path.join(root_folder_path['path'], "for_program"))
 
     # Создаем ViewModel и передаем ей Model
     view_model = ButtonViewModel(model)

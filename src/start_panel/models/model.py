@@ -35,14 +35,14 @@ class ButtonListModel(IButtonModel):
     Этот класс управляет списком кнопок. Он предоставляет методы для добавления новой кнопки (add_button), 
     получения списка всех кнопок (get_buttons) и получения конкретной кнопки по индексу (get_button).
     '''
-    def __init__(self, file_path: str = "buttons.json"):
+    def __init__(self, file_path: str ,name_file : str = "buttons.json" ):
         """
         Инициализация класса ButtonListModel.
 
         :param file_path: Путь к файлу, в котором хранятся данные о кнопках. По умолчанию "buttons.json".
         """
         self._buttons: List[ButtonModel] = []  # Список кнопок
-        self._file_path = file_path
+        self._file_path = os.path.join(file_path, name_file)
         self.load_buttons()  # Загружаем кнопки при инициализации
     def is_button_name_unique(self, name: str) -> bool:
         """
@@ -104,6 +104,7 @@ class ButtonListModel(IButtonModel):
         :param name: Новое имя кнопки.
         :param path: Новый путь к программе.
         """
+        # TODO 05.08.2025 - подозрение на мертвый код метод edit_button
         if 0 <= index < len(self._buttons):
             self._buttons[index].name = name
             self._buttons[index].path = path        
@@ -129,6 +130,7 @@ class ButtonListModel(IButtonModel):
         """
         Сохраняет кнопки в файл в формате JSON.
         """
+        #TODO 05.08.2025 - подумать перенести метод в модуль file_manager.py или оставить как есть
         data = [{"name": button.name, "path": button.path} for button in self._buttons]
         with open(self._file_path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
