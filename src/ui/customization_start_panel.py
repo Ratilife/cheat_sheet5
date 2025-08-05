@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 from src.ui.customization_start_panel_window import CostStartPanelWindow
 from src.operation.file_operations import FileOperations
-from src.ui.config import get_root_folder, update_root_folder
+from src.global_var.config import get_root_folder, update_root_folder
 class CostStartPanel(QMainWindow):
 
     def __init__(self):

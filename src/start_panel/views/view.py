@@ -292,6 +292,7 @@ class MainWindow(QMainWindow):
         Обработчик нажатия на кнопку "Удалить".
         """
         # TODO 🚧 В разработке: 04.08.2025
+            #Удаление пользовательских кнопок из стартовой панели
         # Создаем модель, ViewModel и диалог
         view_model = DeleteButtonsViewModel(self.view_model._model)  # Передаем ButtonListModel
         dialog = DeleteButtonsDialog(view_model, self)
