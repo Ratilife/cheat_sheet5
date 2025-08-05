@@ -292,15 +292,43 @@ class MainWindow(QMainWindow):
         Обработчик нажатия на кнопку "Удалить".
         """
         # TODO 🚧 В разработке: 04.08.2025
-            #Удаление пользовательских кнопок из стартовой панели
+            # task: Удаление пользовательских кнопок из стартовой панели
+            # task: Изменить размер стартовой панели после удаления кнопок
         # Создаем модель, ViewModel и диалог
         view_model = DeleteButtonsViewModel(self.view_model._model)  # Передаем ButtonListModel
         dialog = DeleteButtonsDialog(view_model, self)
         # Показываем диалог
         if dialog.exec() == QDialog.Accepted:
             # Удаляем отмеченные кнопки
+            # Получаем имена выбранных кнопок
             selected_indices = dialog.get_selected_buttons()
-            self.view_model.remove_button(selected_indices)
+            # Удаляем кнопки по именам
+            view_model.remove_button(selected_indices)
+
+        # Эмитируем сигнал для обновления интерфейса
+        self.view_model.buttonsChanged.emit()
+        # Подстраиваем размер окна
+        self.adjust_size()
+
+    def adjust_size(self):
+        """Подстраивает размер окна под текущее количество кнопок"""
+        # TODO 🚧 В разработке: 05.08.2025
+            # task: Изменить размер стартовой панели после удаления кнопок
+        # Рассчитываем ширину всех кнопок + отступы
+        total_width = 0
+        for i in range(self.buttons_layout.count()):
+            widget = self.buttons_layout.itemAt(i).widget()
+            if widget:
+                total_width += widget.width() + self.buttons_layout.spacing()
+
+        # Добавляем отступы по краям
+        total_width += self.main_layout.contentsMargins().left() + self.main_layout.contentsMargins().right()
+
+        # Устанавливаем новую ширину окна
+        self.setFixedWidth(total_width)
+
+        # Обновляем геометрию окна
+        self.updateGeometry()
 
     # Обработчик нажатия на кнопку Открыть Менеджер структуры проекта
     def open_structure_manager_clicked(self):

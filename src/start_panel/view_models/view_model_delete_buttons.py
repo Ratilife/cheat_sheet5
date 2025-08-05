@@ -8,9 +8,11 @@ class DeleteButtonsViewModel(QObject):
         self._model = model  # Ссылка на ButtonListModel (model)
         #self._delete_model = DeleteButtonsModel(model)  # Создаем DeleteButtonsModel (model_delete_buttons)
         self._selected_buttons: Set[str] = set()  # Храним имена выбранных кнопок
+
+
     # Сигнал для уведомления View об изменении данных
     buttonsUpdated = Signal()
-
+    selection_changed = Signal()
     def get_buttons(self) -> List[ButtonModel]:
         """
         Возвращает список кнопок.
@@ -44,5 +46,22 @@ class DeleteButtonsViewModel(QObject):
                 selected_indices.append(i)
         return selected_indices
 
+    def remove_button(self,names: List[str]):
+        """
+            Удаляет кнопки по их именам, используя их индексы.
 
-
+            :param names: Список имен кнопок для удаления (например, ['Notepad++', '1C']).
+        """
+        # TODO 🚧 В разработке: 05.08.2025
+            # Удаление пользовательских кнопок из стартовой панели
+        # Получаем все кнопки
+        buttons = self._model.get_buttons()
+        # Находим индексы кнопок с указанными именами
+        indices_to_remove = [
+            index
+            for index, button in enumerate(buttons)
+            if button.name in names
+        ]
+        # Удаляем по индексам в обратном порядке (чтобы избежать смещения)
+        for index in sorted(indices_to_remove, reverse=True):
+            self._model.remove_button(index)
