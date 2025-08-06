@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
-from src.global_var.config import update_root_folder,get_for_program_path
+from src.global_var.config import update_root_folder
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
@@ -14,7 +14,7 @@ class FileOperations:
 
         """
         # TODO 🚧 В разработке: 03.08.2025 - нужна проверка на уже созданную папку
-            # task: Создание корневой папки
+            # 🏆task: Создание корневой папки;
 
         path_folder = self.file_manager.get_create_folder_path("Создайте корнивую папку")
         if not path_folder:
@@ -52,7 +52,7 @@ class FileOperations:
 
     def save_path_root_folder(self,root_path: str, target_name: str):
          # TODO 🚧 В разработке: 03.08.2025 - метод уже не актуален (мертвый код) Нужен пока как пример
-            # task: Работа с окном Настройка для стартовой панели
+            # 🏆task: Работа с окном Настройка для стартовой панели;
          '''
          Если is_path_already_exists = True - Создаем файл json
          :param root_path: - путь к корневой папке
@@ -90,7 +90,7 @@ class FileOperations:
 
 
     def get_path_root_folder(self,json_file):
-        # TODO 🚧 В разработке: 04.08.2025
-            # task: Работа с окном Настройка для стартовой панели
+        # TODO 🚧 В разработке: 04.08.2025 - мертвый код get_path_root_folder
+            # 🏆task: Работа с окном Настройка для стартовой панели;
         if self.file_manager.is_path_already_exists(json_file):
             pass
