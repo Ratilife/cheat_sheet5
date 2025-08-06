@@ -22,8 +22,8 @@ class FileOperations:
             return
         try:
             # Получаем путь к JSON-файлу относительно текущего модуля
-            #json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
-            json_path = Path(os.path.join(get_for_program_path(),"root_folder_structure_basic.json"))
+            json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
+            #json_path = Path(os.path.join(get_for_program_path(),"root_folder_structure_basic.json"))
             root_folder_path = self.file_manager.create_root_folder_structure(json_path, path_folder)
 
             if not root_folder_path.success:
