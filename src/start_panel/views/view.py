@@ -47,6 +47,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.view_model = view_model
         #self.setWindowTitle("Панель кнопок")
+        # Убираем заголовок окна и кнопки управления
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)  # Добавляем флаг поверх окон по умолчанию
         
         # Убираем заголовок окна и кнопки управления
         self.setWindowFlags(Qt.FramelessWindowHint)
@@ -68,7 +70,7 @@ class MainWindow(QMainWindow):
 
         # Инициализация контекстного меню для управления позицией
         self._init_position_menu()
-
+        self.top_windows.setChecked(True)  # Устанавливаем галочку по умолчанию
         # Панель для кнопок 
         self.buttons_layout = QHBoxLayout()
         self.buttons_layout.setSpacing(5)  # Устанавливаем отступ между кнопками
@@ -166,9 +168,21 @@ class MainWindow(QMainWindow):
         # Подключаем обработчик показа контекстного меню
         self.customContextMenuRequested.connect(self.show_context_menu)
     def _display_top_windows(self):
+        """
+           Обработчик события нажатия на кнопку "Поверх окон" в контекстном меню.
+           Переключает режим отображения панели поверх всех окон.
+        """
         # TODO 🚧 В разработке: 05.08.2025
             # task: Контекстное меню стартовой панели кнопка поверх окон:
-        pass
+        if self.top_windows.isChecked():
+            # Включаем режим "Поверх окон"
+            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        else:
+            # Выключаем режим "Поверх окон"
+            self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
+
+        # Необходимо вызвать show() для применения изменений
+        self.show()
 
         # Метод показа контекстного меню
     def show_context_menu(self, pos):
