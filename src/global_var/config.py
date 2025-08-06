@@ -1,6 +1,7 @@
 # config.py
 # TODO 🚧 В разработке: 04.08.2025
             # task: Работа с окном Настройка для стартовой панели
+            # task: Создать переменную которая знает где находится папка for_program из корневой папки
 
 from datetime import datetime
 from typing import Dict, Optional
@@ -16,7 +17,14 @@ ROOT_FOLDER_DATA: Dict[str, Optional[str]] = {
     "path": None,    # Путь к корневой папке
     "date": None     # Дата последнего обновления
 }
+FOR_PROGRAM_PATH:  Optional[str] = None
 
+def set_for_program_path(for_program_path):
+    global FOR_PROGRAM_PATH
+    FOR_PROGRAM_PATH = for_program_path
+
+def get_for_program_path():
+    return  FOR_PROGRAM_PATH
 def load_config() -> None:
     """Загружает данные из файла при старте программы"""
     global ROOT_FOLDER_DATA

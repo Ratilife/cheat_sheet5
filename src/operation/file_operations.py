@@ -1,8 +1,9 @@
+import os
 from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
-from src.global_var.config import update_root_folder
+from src.global_var.config import update_root_folder,get_for_program_path
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
@@ -21,8 +22,8 @@ class FileOperations:
             return
         try:
             # Получаем путь к JSON-файлу относительно текущего модуля
-            json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
-
+            #json_path = Path(__file__).parent.parent / "managers" / "root_folder_structure_basic.json"
+            json_path = Path(os.path.join(get_for_program_path(),"root_folder_structure_basic.json"))
             root_folder_path = self.file_manager.create_root_folder_structure(json_path, path_folder)
 
             if not root_folder_path.success:
