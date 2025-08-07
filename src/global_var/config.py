@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Dict, Optional
 import json
 from pathlib import Path
+import os
 
 
 # Путь к файлу конфигурации (в папке пользователя или рядом с программой)
@@ -19,8 +20,10 @@ ROOT_FOLDER_DATA: Dict[str, Optional[str]] = {
 }
 FOR_PROGRAM_PATH:  Optional[str] = None
 
-def set_for_program_path(for_program_path):
+def set_for_program_path():
     global FOR_PROGRAM_PATH
+    root_folder_path = get_root_folder()
+    for_program_path = os.path.join(root_folder_path['path'], "for_program")
     FOR_PROGRAM_PATH = for_program_path
 
 def get_for_program_path():
