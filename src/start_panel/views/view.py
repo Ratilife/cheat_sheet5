@@ -407,7 +407,8 @@ class MainWindow(QMainWindow):
     def open_side_panel(self):
         #TODO 🚧 В разработке: 04.08.2025
         if not hasattr(self, '_side_manel'):
-            self._side_manel = SidePanel()
+            tab_names = ["Документы", "Проекты", "Шаблоны"]
+            self._side_manel = SidePanel(tab_names)
 
         self._side_manel.show()
 
