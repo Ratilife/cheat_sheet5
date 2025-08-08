@@ -10,6 +10,7 @@ from src.start_panel.view_models.view_model import ButtonViewModel, IButtonViewM
 import base64
 import sys
 from src.ui.customization_start_panel import CostStartPanel
+from src.ui.side_panel import SidePanel
 
 
 class MainWindow(QMainWindow):
@@ -405,7 +406,10 @@ class MainWindow(QMainWindow):
     # Обработчик нажатия на кнопку Открыть боковую панель
     def open_side_panel(self):
         #TODO 🚧 В разработке: 04.08.2025
-        pass
+        if not hasattr(self, '_side_manel'):
+            self._side_manel = SidePanel()
+
+        self._side_manel.show()
 
     def toggle_panel(self):
         """Переключает состояние панели (свернуто/развернуто)"""
