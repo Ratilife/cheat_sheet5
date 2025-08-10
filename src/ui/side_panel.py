@@ -34,6 +34,7 @@ class SidePanel(QWidget):
         self.file_watcher = FileWatcher()
         self.file_watcher.file_updated.connect(self._on_file_updated)
         self.file_watcher.file_deleted.connect(self._on_file_deleted)
+        self.file_watcher.dir_changed.connect(self._on_dir_changed)
 
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
@@ -132,9 +133,15 @@ class SidePanel(QWidget):
         )
 
     def _on_file_deleted(self, path):
+        """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
         pass
 
     def _on_file_updated(self,path):
+        """Реагирует на изменение файла."""
         # TODO 🚧 В разработке: 08.08.2025
+        pass
+
+    def _on_dir_changed(self):
+        # TODO 🚧 В разработке: 10.08.2025
         pass
