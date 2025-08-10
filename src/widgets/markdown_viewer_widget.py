@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import QWidget,  QVBoxLayout,QRadioButton
+from PySide6.QtWidgets import (QWidget,  QVBoxLayout,QRadioButton,QHBoxLayout, QButtonGroup, QTextEdit)
+from src.widgets.markdown_highlighter import MarkdownHighlighter
+from src.widgets.markdown_converter import MarkdownConverter
 class MarkdownViewer(QWidget):
     """Класс для отображения MD файлов в двух режимах: текст и markdown"""
 
@@ -60,4 +62,47 @@ class MarkdownViewer(QWidget):
     def _change_mode(self):
         """Переключение между режимами просмотра"""
         # TODO 🚧 В разработке: 10.08.2025
-        pass
+        if self.text_mode_btn.isChecked():
+            # Активация текстового режима
+            self._current_mode = 'text'
+            self.markdown_editor.setVisible(False)
+            self.text_editor.setVisible(True)
+        else:
+            # Активация markdown режима
+            self._current_mode = 'markdown'
+            html = MarkdownConverter.convert_md_to_html(self.text_editor.toPlainText())
+            self.markdown_editor.setHtml(html)
+
+            self.text_editor.setVisible(False)
+            self.markdown_editor.setVisible(True)
+
+    def set_content(self, text):
+        """Установка содержимого редактора"""
+        # TODO 🚧 В разработке: 10.08.2025
+        self.text_editor.setPlainText(text)
+        if self._current_mode == 'markdown':
+            # Если в режиме markdown, сразу конвертируем в HTML
+            html = self._convert_md_to_html(text) # TODO 10.08.2025 _convert_md_to_html метод не определен
+            self.markdown_editor.setHtml(html)
+
+    def get_content(self):
+        """Получение содержимого редактора"""
+        # TODO 🚧 В разработке: 10.08.2025
+        return self.text_editor.toPlainText()
+
+    def set_view_mode(self, mode):
+        """Устанавливает режим отображения: 'text' или 'markdown'"""
+        # TODO 🚧 В разработке: 10.08.2025
+        if mode not in ['text', 'markdown']:
+            return
+
+        self._current_mode = mode
+
+        # Обновляем состояние кнопок
+        if mode == 'text':
+            self.text_mode_btn.setChecked(True)
+        else:
+            self.markdown_mode_btn.setChecked(True)
+
+        # Вызываем _change_mode для обновления отображения
+        self._change_mode()
