@@ -16,7 +16,7 @@ class FileWatcher(QObject):
         # ✅ Реализовано: 10.08.2025
         super().__init__()   # Вызываем конструктор базового класса QObject, чтобы корректно инициализировать объект с поддержкой сигналов/слотов Qt
         # Создаём экземпляр QFileSystemWatcher, который будет следить за изменениями файлов и директорий в файловой системе
-        self.watcher = QFileSystemWatcher
+        self.watcher = QFileSystemWatcher()
         self.watched_dirs = set()  # Все отслеживаемые папки
         # Подключаем собственный метод _handle_file_change к сигналу fileChanged:
         # это значит, что когда отслеживаемый файл изменится, будет автоматически вызван _handle_file_change с путём к файлу
