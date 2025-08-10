@@ -25,7 +25,7 @@ class MyBaseObserver(QObject):
 
     def unwatch_file(self, path):
         """Прекратить отслеживание файла"""
-        # ✅ Реализовано: 10.08.2025
+        # ✅ Реализовано: 10.08.2025 - мертвый код оставить для дальнейших задач
         self._watched_files.discard(path)
 
     def is_watched(self, path):
