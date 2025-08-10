@@ -50,9 +50,9 @@ class MarkdownViewer(QWidget):
 
         # Редактор для просмотра HTML (рендер Markdown)
         self.markdown_editor = QTextEdit()
-        self.markdown_editor.setReadOnly(True)   #?
-        self.markdown_editor.setVisible(True)    #?
-        self.text_editor.setVisible(False)       #?
+        self.markdown_editor.setReadOnly(True)   # Блокирует редактирование
+        self.markdown_editor.setVisible(True)    # Видимость показывать
+        self.text_editor.setVisible(False)       # Видимость не показывать
 
         # Добавление виджетов на основной layout
         self.layout.addWidget(self.mode_panel)
