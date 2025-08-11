@@ -19,7 +19,7 @@ ROOT_FOLDER_DATA: Dict[str, Optional[str]] = {
     "date": None     # Дата последнего обновления
 }
 FOR_PROGRAM_PATH:  Optional[str] = None
-
+BOOKMARKS_PATH:  Optional[str] = None
 def set_for_program_path():
     global FOR_PROGRAM_PATH
     root_folder_path = get_root_folder()
@@ -28,6 +28,15 @@ def set_for_program_path():
 
 def get_for_program_path():
     return  FOR_PROGRAM_PATH
+
+def set_bookmarks():
+    global BOOKMARKS_PATH
+    root_folder_path = get_root_folder()
+    bookmarks_path = os.path.join(root_folder_path['path'], "bookmarks")
+    BOOKMARKS_PATH = bookmarks_path
+
+def get_bookmarks():
+    return BOOKMARKS_PATH
 def load_config() -> None:
     """Загружает данные из файла при старте программы"""
     global ROOT_FOLDER_DATA

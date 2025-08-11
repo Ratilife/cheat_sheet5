@@ -6,15 +6,14 @@ from src.start_panel.view_models.view_model import ButtonViewModel
 from src.start_panel.models.model import ButtonListModel
 from src.ui.start_panel_buttons import StartPanelButtons
 from src.ui.customization_start_panel import CostStartPanel
-from src.global_var.config import get_root_folder, set_for_program_path,get_for_program_path
+from src.global_var.config import set_for_program_path,get_for_program_path, set_bookmarks
 def start():
     app = QApplication([])
 
-    #task: Сохранить buttons.json в папке for_program корневого католога:
-    #root_folder_path = get_root_folder()
-    #for_program_path = os.path.join(root_folder_path['path'], "for_program")
+
     # task: Создать переменную которая знает где находится папка for_program из корневой папки
     set_for_program_path()
+    set_bookmarks()
     for_program_path = get_for_program_path()
     # Создаем Model
     model = ButtonListModel(for_program_path)
