@@ -12,8 +12,7 @@ def start():
 
 
     # task: Создать переменную которая знает где находится папка for_program из корневой папки
-    set_for_program_path()
-    set_bookmarks()
+
     for_program_path = get_for_program_path()
     # Создаем Model
     model = ButtonListModel(for_program_path)

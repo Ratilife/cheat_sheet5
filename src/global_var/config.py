@@ -46,6 +46,8 @@ def load_config() -> None:
                 ROOT_FOLDER_DATA.update(json.load(f))
         except Exception as e:
             print(f"Ошибка загрузки конфига: {e}")
+    set_for_program_path()
+    set_bookmarks()
 
 def _save_config() -> None:
     """Сохраняет данные в файл"""
