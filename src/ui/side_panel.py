@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, QRect, QSize
 from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
 from src.operation.file_operations import FileOperations
+from src.managers.tree_model_manager import TreeModelManager
 
 
 class SidePanelObserver(MyBaseObserver):
@@ -33,7 +34,7 @@ class SidePanel(QWidget):
         # 1. Создаем экземпляр класса для сигналов
         self.observer = SidePanelObserver()
 
-        self.tab_manager = DynamicTabManager()
+
         # 3. # Инициализация наблюдателя
         self.file_watcher = FileWatcher()
         self.file_watcher.file_updated.connect(self._on_file_updated)
@@ -43,8 +44,10 @@ class SidePanel(QWidget):
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
         self.file_operation = FileOperations()
-        tab_names = self.file_operation.fetch_file_heararchy() # TODO 12.08.2025 создать метод fetch_file_heararchy()
-        self.tab_names = tab_names
+        self.tab_names = self.file_operation.fetch_file_heararchy()
+        self.tab_manager = DynamicTabManager()
+
+
         self._init_ui()
 
         # Подключение сигнала
@@ -90,7 +93,7 @@ class SidePanel(QWidget):
         self.tab_widget.setTabPosition(QTabWidget.West)  # Вкладки слева
 
         # Создаем деревья для каждой вкладки
-        self._create_tabs_with_trees()
+        self._create_tabs_with_trees(self.tab_names)
 
         # Добавляем вкладки в основной layout
         main_layout.addWidget(self.tab_widget)
@@ -99,9 +102,13 @@ class SidePanel(QWidget):
         # Добавляем разделитель в основной layout
         main_layout.addWidget(self.splitter)
 
-    def _create_tabs_with_trees(self):
+    def _create_tabs_with_trees(self, tab_name:dict):
+        # TODO 🚧 В разработке: 12.08.2025
         """Создает вкладки с деревьями файлов"""
-        # TODO 🚧 В разработке: 08.08.2025 перенести в класс DynamicTabManager
+        self.tab_manager.create_tabs(tab_name)
+    def _create_tabs_with_trees_old(self):
+        """Создает вкладки с деревьями файлов"""
+        # TODO 🚧 В разработке: 08.08.2025  мертвый код
         if not self.tab_names:
             raise ValueError("Список имен вкладок не может быть пустым!")
 
@@ -139,13 +146,6 @@ class SidePanel(QWidget):
         tree.expandAll()
         return tree
 
-    '''def update_dock_position(self):
-        """Обновляет позицию панели"""
-        screen = QApplication.primaryScreen().availableGeometry()
-        self.move(
-            screen.right() - self.width(),
-            screen.top() + 100
-        )'''
 
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
