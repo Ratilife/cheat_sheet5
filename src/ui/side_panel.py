@@ -9,6 +9,7 @@ from src.widgets.markdown_viewer_widget import MarkdownViewer
 from PySide6.QtCore import Qt, QRect, QSize
 from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
+from src.operation.file_operations import FileOperations
 
 
 class SidePanelObserver(MyBaseObserver):
@@ -19,7 +20,7 @@ class SidePanel(QWidget):
     # TODO 🚧 В разработке: 08.08.2025
         # 🏆task: Создание боковой панели;
         # 🏆task: Открыть боковую панель из стартовой панели;
-    def __init__(self, tab_names: list[str], parent=None):
+    def __init__(self,  parent=None):
         """
             Инициализация боковой панели с динамическими вкладками
 
@@ -41,7 +42,8 @@ class SidePanel(QWidget):
 
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
-
+        self.file_operation = FileOperations()
+        tab_names = self.file_operation.fetch_file_heararchy() # TODO 12.08.2025 создать метод fetch_file_heararchy()
         self.tab_names = tab_names
         self._init_ui()
 

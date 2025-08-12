@@ -94,3 +94,13 @@ class FileOperations:
             # 🏆task: Работа с окном Настройка для стартовой панели;
         if self.file_manager.is_path_already_exists(json_file):
             pass
+
+
+    def fetch_file_heararchy(self):
+        # TODO 🚧 В разработке: 12.08.2025
+        bookmarks = get_bookmarks()
+        if not bookmarks:
+            return # TODO 12.08.2025 продумать что должен вернуть метод
+
+        bookmarks_path = self.file_manager.check_path_exists(bookmarks)
+        dict_dir_files = self.file_manager.scan_files_by_category()

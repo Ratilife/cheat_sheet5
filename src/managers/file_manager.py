@@ -1,4 +1,5 @@
 import json
+import os
 from dataclasses import dataclass
 from PySide6.QtWidgets import QFileDialog
 from pathlib import Path
@@ -205,3 +206,19 @@ class FileManager:
 
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+
+    def scan_files_by_category(self, bookmarks_path: Path) -> dict:
+        # TODO 🚧 В разработке: 12.08.2025
+        dict_dir_files = {}
+        for root, dirs, files in os.walk(bookmarks_path):
+            # root - текущая директория
+            # dirs - список поддиректорий
+            # files - список файлов в текущей директории
+            for dir in dirs:
+                for file in files:
+                    # Проверяем, что файл имеет расширение .md и st
+                    if file.endswith(".md") and file.endswith(".st"):
+                        dict_dir_files[dir] = file # TODO 12.08.2025 добавлять путь и файл
+        return dict_dir_files
+
+
