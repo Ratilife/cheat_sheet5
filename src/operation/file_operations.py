@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
@@ -98,9 +97,12 @@ class FileOperations:
 
     def fetch_file_heararchy(self):
         # TODO 🚧 В разработке: 12.08.2025
+        dict_dir_files = None
         bookmarks = get_bookmarks()
         if not bookmarks:
             return # TODO 12.08.2025 продумать что должен вернуть метод
 
-        bookmarks_path = self.file_manager.check_path_exists(bookmarks)
-        dict_dir_files = self.file_manager.scan_files_by_category()
+        if self.file_manager.is_path_already_exists(Path(bookmarks)):
+            dict_dir_files = self.file_manager.create_files_dict_with_paths(Path(bookmarks))
+
+        return dict_dir_files
