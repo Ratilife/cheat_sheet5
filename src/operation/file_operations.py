@@ -100,7 +100,7 @@ class FileOperations:
         dict_dir_files = None
         bookmarks = get_bookmarks()
         if not bookmarks:
-            return # TODO 12.08.2025 продумать что должен вернуть метод
+            return {}
 
         if self.file_manager.is_path_already_exists(Path(bookmarks)):
             dict_dir_files = self.file_manager.create_files_dict_with_paths(Path(bookmarks))

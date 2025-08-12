@@ -82,6 +82,7 @@ class SidePanel(QWidget):
         # Создаем основной вертикальный layout
         main_layout = QVBoxLayout(self)
         # Убираем отступы у layout
+
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Создаем панель заголовка с кнопками управления
@@ -89,7 +90,7 @@ class SidePanel(QWidget):
         main_layout.addWidget(title_layout)  # Добавляем панель инструментов в основной layout(макет)
 
         # Создаем виджет вкладок
-        self.tab_widget = QTabWidget()
+        self.tab_widget = self.tab_manager.tab_widget
         self.tab_widget.setTabPosition(QTabWidget.West)  # Вкладки слева
 
         # Создаем деревья для каждой вкладки
