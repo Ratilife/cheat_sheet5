@@ -46,7 +46,7 @@ class SidePanel(QWidget):
         self.file_operation = FileOperations()
         self.tab_names = self.file_operation.fetch_file_heararchy()
         self.tab_manager = DynamicTabManager()
-
+        self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
 
         self._init_ui()
 
@@ -107,18 +107,7 @@ class SidePanel(QWidget):
         # TODO 🚧 В разработке: 12.08.2025
         """Создает вкладки с деревьями файлов"""
         self.tab_manager.create_tabs(tab_name)
-    def _create_tabs_with_trees_old(self):
-        """Создает вкладки с деревьями файлов"""
-        # TODO 🚧 В разработке: 08.08.2025  мертвый код
-        if not self.tab_names:
-            raise ValueError("Список имен вкладок не может быть пустым!")
 
-        for tab_name in self.tab_names:
-            # Создаем дерево для вкладки
-            tree = self._create_file_tree(tab_name)
-
-            # Добавляем вкладку с деревом
-            self.tab_widget.addTab(tree, tab_name)
 
     def _create_file_tree(self, tab_name: str) -> QTreeWidget:
         """Создает дерево файлов для конкретной вкладки"""
@@ -161,6 +150,15 @@ class SidePanel(QWidget):
     def _on_dir_changed(self):
         # TODO 🚧 В разработке: 10.08.2025
         pass
+
+    def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
+        """Заполняет дерево файлами из словаря tab_names."""
+        # TODO 🚧 В разработке: 13.08.2025
+        # 1. Проверяем, есть ли данные для заполнения
+        if not self.tab_names:
+            return
+
+
 
     def _open_editor(self):
         """Открыть окно редактора файла"""
