@@ -13,16 +13,7 @@ class DynamicTabManager(QObject):
         super().__init__(parent)
         self.tab_widget = QTabWidget()
         self.trees = {}  # Словарь для хранения деревьев по именам вкладок
-    def create_tabs_old(self, tab_names: list[str]) -> QTabWidget:
-        """Создает вкладки и деревья на основе списка имен."""
-        # TODO 🚧 В разработке: 08.08.2025 - мертвый код
 
-        if not tab_names:
-            raise ValueError("Список имен вкладок не может быть пустым!")
-
-        for name in tab_names:
-            self._add_tab(name)
-        return self.tab_widget
 
     def create_tabs(self, tab_data: dict) -> QTabWidget:
         """Создает вкладки и деревья на основе переданного словаря.
