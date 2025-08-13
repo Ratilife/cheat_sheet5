@@ -209,30 +209,35 @@ class FileManager:
 
     def create_files_dict_with_paths(self, bookmarks_path: Path) -> dict:
         """
-        Создает словарь со всеми папками (включая пустые) и путями к файлам .md и .st.
+        Создает словарь со всеми папками (включая пустые) и путями к файлам .md и .st,
+        исключая корневую папку и файлы в ней.
 
         Args:
             bookmarks_path (Path): Путь к корневой директории для поиска.
 
         Returns:
             dict: Словарь, где:
-                  - ключи: имена директорий
-                  - значения: списки полных путей к файлам .md или .st (если есть)
+                  - ключи: имена поддиректорий (не включая корневую)
+                  - значения: списки полных путей к файлам .md или .st в этих поддиректориях
         """
+        # ✅ Реализовано: 13.08.2025
         dict_dir_files = {}
 
-        # 1. Сначала добавляем ВСЕ папки в словарь (даже пустые)
+        # Проходим по всем поддиректориям, начиная с первого уровня вложенности
         for root, dirs, files in os.walk(bookmarks_path):
+            # Пропускаем корневую директорию
+            if Path(root) == bookmarks_path:
+                continue
+
             dir_name = os.path.basename(root)
             if dir_name not in dict_dir_files:
                 dict_dir_files[dir_name] = []  # Инициализируем пустым списком
 
-        # 2. Теперь добавляем только файлы .md и .st
-        for root, dirs, files in os.walk(bookmarks_path):
-            dir_name = os.path.basename(root)
+            # Добавляем только файлы .md и .st
             for file in files:
                 if file.endswith((".md", ".st")):
                     file_path = os.path.join(root, file)
                     dict_dir_files[dir_name].append(file_path)
 
         return dict_dir_files
+
