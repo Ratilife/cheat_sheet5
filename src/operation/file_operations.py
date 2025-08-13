@@ -3,6 +3,7 @@ from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks
+from src.managers.tree_model_manager import TreeModelManager
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
@@ -96,7 +97,7 @@ class FileOperations:
 
 
     def fetch_file_heararchy(self):
-        # TODO 🚧 В разработке: 12.08.2025
+        # ✅ Реализовано: 12.08.2025
         dict_dir_files = None
         bookmarks = get_bookmarks()
         if not bookmarks:
@@ -106,3 +107,4 @@ class FileOperations:
             dict_dir_files = self.file_manager.create_files_dict_with_paths(Path(bookmarks))
 
         return dict_dir_files
+
