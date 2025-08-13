@@ -11,6 +11,8 @@ import base64
 import sys
 from src.ui.customization_start_panel import CostStartPanel
 from src.ui.side_panel import SidePanel
+from src.parsers.file_parser_service import FileParserService
+from src.managers.tree_model_manager import TreeModelManager
 
 
 class MainWindow(QMainWindow):
@@ -407,7 +409,10 @@ class MainWindow(QMainWindow):
     def open_side_panel(self):
         #TODO 🚧 В разработке: 04.08.2025
         if not hasattr(self, '_side_manel'):
-            #tab_names = ["Документы", "Проекты", "Шаблоны"]
+            # 1. Создаем сервисы
+            parser_service = FileParserService()
+            tree_model_manager = TreeModelManager(parser_service)
+            # 2. Создаем SidePanel и передаем зависимости
             self._side_manel = SidePanel()
 
         self._side_manel.show()
