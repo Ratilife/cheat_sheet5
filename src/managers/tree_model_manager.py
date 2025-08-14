@@ -1,5 +1,5 @@
 
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
 
@@ -11,7 +11,7 @@ class TreeModelManager(QObject):
       - Парсинг файлов
       - Взаимодействие с DeleteManager
       """
-
+    model_updated = Signal(str, QAbstractItemModel)
     def __init__(self, parser_service):
         # TODO 🚧 В разработке: 12.07.2025
         super().__init__()
@@ -60,19 +60,10 @@ class TreeModelManager(QObject):
         return self._models_cache.get(tab_name)
 
     def refresh_model(self, tab_name: str, new_file_paths: list) -> bool:
-        """
-        Обновляет модель для вкладки
-        Args:
-            tab_name (str): Имя вкладки
-            new_file_paths (list): Новый список файлов
-        Returns:
-            bool: True если обновление прошло успешно
-        """
-        # TODO 🚧 В разработке: 13.07.2025 - мертвый код
-        if tab_name in self._models_cache:
-            self._models_cache[tab_name] = self._create_single_model(new_file_paths)
-            return True
-        return False
+        # TODO 🚧 В разработке: 13.07.2025 - метод для слушателя
+        model = self._create_single_model(new_file_paths)
+        self.tab_models[tab_name] = model
+        self.model_updated.emit(tab_name, model)
 
     def _create_single_model(self, file_paths: list) -> STMDFileTreeModel:
         """
@@ -103,6 +94,13 @@ class TreeModelManager(QObject):
             file_path (str): Путь к файлу
         """
         # TODO 🚧 В разработке: 13.07.2025
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            return
+        if os.path.getsize(file_path) > 10 * 1024 * 1024:  # 10 MB
+            print(f"File too large: {file_path}")
+            return
+
         try:
             # 1. Парсим файл
             file_type, parsed_data = self.parser_service.parse_and_get_type(file_path)
@@ -154,3 +152,8 @@ class TreeModelManager(QObject):
                 self._add_st_item(item, child)
 
         parent_item.appendChild(item)
+
+    def build_skeleton_model(self, file_paths: list) -> STMDFileTreeModel:
+        """Создает модель только с метаданными (без содержимого файлов)"""
+        # Использует MetadataCache
+        pass
