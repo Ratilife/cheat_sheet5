@@ -340,7 +340,8 @@ class MainWindow(QMainWindow):
         y = 0  # Верхняя часть экрана
 
         # Устанавливаем позицию окна
-        self.move(x, y)        
+        self.move(x, y)
+
     def closeEvent(self, event):
         """
         Обработчик события закрытия окна.
@@ -413,9 +414,9 @@ class MainWindow(QMainWindow):
             parser_service = FileParserService()
             tree_model_manager = TreeModelManager(parser_service)
             # 2. Создаем SidePanel и передаем зависимости
-            self._side_manel = SidePanel()
-
-        self._side_manel.show()
+            self.side_manel = SidePanel()
+            self.side_panel.set_managers(tree_model_manager) # TODO 14.08.2025 тут ошибка метод не запускается
+            self.side_manel.show()
 
     def toggle_panel(self):
         """Переключает состояние панели (свернуто/развернуто)"""
