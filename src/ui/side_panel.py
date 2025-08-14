@@ -11,6 +11,7 @@ from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
 from src.operation.file_operations import FileOperations
 from src.managers.tree_model_manager import TreeModelManager
+from src.parsers.background_parser import BackgroundParser,Priority
 
 
 class SidePanelObserver(MyBaseObserver):
@@ -34,12 +35,13 @@ class SidePanel(QWidget):
         # 1. Создаем экземпляр класса для сигналов
         self.observer = SidePanelObserver()
 
-
         # 3. # Инициализация наблюдателя
         self.file_watcher = FileWatcher()
         self.file_watcher.file_updated.connect(self._on_file_updated)
         self.file_watcher.file_deleted.connect(self._on_file_deleted)
         self.file_watcher.dir_changed.connect(self._on_dir_changed)
+
+        self.tree_model_manager = None
 
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
@@ -47,6 +49,10 @@ class SidePanel(QWidget):
         self.tab_names = self.file_operation.fetch_file_heararchy()
         self.tab_manager = DynamicTabManager()
         self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+
+        self.parser = BackgroundParser()
+        self.parser.task_finished.connect(self._on_parsing_done)
+
 
         self._init_ui()
 
@@ -154,10 +160,20 @@ class SidePanel(QWidget):
     def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
         """Заполняет дерево файлами из словаря tab_names."""
         # TODO 🚧 В разработке: 13.08.2025
-        # 1. Проверяем, есть ли данные для заполнения
-        if not self.tab_names:
-            return
+        # 1. Получаем пути файлов для этой вкладки
+        file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
 
+        # 2. Запрашиваем модель с метаданными
+        model = self.tree_model_manager.build_skeleton_model(file_paths)
+
+        # 3. Привязываем модель к дереву
+        tree.setModel(model)
+
+        # 4. Запускаем фоновый парсинг
+        self.background_parser.add_task(
+            files=file_paths,
+            priority=Priority.VISIBLE
+        )
 
 
     def _open_editor(self):
@@ -357,3 +373,11 @@ class SidePanel(QWidget):
         self.update_dock_position()
         # Устанавливаем прозрачность окна
         self.setWindowOpacity(0.9)
+
+    def set_managers(self, tree_model_manager: TreeModelManager):
+        """
+        Устанавливает менеджеры для работы панели
+        Args:
+            tree_model_manager (TreeModelManager): Менеджер моделей деревьев
+        """
+        self.tree_model_manager = tree_model_manager
