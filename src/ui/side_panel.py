@@ -2,6 +2,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
                                QTreeWidget, QTreeWidgetItem, QApplication,
                                 QMenu)
 from PySide6.QtGui import QAction
+
+from parsers.content_cache import ContentCache
 from src.managers.dynamic_tabs import DynamicTabManager
 from src.observers.file_watcher import FileWatcher
 from src.observers.my_base_observer import MyBaseObserver
@@ -22,7 +24,7 @@ class SidePanel(QWidget):
     # TODO 🚧 В разработке: 08.08.2025
         # 🏆task: Создание боковой панели;
         # 🏆task: Открыть боковую панель из стартовой панели;
-    def __init__(self,  parent=None):
+    def __init__(self, tree_model_manager: TreeModelManager ,  parent=None):
         """
             Инициализация боковой панели с динамическими вкладками
 
@@ -41,7 +43,7 @@ class SidePanel(QWidget):
         self.file_watcher.file_deleted.connect(self._on_file_deleted)
         self.file_watcher.dir_changed.connect(self._on_dir_changed)
 
-        self.tree_model_manager = None
+        self.tree_model_manager = tree_model_manager
 
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
@@ -52,7 +54,7 @@ class SidePanel(QWidget):
 
         self.parser = BackgroundParser()
         self.parser.task_finished.connect(self._on_parsing_done)
-
+        self.content_cache = ContentCache()  # Инициализация кэша
 
         self._init_ui()
 
@@ -110,37 +112,9 @@ class SidePanel(QWidget):
         main_layout.addWidget(self.splitter)
 
     def _create_tabs_with_trees(self, tab_name:dict):
-        # TODO 🚧 В разработке: 12.08.2025
+        # ✅ Реализовано: 14.08.2025
         """Создает вкладки с деревьями файлов"""
         self.tab_manager.create_tabs(tab_name)
-
-
-    def _create_file_tree(self, tab_name: str) -> QTreeWidget:
-        """Создает дерево файлов для конкретной вкладки"""
-        # TODO 🚧 В разработке: 08.08.2025 перенести в класс DynamicTabManager
-        tree = QTreeWidget()
-        tree.setHeaderHidden(True)
-        tree.setColumnCount(1)
-
-        # Заголовок дерева
-        root = QTreeWidgetItem(tree, [f"Файлы: {tab_name}"])
-
-        # Примерная структура файлов (в реальном приложении заменить на сканирование директории)
-        files = {
-            "Документы": ["doc1.txt", "doc2.pdf"],
-            "Изображения": ["image1.png"],
-            "Код": ["main.py", "utils.py"]
-        }
-
-        for folder, file_list in files.items():
-            folder_item = QTreeWidgetItem(root, [folder])
-            for file in file_list:
-                file_item = QTreeWidgetItem(folder_item, [file])
-                folder_item.addChild(file_item)
-            root.addChild(folder_item)
-
-        tree.expandAll()
-        return tree
 
 
     def _on_file_deleted(self, path):
@@ -170,10 +144,21 @@ class SidePanel(QWidget):
         tree.setModel(model)
 
         # 4. Запускаем фоновый парсинг
-        self.background_parser.add_task(
+        self.parser.add_task(
             files=file_paths,
             priority=Priority.VISIBLE
         )
+
+    def _on_parsing_done(self, file_path: str, parsed_data: dict):
+        """Обработчик завершения фонового парсинга"""
+        # 1. Сохраняем в кэш
+        self.content_cache.save(file_path, parsed_data)
+
+        # 2. Находим модель для обновления
+        for tab_name, tree in self.tab_manager.trees.items():
+            model = tree.model()
+            if model:  # Если модель привязана
+                model.update_item(file_path)  # Делегируем обновление модели
 
 
     def _open_editor(self):
@@ -374,10 +359,5 @@ class SidePanel(QWidget):
         # Устанавливаем прозрачность окна
         self.setWindowOpacity(0.9)
 
-    def set_managers(self, tree_model_manager: TreeModelManager):
-        """
-        Устанавливает менеджеры для работы панели
-        Args:
-            tree_model_manager (TreeModelManager): Менеджер моделей деревьев
-        """
+    def set_manedger(self,tree_model_manager:TreeModelManager):
         self.tree_model_manager = tree_model_manager

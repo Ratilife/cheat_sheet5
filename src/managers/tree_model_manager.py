@@ -1,7 +1,8 @@
-
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
+from src.parsers.metadata_cache import MetadataCache
+from src.parsers.file_parser_service import FileParserService
 
 import os
 class TreeModelManager(QObject):
@@ -153,7 +154,56 @@ class TreeModelManager(QObject):
 
         parent_item.appendChild(item)
 
-    def build_skeleton_model(self, file_paths: list) -> STMDFileTreeModel:
-        """Создает модель только с метаданными (без содержимого файлов)"""
-        # Использует MetadataCache
+    def _find_index(self, file_path: str) -> QModelIndex:
+        """Находит QModelIndex элемента по его полному пути"""
+
+        # TODO 🚧 В разработке: 15.07.2025
         pass
+
+    def _parse_metadata(self, file_path: str) -> dict:
+        """Парсит только метаданные файла"""
+        # TODO 🚧 В разработке: 15.07.2025
+        if os.path.isdir(file_path):
+            return {"name": os.path.basename(file_path), "type": "folder"}
+
+        # Для файлов используем FileParserService
+        file_type, _ = FileParserService().parse_metadata(file_path)
+        return {
+            "name": os.path.basename(file_path),
+            "type": file_type,
+            "size": os.path.getsize(file_path),
+            "last_modified": os.path.getmtime(file_path)
+        }
+    def build_skeleton_model(self, file_paths: list) -> STMDFileTreeModel:
+
+        """Создает модель дерева только с метаданными файлов.
+        Args:
+            file_paths: Список путей к файлам/папкам вкладки
+        Returns:
+            Готовая модель для отображения в QTreeView
+        """
+        # TODO 🚧 В разработке: 15.07.2025
+        # 1. Создаем корневой элемент
+        root_item = STMDFileTreeItem(["Root", "folder"])
+
+        # 2. Добавляем элементы на верхний уровень
+        for path in file_paths:
+            # Получаем метаданные из кэша (или парсим)
+            metadata = MetadataCache().get(path) or self._parse_metadata(path)
+
+            # Создаем элемент дерева
+            item_data = [
+                metadata["name"],
+                metadata["type"],
+                path  # Полный путь для последующего парсинга
+            ]
+            item = STMDFileTreeItem(item_data, root_item)
+            root_item.appendChild(item)
+
+        # 3. Возвращаем модель
+        return STMDFileTreeModel(root_item)
+
+    def update_item(self, file_path):
+        # TODO 🚧 В разработке: 15.07.2025 - метод update_item не доработан
+        index = self._find_index(file_path)  # Находим индекс элемента
+        self.dataChanged.emit(index, index)  # Уведомляем UI
