@@ -414,9 +414,9 @@ class MainWindow(QMainWindow):
             parser_service = FileParserService()
             tree_model_manager = TreeModelManager(parser_service)
             # 2. Создаем SidePanel и передаем зависимости
-            self.side_manel = SidePanel()
-            self.side_panel.set_managers(tree_model_manager) # TODO 14.08.2025 тут ошибка метод не запускается
-            self.side_manel.show()
+            self.side_panel = SidePanel(tree_model_manager)
+
+            self.side_panel.show()
 
     def toggle_panel(self):
         """Переключает состояние панели (свернуто/развернуто)"""
