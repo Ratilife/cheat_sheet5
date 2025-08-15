@@ -377,6 +377,17 @@ class STFileParserWrapper:
             f'{build_folder(root_folder)}\n'
             ']}'
         )
+
+    def parse_st_metadata(self, file_path: str, first_lines: list) -> dict:
+        """Парсит метаданные ST-файла (шаблоны/папки)"""
+        return {
+            "name": os.path.basename(file_path),
+            "type": "st_file",
+            "size": os.path.getsize(file_path),
+            "last_modified": os.path.getmtime(file_path),
+            # Доп. поля для ST-файлов
+            "has_templates": "template" in first_lines[0]
+        }
 class ExceptionErrorListener(ErrorListener):
     """
         Кастомный обработчик ошибок парсинга для ANTLR.

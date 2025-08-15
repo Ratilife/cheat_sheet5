@@ -101,3 +101,13 @@ class MarkdownListener:
                 'root_name': "Error"
             }
 
+    def parse_md_metadata(self, file_path: str, first_lines: list) -> dict:
+        """Парсит метаданные Markdown-файла"""
+        title = next((line.strip('# ') for line in first_lines if line.startswith('#')), None)
+        return {
+            "name": title or os.path.basename(file_path),
+            "type": "markdown",
+            "size": os.path.getsize(file_path),
+            "last_modified": os.path.getmtime(file_path),
+            "headers": [line.strip('#') for line in first_lines if line.startswith('#')]
+        }
