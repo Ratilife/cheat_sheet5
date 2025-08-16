@@ -154,6 +154,28 @@ class TreeModelManager(QObject):
 
         parent_item.appendChild(item)
 
+    def add_st_file(self, file_path, result_parser: dict):
+        """Добавляет ST-файл в модель через менеджер.
+
+        Args:
+            file_path: Путь к файлу
+            result_parser: Результаты парсинга (структура + имя корня)
+        """
+        #model = self._get_or_create_model(file_path)
+        model = self.get_model(self.tab_name)
+
+        # Подготовка данных
+        root_name = result_parser['root_name']
+        structure = result_parser['structure']
+
+        # Взаимодействие с моделью
+        model.beginInsertRows(QModelIndex(), model.rowCount(), model.rowCount())
+
+        file_item = STMDFileTreeItem([root_name, "file", file_path], model.root_item)
+        model._build_tree(structure, file_item)
+        model.root_item.child_items.append(file_item)
+
+        model.endInsertRows()
     def _find_index(self, file_path: str) -> QModelIndex:
         """Находит QModelIndex элемента по его полному пути"""
 

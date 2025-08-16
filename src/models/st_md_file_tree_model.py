@@ -9,6 +9,8 @@ from PySide6.QtGui import QColor
 from models.st_md_file_tree_item import STMDFileTreeItem
 
 
+
+
 class STMDFileTreeModel(QAbstractItemModel):
     """Модель данных для отображения структуры ST-файлов и MD-файлов в дереве"""
     # TODO 🚧 В разработке: 13.07.2025
@@ -319,7 +321,6 @@ class STMDFileTreeModel(QAbstractItemModel):
         return True
 
 
-
     def _calculate_item_level(self, item):
         """
             Вычисляет уровень вложенности элемента в дереве.
@@ -344,6 +345,47 @@ class STMDFileTreeModel(QAbstractItemModel):
             parent = parent.parent_item
         # Возвращаем итоговый уровень вложенности
         return level
+
+    def _build_tree(self, nodes, parent):
+        """Рекурсивно строит дерево из данных"""
+        for node in nodes:
+            item = STMDFileTreeItem([node['name'], node['type'], node.get('content', '')], parent)
+            parent.child_items.append(item)
+            if 'children' in node:
+                self._build_tree(node['children'], item)
+
+    def add_st_file(self, file_path, result_parser: dict):
+        # TODO 16.08.2025 Возможно прийдется удалить add_st_file
+
+        # Получаем результат парсинга, который теперь содержит и структуру, и имя корневой папки
+        result = result_parser
+
+        print("Parsed structure:")
+        print(json.dumps(result['structure'], indent=2, ensure_ascii=False))
+        print(f"Root name: {result['root_name']}")  # Отладочный вывод
+
+        # Извлекаем имя корневой папки (например, "Новый1")
+        root_name = result['root_name']
+
+        # Извлекаем структуру файла для построения дерева
+        structure = result['structure']
+
+        # Начинаем вставку данных в модель
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+
+        # Создаем элемент для корневой папки с именем из файла
+        file_item = STMDFileTreeItem([root_name, "file", file_path], self.root_item)
+
+        # Строим поддерево на основе структуры файла
+        self._build_tree(structure, file_item)
+
+        # Добавляем элемент в корневую папку модели
+        self.root_item.child_items.append(file_item)
+
+        # Завершаем вставку
+        self.endInsertRows()
+        # self.print_tree()
+        print(f"Структура из парсера: {json.dumps(structure, indent=2)}")
 
     # проверить нужны эти методы
     def get_item_path(self, index):
