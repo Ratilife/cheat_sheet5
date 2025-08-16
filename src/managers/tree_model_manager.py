@@ -161,18 +161,24 @@ class TreeModelManager(QObject):
             file_path: Путь к файлу
             result_parser: Результаты парсинга (структура + имя корня)
         """
+        # TODO 16.08.2025 Возможно прийдется удалить add_st_file
         #model = self._get_or_create_model(file_path)
         model = self.get_model(self.tab_name)
 
         # Подготовка данных
+        # Извлекаем имя корневой папки (например, "Новый1")
         root_name = result_parser['root_name']
+        # Извлекаем структуру файла для построения дерева
         structure = result_parser['structure']
 
         # Взаимодействие с моделью
         model.beginInsertRows(QModelIndex(), model.rowCount(), model.rowCount())
 
+        # Создаем элемент для корневой папки с именем из файла
         file_item = STMDFileTreeItem([root_name, "file", file_path], model.root_item)
+        # Строим поддерево на основе структуры файла
         model._build_tree(structure, file_item)
+        # Добавляем элемент в корневую папку модели
         model.root_item.child_items.append(file_item)
 
         model.endInsertRows()
