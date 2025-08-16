@@ -71,7 +71,7 @@ class STFileParserWrapper:
             parser.remove_template('example.st', 'SomeTemplate')
             parser.remove_folder('example.st', 'SomeFolder')
         """
-    def parse_st_file(self, file_path):
+    def parse_st_file(self, file_path) -> dict:
         """
            Парсит ST-файл и возвращает его иерархическую структуру.
 
@@ -136,7 +136,7 @@ class STFileParserWrapper:
             }
 
     # Добавляем методы в STFileParserWrapper:
-    def remove_template(self, file_path, template_name):
+    def remove_template(self, file_path, template_name) -> None:
         """
             Удаляет указанный шаблон (template) из ST-файла.
 
@@ -181,7 +181,7 @@ class STFileParserWrapper:
         # Сохранение изменений
         self._save_structure(file_path, new_structure)
 
-    def remove_folder(self, file_path, folder_name):
+    def remove_folder(self, file_path, folder_name) -> None:
         """
         Удаляет указанную папку (folder) из ST-файла.
 
