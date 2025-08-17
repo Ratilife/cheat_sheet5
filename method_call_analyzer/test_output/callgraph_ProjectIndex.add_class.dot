@@ -1,0 +1,4 @@
+digraph CallGraph {
+  rankdir=LR;
+  "method_call_analyzer:ProjectIndex.add_class" [style=filled, fillcolor=gold];
+}
