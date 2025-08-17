@@ -1,75 +1,89 @@
-# Word Markdown VSTO Add-in
+# Надстройка Markdown для Microsoft Word (VSTO)
 
-This repository contains the source code scaffold for a Microsoft Word VSTO add-in that provides a Markdown editor/preview pane, Ribbon commands, and basic import/export of `.md` files.
+Этот репозиторий содержит исходники каркаса (scaffold) VSTO‑надстройки для Microsoft Word, которая предоставляет редактор Markdown и живой предпросмотр в панели задач, а также команды на ленте (Ribbon) и базовые операции открытия/сохранения `.md`.
 
-The add-in implements:
-- Task Pane with WebView2-based split view (editor + live preview)
-- Markdown → HTML rendering via Markdig (C#)
-- Prism.js syntax highlighting, MathJax, Mermaid, DOMPurify (client-side)
-- Ribbon (XML) with buttons for common Markdown actions (bold, italic, lists, code block, link, image, etc.)
-- Open/Save `.md` with UTF-8
-- Storage of Markdown source in the Word document `CustomXMLPart` (namespace `urn:markdown/source`)
+- **Панель задач** с WebView2: слева редактор (textarea), справа превью
+- **Рендер Markdown → HTML** на .NET через Markdig
+- **Подсветка кода** (Prism.js), **Mermaid** (диаграммы), **MathJax** (формулы), **DOMPurify** (санитизация HTML)
+- **Вкладка “Markdown”** на ленте с кнопками для вставки синтаксиса (жирный, курсив, списки, таблицы, ссылки, изображения, код‑блок, Mermaid, формулы, разделители)
+- **Открытие/Сохранение `.md`** с кодировкой UTF‑8
+- **Хранение Markdown внутри документа** Word в `CustomXMLPart` (namespace `urn:markdown/source`)
 
-Note: Building and running a VSTO add-in requires Windows and Visual Studio with Office Developer Tools.
+## Стек и архитектура
+- **Платформа**: Microsoft Word VSTO Add‑in (C#, .NET Framework 4.8)
+- **Предпросмотр**: WebView2 (Edge runtime)
+- **Markdown**: Markdig (C#)
+- **Клиентские библиотеки**: Prism.js, Mermaid, MathJax, DOMPurify (загружаются из CDN в HTML‑оболочке превью)
 
-## Prerequisites (on Windows)
-- Microsoft Word 2016/2019/2021/365 (x64 recommended)
+## Предварительные требования (Windows)
+- Microsoft Word 2016/2019/2021/365 (x64 рекомендуется)
 - Windows 10/11
 - Visual Studio 2022 (Community/Pro/Enterprise)
-  - Workload: Office/SharePoint development
+  - Рабочая нагрузка: Office/SharePoint development
 - .NET Framework 4.8 Developer Pack
-- WebView2 Runtime ( Evergreen )
-- Optional: Pandoc (for DOCX→MD conversion beyond the built-in scope)
+- WebView2 Runtime (Evergreen)
+- Опционально: Pandoc (для расширенных конвертаций DOCX→MD)
 
-## How to use this code in Visual Studio (recommended path)
-1. Open Visual Studio on Windows.
-2. Create a new project: "Word VSTO Add-in" (.NET Framework). Name it `WordMarkdownAddIn`.
-3. Close the newly created files `ThisAddIn.cs` and the default Ribbon if any.
-4. In Solution Explorer:
-   - Add existing items from this repo into your project:
-     - `WordMarkdownAddIn/ThisAddIn.cs`
-     - `WordMarkdownAddIn/ThisAddIn.Designer.cs`
-     - `WordMarkdownAddIn/Ribbon.cs`
-     - `WordMarkdownAddIn/Controls/TaskPaneControl.cs`
-     - `WordMarkdownAddIn/Services/MarkdownRenderService.cs`
-     - `WordMarkdownAddIn/Services/DocumentSyncService.cs`
-     - `WordMarkdownAddIn/Properties/AssemblyInfo.cs` (optional override)
-   - Ensure the namespaces match your project root namespace (default is `WordMarkdownAddIn`).
-5. Add NuGet packages to the VSTO project:
-   - `Markdig` (latest stable)
-   - `Microsoft.Web.WebView2` (latest stable)
-   - `NLog` (optional; not required for the scaffold)
-   - `Microsoft.Office.Interop.Word` (if not already referenced by the VSTO template)
-6. Build the solution. Visual Studio will generate the necessary VSTO artifacts.
-7. Start debugging (F5). Word will launch with the add-in loaded. A new tab `Markdown` should appear on the Ribbon.
+## Быстрый старт (рекомендуемый способ)
+1. Откройте Visual Studio на Windows.
+2. Создайте новый проект: «Word VSTO Add‑in» (.NET Framework). Имя проекта — `WordMarkdownAddIn`.
+3. Закройте автоматически созданные шаблонные файлы (например, дефолтный `ThisAddIn.cs`, Ribbon и т. п.), если они не нужны.
+4. В обозревателе решений (Solution Explorer) добавьте файлы из этого репозитория в проект:
+   - `WordMarkdownAddIn/ThisAddIn.cs`
+   - `WordMarkdownAddIn/ThisAddIn.Designer.cs`
+   - `WordMarkdownAddIn/Ribbon.cs`
+   - `WordMarkdownAddIn/Controls/TaskPaneControl.cs`
+   - `WordMarkdownAddIn/Services/MarkdownRenderService.cs`
+   - `WordMarkdownAddIn/Services/DocumentSyncService.cs`
+   - `WordMarkdownAddIn/Properties/AssemblyInfo.cs` (по желанию, чтобы переопределить метаданные)
+   Убедитесь, что пространства имён совпадают с корневым пространством имён проекта (обычно `WordMarkdownAddIn`).
+5. Установите NuGet‑пакеты в проект VSTO:
+   - `Markdig` (последняя стабильная)
+   - `Microsoft.Web.WebView2` (последняя стабильная)
+   - `Microsoft.Office.Interop.Word` (если шаблон не добавил сам)
+   - (Опционально) `NLog`
+6. Соберите решение. Visual Studio сгенерирует необходимые артефакты VSTO.
+7. Запустите отладку (F5). Word стартует с подключённой надстройкой. На ленте появится вкладка `Markdown`.
 
-## Features implemented in the scaffold
-- Task Pane titled `Markdown` shown by default on startup
-- Editor (textarea) on the left, live preview on the right (WebView2)
-- Markdown rendered via Markdig pipeline in .NET
-- Prism.js highlighting, Mermaid diagrams, MathJax equations, sanitized with DOMPurify
-- Ribbon buttons for:
-  - Toggle Pane, Open `.md`, Save `.md`
-  - Bold, Italic, Strikethrough, Inline Code
-  - Headings (H1), Bullet list, Numbered list, Checkbox, Table, Link, Image, Horizontal rule
-  - Code block (with language), Mermaid block, Math block
-- Markdown is stored in the active Word document inside a `CustomXMLPart` with namespace `urn:markdown/source`
+## Возможности каркаса
+- Автопоказ панели задач `Markdown` при запуске
+- Редактор Markdown (textarea) и живой превью с дебаунсом изменений
+- Рендер через Markdig на .NET; пост‑обработка Mermaid‑блоков
+- Подсветка кода Prism.js (автозагрузка языков), рендер Mermaid и MathJax, санитизация HTML DOMPurify
+- Кнопки ленты (Ribbon) для вставки MD‑конструкций:
+  - Панель (вкл/выкл), Открыть `.md`, Сохранить `.md`
+  - Жирный, Курсив, Зачёркнутый, Моноширинный
+  - Заголовок H1, Маркированный/Нумерованный список, Чекбокс
+  - Таблица, Ссылка, Изображение, Горизонтальный разделитель
+  - Код‑блок (с языком), Mermaid‑блок, Формула (MathJax)
+- Источник Markdown сохраняется в активном документе Word (`CustomXMLPart`, `urn:markdown/source`) и автоматически обновляется перед сохранением документа
 
-## Notes
-- The scaffold uses a simple textarea editor for reliability. You can replace it with Monaco editor later if desired.
-- Mermaid rendering converts code blocks with language `mermaid` into `<div class="mermaid">` before initializing Mermaid.
-- MathJax renders inline `$...$` and display `$$...$$` math. Markdig math extension is enabled.
-- HTML blocks in Markdown are sanitized in the preview for safety (DOMPurify). You can adjust the whitelist inside `preview` script.
+## Как использовать
+- Печатайте/вставляйте Markdown слева в редакторе; предпросмотр справа обновляется автоматически.
+- Кнопки на вкладке `Markdown` добавляют соответствующие конструкции в редактор.
+- «Открыть .md» и «Сохранить .md» работают с файлами на диске (UTF‑8, без BOM по умолчанию).
+- При сохранении документа Word текущий Markdown записывается во внутренний `CustomXMLPart`.
 
-## Known limitations
-- The project file (`.csproj`) for VSTO is not included; create the project via Visual Studio template and add these sources.
-- Some advanced round-trip conversions Word↔Markdown require Pandoc and are out of scope of this scaffold.
+## Примечания по безопасности
+- Встроенные HTML‑вставки из Markdown проходят санитизацию (DOMPurify). Разрешённый набор атрибутов ограничен.
+- Mermaid и MathJax работают в режиме по умолчанию; при необходимости можно ужесточить настройки (например, `securityLevel` у Mermaid и CSP для WebView2).
 
-## Uninstall / Clean
-- Close all Word instances before rebuilding.
-- Visual Studio manages registration/unregistration of the add-in during Debug runs.
+## Известные ограничения
+- Проектный файл `.csproj` для VSTO не включён. Создайте проект через шаблон Visual Studio и добавьте исходники из этого репозитория.
+- Полный круговой трансфер Word↔Markdown не гарантируется. Для сложных DOCX рекомендуется использовать Pandoc (вне рамок каркаса).
+- Требуется установленный WebView2 Runtime. Без него превью будет пустым.
 
-## Troubleshooting
-- If the Task Pane is blank, ensure WebView2 Runtime is installed.
-- If the Ribbon is missing, confirm the add-in is loaded under File → Options → Add-ins → COM Add-ins.
-- If build fails due to references, reinstall the Office Developer Tools workload and verify PiA references.
+## Удаление / Очистка
+- Перед пересборкой закройте все экземпляры Word.
+- Visual Studio автоматически регистрирует/дерегистрирует надстройку при Debug‑запусках.
+
+## Устранение неполадок
+- Пустая панель превью: проверьте установку WebView2 Runtime (Evergreen).
+- Вкладка не отображается: Файл → Параметры → Надстройки → Управление: «COM‑надстройки» → убедитесь, что надстройка загружена.
+- Ошибки ссылок/зависимостей: переустановите Office Developer Tools и проверьте ссылки на PIA (Primary Interop Assemblies).
+
+## Дальнейшее развитие (опционально)
+- Горячие клавиши и контекстное меню Word
+- Локализация (RU/EN) и синхронизация с тёмной/светлой темой Word
+- Интеграция с Pandoc для расширенного экспорта DOCX→MD
+- Вставка изображений из буфера/drag‑and‑drop с сохранением в `assets/` рядом с `.md` и относительными путями
