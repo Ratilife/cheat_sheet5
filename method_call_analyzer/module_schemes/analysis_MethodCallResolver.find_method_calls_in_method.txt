@@ -1,0 +1,22 @@
+Target: method_call_analyzer:MethodCallResolver.find_method_calls_in_method
+
+USAGES (who calls target):
+  No usages found.
+
+CALL GRAPH EDGES (caller -> callee):
+  - method_call_analyzer:MethodCallResolver.find_method_calls_in_method -> method_call_analyzer:MethodCallResolver._infer_var_types (/workspace/method_call_analyzer/method_call_analyzer.py:330)
+  - method_call_analyzer:MethodCallResolver.find_method_calls_in_method -> method_call_analyzer:MethodCallResolver._resolve_class_for_attribute (/workspace/method_call_analyzer/method_call_analyzer.py:338)
+  - method_call_analyzer:MethodCallResolver.find_method_calls_in_method -> method_call_analyzer:MethodCallResolver._find_method_ref (/workspace/method_call_analyzer/method_call_analyzer.py:342)
+  - method_call_analyzer:MethodCallResolver._infer_var_types -> method_call_analyzer:MethodCallResolver._resolve_class_from_call (/workspace/method_call_analyzer/method_call_analyzer.py:241)
+  - method_call_analyzer:MethodCallResolver._infer_var_types -> method_call_analyzer:MethodCallResolver._resolve_class_from_call (/workspace/method_call_analyzer/method_call_analyzer.py:252)
+
+NODES:
+  - method_call_analyzer:MethodCallResolver._find_method_ref
+  - method_call_analyzer:MethodCallResolver._infer_var_types
+  - method_call_analyzer:MethodCallResolver._resolve_class_for_attribute
+  - method_call_analyzer:MethodCallResolver._resolve_class_from_call
+  - method_call_analyzer:MethodCallResolver.find_method_calls_in_method
+
+SUMMARY:
+  Nodes: 5
+  Edges: 4

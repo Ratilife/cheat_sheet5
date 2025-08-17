@@ -1,0 +1,12 @@
+digraph CallGraph {
+  rankdir=LR;
+  "method_call_analyzer:MethodCallResolver._find_method_ref";
+  "method_call_analyzer:MethodCallResolver._infer_var_types";
+  "method_call_analyzer:MethodCallResolver._resolve_class_for_attribute";
+  "method_call_analyzer:MethodCallResolver._resolve_class_from_call";
+  "method_call_analyzer:MethodCallResolver.find_method_calls_in_method" [style=filled, fillcolor=gold];
+  "method_call_analyzer:MethodCallResolver.find_method_calls_in_method" -> "method_call_analyzer:MethodCallResolver._find_method_ref";
+  "method_call_analyzer:MethodCallResolver.find_method_calls_in_method" -> "method_call_analyzer:MethodCallResolver._resolve_class_for_attribute";
+  "method_call_analyzer:MethodCallResolver.find_method_calls_in_method" -> "method_call_analyzer:MethodCallResolver._infer_var_types";
+  "method_call_analyzer:MethodCallResolver._infer_var_types" -> "method_call_analyzer:MethodCallResolver._resolve_class_from_call";
+}
