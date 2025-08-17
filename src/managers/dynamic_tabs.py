@@ -1,6 +1,6 @@
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QTabWidget, QTreeWidget, QWidget, QVBoxLayout
-from PySide6.QtGui import QIcon
+
 
 class DynamicTabManager(QObject):
     # TODO 🚧 В разработке: 08.08.2025

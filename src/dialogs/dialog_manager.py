@@ -1,10 +1,9 @@
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import QTimer
-from typing import Optional, Union
-from pathlib import Path
-from datetime import datetime
+from typing import Optional
 from enum import Enum, auto
-from datetime import datetime
+
+
 class MessageType(Enum):
     INFO = auto()      # Информационные сообщения (нейтральные)
     WARNING = auto()   # Предупреждения (потенциальные проблемы)

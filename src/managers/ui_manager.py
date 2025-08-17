@@ -7,7 +7,7 @@
 - Работа с разделителями интерфейса
 Модуль упрощает создание и управление элементами UI, обеспечивая единую точку управления.
 """
-from PySide6.QtWidgets import QToolBar, QPushButton, QHBoxLayout, QWidget, QSplitter, QSizePolicy, QSpacerItem
+from PySide6.QtWidgets import QToolBar, QPushButton, QHBoxLayout, QWidget, QSplitter, QSizePolicy
 from PySide6.QtCore import Qt
 from typing import Union, List, Dict, Tuple
 class UIManager:
