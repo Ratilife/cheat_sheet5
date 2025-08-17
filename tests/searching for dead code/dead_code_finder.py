@@ -980,6 +980,177 @@ class _UsageCollector(ast.NodeVisitor):
         self.used_foreign_defs: Set[Tuple[str, str]] = set()  # (module, name) from `from x import name`
         self.used_foreign_attrs: Set[Tuple[str, str]] = set()  # (module, attr) from `import x; x.attr`
 
+    # Helpers
+
+    def _get_current_module_info(self) -> ModuleInfo:
+        """
+        Возвращает информацию о текущем анализируемом модуле.
+
+        Возвращает:
+            ModuleInfo: Объект с метаданными и аналитической информацией о модуле
+
+        Особенности:
+        - Быстрый доступ к данным модуля через кешированную ссылку
+        - Использует текущее имя модуля (self.current_module) как ключ
+        - Гарантирует наличие информации (не создает новый объект)
+        """
+
+        # Получение объекта ModuleInfo из словаря modules по текущему имени модуля
+        return self.modules[self.current_module]
+
+    def _resolve_from_module(self, binding: ImportBinding) -> Optional[str]:
+        """
+        Преобразует относительные импорты в абсолютные пути модулей.
+
+        Параметры:
+            binding: Информация о привязке импорта
+
+        Возвращает:
+            Optional[str]: Абсолютный путь модуля или None, если преобразование невозможно
+
+        Особенности:
+        - Работает только с from-импортами
+        - Обрабатывает многоуровневые относительные импорты (.., ...)
+        - Корректно обрабатывает комбинации относительных и абсолютных путей
+        """
+
+        # Проверяем, что это from-импорт (для обычных import не требуется преобразование)
+        if binding.type != "from":
+            return None
+
+        # Получаем имя исходного модуля (может быть None или пустой строкой)
+        src_module = binding.module or ""
+
+        # Получаем уровень относительного импорта (0 = абсолютный)
+        level = binding.level
+
+        # Если импорт абсолютный - возвращаем исходное имя модуля
+        if level == 0:
+            return src_module or None
+
+        # Разбиваем текущий модуль на компоненты для вычисления базового пути
+        parts = self.current_module.split(".")
+
+        # Удаляем последний компонент (имя текущего модуля) чтобы получить пакет
+        if parts:
+            parts = parts[:-1]
+
+        # Вычисляем сколько уровней нужно подняться (level-1)
+        ascend = max(0, level - 1)
+
+        # Поднимаемся на нужное количество уровней вверх
+        if ascend > 0:
+            parts = parts[: max(0, len(parts) - ascend)]
+
+        # Добавляем путь из исходного модуля (если он указан)
+        if src_module:
+            parts += src_module.split(".")
+
+        # Собираем итоговый путь, фильтруя пустые компоненты
+        resolved = ".".join([p for p in parts if p])
+
+        # Возвращаем результат или None если путь пустой
+        return resolved or None
+
+    def visit_Name(self, node: ast.Name) -> None:
+        """
+        Обрабатывает использование имен (переменных, функций, классов) в AST-дереве.
+
+        Основные задачи:
+        1. Отслеживание использования локальных определений
+        2. Учет использования импортированных имен
+        3. Анализ внешних зависимостей (from-импорты)
+
+        Параметры:
+            node: AST-узел имени (ast.Name)
+        """
+
+        # Пропускаем, если имя используется не для чтения (например, в присваивании)
+        if not isinstance(node.ctx, ast.Load):
+            return
+
+        # Получаем имя, которое используется
+        name = node.id
+
+        # Получаем информацию о текущем модуле
+        minfo = self._get_current_module_info()
+
+        # 1. Проверка использования локальных определений
+        if name in minfo.definitions:
+            self.used_local_names.add(name)  # Помечаем имя как использованное
+            return
+
+        # 2. Проверка использования импортированных имен
+        if name in minfo.imports:
+            # Добавляем алиас в использованные
+            self.used_import_aliases.add(name)
+
+            # Получаем информацию о привязке импорта
+            binding = minfo.imports[name]
+
+            # Специальная обработка from-импортов:
+            if binding.type == "from" and binding.name:
+                # Преобразуем относительный путь в абсолютный
+                resolved_mod = self._resolve_from_module(binding)
+
+                # Проверяем, что модуль принадлежит нашему проекту
+                if resolved_mod and resolved_mod in self.module_to_file:
+                    # Получаем информацию о целевом модуле
+                    target_modinfo = self.modules.get(resolved_mod)
+
+                    # Если имя определено в целевом модуле - помечаем как использованное
+                    if target_modinfo and binding.name in target_modinfo.definitions:
+                        self.used_foreign_defs.add((resolved_mod, binding.name))
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        """
+        Обрабатывает обращения к атрибутам объектов в AST-дереве.
+
+        Основные задачи:
+        1. Выявление использования атрибутов импортированных модулей
+        2. Проверка принадлежности модуля к проекту
+        3. Фиксация факта использования атрибутов
+
+        Параметры:
+            node: AST-узел атрибута (ast.Attribute)
+        """
+
+        # Анализируем значение, к которому обращаемся через точку
+        value = node.value
+
+        # Обрабатываем только случаи, когда обращение идет через имя (не через выражение)
+        if isinstance(value, ast.Name):
+            alias = value.id  # Получаем имя объекта (модуля)
+
+            # Получаем информацию о текущем модуле
+            minfo = self._get_current_module_info()
+
+            # Проверяем, является ли имя импортированным модулем
+            if alias in minfo.imports:
+                binding = minfo.imports[alias]  # Получаем информацию о привязке
+
+                # Обрабатываем случай прямого импорта (import module)
+                if binding.type == "import" and binding.module:
+                    src_module = binding.module  # Имя исходного модуля
+
+                    # Проверяем, что модуль принадлежит анализируемому проекту
+                    if src_module in self.module_to_file:
+                        # Получаем информацию о целевом модуле
+                        target_modinfo = self.modules.get(src_module)
+
+                        # Если атрибут является определением в целевом модуле
+                        if target_modinfo and node.attr in target_modinfo.definitions:
+                            # Фиксируем использование атрибута
+                            self.used_foreign_attrs.add((src_module, node.attr))
+
+                # Для from-импортов не выполняем анализ (слишком сложно отслеживать)
+                elif binding.type == "from":
+                    pass  # Намеренно пропускаем
+
+        # Продолжаем стандартный обход дочерних узлов
+        self.generic_visit(node)
+
+
     # ----------------------------- Utilities --------------------------------- #
 def _extract_str_names(node: ast.AST) -> List[str]:
     """
