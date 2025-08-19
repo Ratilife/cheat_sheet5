@@ -1,0 +1,21 @@
+// Control flow demo
+let n = 5;
+
+if (n > 0) {
+  print("n is positive");
+} else {
+  if (n == 0) {
+    print("n is zero");
+  } else {
+    print("n is negative");
+  }
+}
+
+let i = 1;
+let fact = 1;
+while (i <= n) {
+  fact = fact * i;
+  i = i + 1;
+}
+
+print("fact(" + n + ") = " + fact);
