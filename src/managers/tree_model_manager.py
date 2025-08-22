@@ -11,7 +11,7 @@ class TreeModelManager(QObject):
         self.tab_models = {}
     def build_initial_model(self, file_paths: list) -> STMDFileTreeModel:
         """Создает модель только с метаданными файлов"""
-        #  TODO 🚧 В разработке: 22.08.2025 - устарел метод build_skeleton_model взамен прийдет build_initial_model
+        #  TODO 🚧 В разработке: 22.08.2025 - устарел метод build_skeleton_model взамен  build_initial_model
         root_item = STMDFileTreeItem(["Root", "folder"])
 
 
