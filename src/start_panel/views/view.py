@@ -12,7 +12,7 @@ import sys
 from src.ui.customization_start_panel import CostStartPanel
 from src.ui.side_panel import SidePanel
 from src.parsers.file_parser_service import FileParserService
-from src.managers.tree_model_manager import TreeModelManager
+from src.managers.tree_model_manager_old import TreeModelManager
 
 
 class MainWindow(QMainWindow):

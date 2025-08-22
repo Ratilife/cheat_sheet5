@@ -3,7 +3,7 @@ from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks
-from src.managers.tree_model_manager import TreeModelManager
+from src.managers.tree_model_manager_old import TreeModelManager
 
 class FileOperations:
     def __init__(self,  tree_model_manager=None, file_watcher=None):
