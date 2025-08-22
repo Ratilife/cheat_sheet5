@@ -379,9 +379,10 @@ class STFileParserWrapper:
 
     def parse_st_metadata(self, file_path: str, first_lines: list) -> dict:
         """Парсит метаданные ST-файла (шаблоны/папки)"""
+        #  TODO 🚧 В разработке: 22.08.2025 - метод parse_st_metadata не устраивает
         return {
             "name": os.path.basename(file_path),
-            "type": "st_file",
+            "type": "file",
             "size": os.path.getsize(file_path),
             "last_modified": os.path.getmtime(file_path),
             # Доп. поля для ST-файлов
