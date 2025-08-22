@@ -48,7 +48,6 @@ class DynamicTabManager(QObject):
 
         self.tab_widget.addTab(tab_content, name)
         self.trees[name] = tree
-        #TODO 08.08.2025 self.tab_created Что за переменная и для чего
         self.tab_created.emit(name, tree)  # Уведомляем о создании
 
         return tree
