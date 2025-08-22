@@ -12,9 +12,10 @@ from PySide6.QtCore import Qt, QRect, QSize
 from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
 from src.operation.file_operations import FileOperations
-from src.managers.tree_model_manager import TreeModelManager
+from src.managers.tree_model_manager_old import TreeModelManager
 from src.parsers.background_parser import BackgroundParser,Priority
-
+from src.parsers.file_parser_service import FileParserService
+from src.parsers.metadata_cache import MetadataCache
 
 class SidePanelObserver(MyBaseObserver):
     # ✅ Реализовано: 29.06.2025
@@ -24,7 +25,7 @@ class SidePanel(QWidget):
     # TODO 🚧 В разработке: 08.08.2025
         # 🏆task: Создание боковой панели;
         # 🏆task: Открыть боковую панель из стартовой панели;
-    def __init__(self, tree_model_manager: TreeModelManager ,  parent=None):
+    def __init__(self,   parent=None):
         """
             Инициализация боковой панели с динамическими вкладками
 
@@ -43,20 +44,22 @@ class SidePanel(QWidget):
         self.file_watcher.file_deleted.connect(self._on_file_deleted)
         self.file_watcher.dir_changed.connect(self._on_dir_changed)
 
-        self.tree_model_manager = tree_model_manager
+
 
         # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
         self.file_operation = FileOperations()
         self.tab_names = self.file_operation.fetch_file_heararchy()
         self.tab_manager = DynamicTabManager()
-        self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
 
-        self.parser = BackgroundParser()
-        self.parser.task_finished.connect(self._on_parsing_done)
+
+
+
         self.content_cache = ContentCache()  # Инициализация кэша
 
         self._init_ui()
+
+        self._init_managers()
 
         # Подключение сигнала
 
@@ -69,6 +72,10 @@ class SidePanel(QWidget):
 
         self.setAttribute(Qt.WA_ShowWithoutActivating)
 
+        # Подключаем сигналы
+        self.background_parser.task_finished.connect(self._on_parsing_done)
+        self.parser.task_finished.connect(self._on_parsing_done)
+        self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
         #self.connect_signals()
 
     def _init_ui(self):
@@ -110,6 +117,29 @@ class SidePanel(QWidget):
         self.splitter.addWidget(self.content_viewer)
         # Добавляем разделитель в основной layout
         main_layout.addWidget(self.splitter)
+
+    def _init_managers(self):
+        """Инициализация всех менеджеров и сервисов"""
+        # ✅ Реализовано: 20.08.2025
+        # 1. Создаем кэш (синглтон)
+        self.metadata_cache = MetadataCache()
+
+        # 2. Создаем парсер сервис
+        self.parser_service = FileParserService()
+
+        self.parser = BackgroundParser()
+
+        # 3. Создаем менеджер моделей с зависимостями
+        self.tree_model_manager = TreeModelManager(
+            parser_service=self.parser_service,
+            metadata_cache=self.metadata_cache
+        )
+
+        # 4. Создаем фоновый парсер
+        self.background_parser = BackgroundParser(
+            parser_service=self.parser_service,
+            metadata_cache=self.metadata_cache
+        )
 
     def _create_tabs_with_trees(self, tab_name:dict):
         # ✅ Реализовано: 14.08.2025
@@ -341,7 +371,7 @@ class SidePanel(QWidget):
         self.float_action.setChecked(self.dock_position == "float")
 
     def show_context_menu(self, pos):
-        # TODO 🚧 В разработке: 11.08.2025
+        # ✅ Реализовано: 11.08.2025
         # Показываем меню в указанной позиции
         self.position_menu.exec(self.mapToGlobal(pos))
 
