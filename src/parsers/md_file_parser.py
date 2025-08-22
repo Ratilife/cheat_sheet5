@@ -109,5 +109,5 @@ class MarkdownListener:
             "type": "markdown",
             "size": os.path.getsize(file_path),
             "last_modified": os.path.getmtime(file_path),
-            "headers": [line.strip('#') for line in first_lines if line.startswith('#')]
+            #"headers": [line.strip('#') for line in first_lines if line.startswith('#')]
         }
