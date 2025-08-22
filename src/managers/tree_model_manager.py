@@ -9,8 +9,9 @@ class TreeModelManager(QObject):
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
         self.tab_models = {}
-    def build_skeleton_model(self, file_paths: list) -> STMDFileTreeModel:
+    def build_initial_model(self, file_paths: list) -> STMDFileTreeModel:
         """Создает модель только с метаданными файлов"""
+        #  TODO 🚧 В разработке: 22.08.2025 - устарел метод build_skeleton_model взамен прийдет build_initial_model
         root_item = STMDFileTreeItem(["Root", "folder"])
 
 
@@ -29,6 +30,7 @@ class TreeModelManager(QObject):
         self.model = STMDFileTreeModel(root_item)
 
         return self.model
+
 
     def _parse_metadata(self, file_path: str) -> dict:
         """Парсит метаданные файла (вызывает FileParserService)"""
