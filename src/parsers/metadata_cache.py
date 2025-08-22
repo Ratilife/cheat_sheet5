@@ -47,7 +47,7 @@ class MetadataCache:
                 'error': str(e)
             }
 
-    def get_st(self, file_path: str) -> Optional[dict]:
+    def get(self, file_path: str) -> Optional[dict]:
         """
         Получает метаданные из кэша с проверкой актуальности.
 
@@ -114,9 +114,7 @@ class MetadataCache:
             ttl: Время жизни записи в кэше (секунды)
         """
         try:
-            # Если метаданные не предоставлены - парсим файл
-            if metadata is None:
-                metadata = self._parse_md_file_metadata(file_path)
+
 
             # Получаем информацию о файле
             file_stats = os.stat(file_path)
@@ -148,60 +146,6 @@ class MetadataCache:
                 'error': str(e)
             }
 
-    def _parse_md_file_metadata(self, file_path: str) -> dict:
-        """
-        Парсит Markdown-файл и извлекает метаданные.
-
-        Args:
-            file_path: Путь к MD-файлу
-
-        Returns:
-            Словарь с метаданными Markdown-файла
-        """
-        try:
-            # Читаем первые несколько строк для извлечения заголовка
-            with open(file_path, 'r', encoding='utf-8') as f:
-                first_lines = [f.readline().strip() for _ in range(5)]
-
-            # Извлекаем заголовок из первых строк
-            title = next((line.strip('# ') for line in first_lines if line.startswith('#')), None)
-
-            # Получаем статистику файла
-            file_stats = os.stat(file_path)
-
-            # Формируем метаданные (только базовые поля)
-            return {
-                "name": title or os.path.basename(file_path),
-                "type": "markdown",
-                "size": file_stats.st_size,
-                "last_modified": file_stats.st_mtime,
-                "has_title": title is not None,
-                "file_path": file_path
-            }
-
-        except Exception as e:
-            # Возвращаем базовые метаданные в случае ошибки
-            return {
-                "name": os.path.basename(file_path),
-                "type": "markdown",
-                "size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
-                "last_modified": os.path.getmtime(file_path) if os.path.exists(file_path) else 0,
-                "has_title": False,
-                "file_path": file_path,
-                "error": str(e)
-            }
-
-    def get_md_metadata(self, file_path: str) -> Optional[dict]:
-        """
-        Получает метаданные Markdown-файла из кэша.
-
-        Returns:
-            dict: Метаданные MD-файла или None если устарело
-        """
-        cached_data = self.get(file_path)
-        if cached_data and cached_data.get('file_type') == 'markdown':
-            return cached_data['metadata']
-        return None
 
     def get_md_title(self, file_path: str) -> Optional[str]:
         """
