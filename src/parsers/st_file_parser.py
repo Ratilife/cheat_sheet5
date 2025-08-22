@@ -318,7 +318,6 @@ class STFileParserWrapper:
             raise IOError(f"Ошибка сохранения файла: {str(e)}")
 
 
-
     def _generate_st_content(self, structure):
         """
         Генерирует строковое содержимое ST-файла на основе переданной структуры согласно грамматике STFile.g4.
@@ -388,6 +387,67 @@ class STFileParserWrapper:
             # Доп. поля для ST-файлов
             "has_templates": "template" in first_lines[0]
         }
+
+    # парсинг st файлов для metadata_cache
+
+    def parse_st_metadata_level2(self, file_path) -> dict:
+        """
+        Парсит ST-файл и возвращает его метаданные, пропуская содержимое template блоков
+        и ограничиваясь вторым уровнем вложенности.
+        """
+
+        try:
+            input_stream = FileStream(file_path, encoding="utf-8")
+            lexer = STFileLexer(input_stream)
+            tokens = CommonTokenStream(lexer)
+            parser = STFileParser(tokens)
+
+            parser.removeErrorListeners()
+            parser.addErrorListener(ExceptionErrorListener())
+            tree = parser.fileStructure()
+
+            # Используем специальный слушатель для метаданных
+            listener = MetadataStructureListener()
+            file_name = os.path.splitext(os.path.basename(file_path))[0]
+            listener.root_name = file_name
+
+            ParseTreeWalker().walk(listener, tree)
+
+            # Получаем полную структуру и ограничиваем глубину
+            full_structure = listener.get_structure()
+            limited_structure = self._limit_depth_level2(full_structure)
+
+            return {
+                'structure': limited_structure,
+                'root_name': listener.root_name
+            }
+        except Exception as e:
+            print(f"Ошибка при парсинге: {e}")
+            return {
+                'structure': [],
+                'root_name': os.path.splitext(os.path.basename(file_path))[0]
+            }
+
+
+    def _limit_depth_level2(self, structure, current_level=1):
+        """
+        Рекурсивно ограничивает структуру вторым уровнем вложенности.
+        """
+        if current_level > 2:
+            return []
+
+        limited_structure = []
+        for item in structure:
+            if item['type'] == 'folder':
+                # Для папок ограничиваем глубину детей
+                limited_item = item.copy()
+                limited_item['children'] = self._limit_depth_level2(item['children'], current_level + 1)
+                limited_structure.append(limited_item)
+            else:
+                # Для шаблонов оставляем как есть
+                limited_structure.append(item)
+        return limited_structure
+
 class ExceptionErrorListener(ErrorListener):
     """
         Кастомный обработчик ошибок парсинга для ANTLR.
@@ -543,3 +603,67 @@ class StructureListener(STFileListener):
             self.stack.pop()
             self.current_parent = self.stack[-1]
 
+class MetadataStructureListener(StructureListener):
+    def __init__(self):
+        super().__init__()
+
+    def enterEntry(self, ctx):
+        """
+            Обрабатывает вход в элемент структуры ST-файла, собирая метаданные без содержимого шаблонов.
+
+            Метод вызывается при входе в элемент структуры (папку или шаблон) во время обхода дерева разбора.
+            Для папок создает полную структуру с пустыми дочерними элементами, для шаблонов создает записи
+            только с метаданными (без содержимого).
+
+            Args:
+                ctx (STFileParser.EntryContext): Контекст элемента структуры, содержащий информацию
+                    о папке или шаблоне, полученную от парсера.
+
+            Behavior:
+                - Для папок (folderHeader): создает элемент с именем, типом 'folder' и пустым списком детей,
+                обновляет стек и текущего родителя для поддержания иерархии.
+                - Для шаблонов (templateHeader): создает элемент с именем, типом 'template' и пустым содержимым,
+                добавляет к текущему родителю без изменения стека.
+
+            Notes:
+                - Извлекает имена элементов из строковых литералов, удаляя окружающие кавычки.
+                - Содержимое шаблонов игнорируется (устанавливается в пустую строку).
+                - Поддерживает иерархическую структуру через механизм стека.
+
+            Example:
+                Для входного элемента:
+                    folder "MyFolder" { ... }
+                Создает:
+                    {'name': 'MyFolder', 'type': 'folder', 'children': []}
+
+                Для входного элемента:
+                    template "MyTemplate" "content ignored"
+                Создает:
+                 {'name': 'MyTemplate', 'type': 'template', 'content': ''}
+            """
+        # Пропускаем обработку template содержимого
+        if ctx.folderHeader():
+            # Обработка папки (как обычно)
+            header = ctx.folderHeader()
+            name = header.STRING(0).getText()[1:-1]
+
+            new_item = {
+                'name': name,
+                'type': 'folder',
+                'children': []
+            }
+            self.current_parent['children'].append(new_item)
+            self.stack.append(new_item)
+            self.current_parent = new_item
+
+        elif ctx.templateHeader():
+            # Обработка шаблона, но без содержимого
+            header = ctx.templateHeader()
+            name = header.STRING(0).getText()[1:-1]
+
+            # Добавляем template без содержимого
+            self.current_parent['children'].append({
+                'name': name,
+                'type': 'template',
+                'content': ""  # Пустое содержимое
+            })
