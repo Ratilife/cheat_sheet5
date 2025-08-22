@@ -3,235 +3,33 @@ from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
-
-import os
 class TreeModelManager(QObject):
-    """
-      Фасад для работы с моделью дерева файлов. Инкапсулирует:
-      - Добавление/удаление элементов
-      - Парсинг файлов
-      - Взаимодействие с DeleteManager
-      """
-    model_updated = Signal(str, QAbstractItemModel)
-    def __init__(self, parser_service):
-        # TODO 🚧 В разработке: 12.07.2025
+    def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache):
         super().__init__()
         self.parser_service = parser_service
-        self.tab_models = {}  # Кэш моделей по именам вкладок
-
-    def create_tree_model(self, file_paths: list) -> QAbstractItemModel:
-        """Создает модель дерева для списка файлов"""
-        # TODO 🚧 В разработке: 13.07.2025
-        # 1. Создаем корневой элемент
-        root_item = STMDFileTreeItem(["Root", "folder"])
-
-        # 2. Создаем модель
-        model = STMDFileTreeModel(root_item)
-
-        # 3. Добавляем файлы в модель
-        for file_path in file_paths:
-            self._add_file_to_model(model, file_path)
-
-        return model
-
-    def create_models_from_tabs(self, tab_data: dict) -> dict:
-        """
-        Создает модели деревьев для всех вкладок
-        Args:
-            tab_data (dict): Словарь {имя_вкладки: [список_файлов]}
-        Returns:
-            dict: Созданные модели {имя_вкладки: модель}
-        """
-        # TODO 🚧 В разработке: 13.07.2025
-        models = {}
-        for tab_name, file_paths in tab_data.items():
-            models[tab_name] = self.create_tree_model(file_paths)
-        self.tab_models.update(models)
-        return models
-
-    def get_model(self, tab_name: str) -> QAbstractItemModel:
-        """
-        Возвращает модель для указанной вкладки
-        Args:
-            tab_name (str): Имя вкладки
-        Returns:
-            QAbstractItemModel: Модель дерева или None если не найдена
-        """
-        # TODO 🚧 В разработке: 13.07.2025 - мертвый код
-        return self._models_cache.get(tab_name)
-
-    def refresh_model(self, tab_name: str, new_file_paths: list) -> bool:
-        # TODO 🚧 В разработке: 13.07.2025 - метод для слушателя
-        model = self._create_single_model(new_file_paths)
-        self.tab_models[tab_name] = model
-        self.model_updated.emit(tab_name, model)
-
-    def _create_single_model(self, file_paths: list) -> STMDFileTreeModel:
-        """
-        Создает одну модель дерева для списка файлов
-        Args:
-            file_paths (list): Список путей к файлам
-        Returns:
-            STMDFileTreeModel: Готовая модель дерева
-        """
-        # TODO 🚧 В разработке: 13.07.2025
-
-        # 1. Создаем корневой элемент
-        root_item = STMDFileTreeItem(["Root", "folder"])
-        model = STMDFileTreeModel(root_item)
-
-        # 2. Добавляем файлы в модель
-        for file_path in file_paths:
-            if os.path.exists(file_path):
-                self._add_file_to_model(model, file_path)
-
-        return model
-
-    def _add_file_to_model(self, model: STMDFileTreeModel, file_path: str):
-        """
-        Добавляет файл в модель дерева
-        Args:
-            model (STMDFileTreeModel): Целевая модель
-            file_path (str): Путь к файлу
-        """
-        # TODO 🚧 В разработке: 13.07.2025
-        if not os.path.exists(file_path):
-            print(f"File not found: {file_path}")
-            return
-        if os.path.getsize(file_path) > 10 * 1024 * 1024:  # 10 MB
-            print(f"File too large: {file_path}")
-            return
-
-        try:
-            # 1. Парсим файл
-            file_type, parsed_data = self.parser_service.parse_and_get_type(file_path)
-            file_name = os.path.basename(file_path)
-
-            # 2. Создаем элемент для файла
-            file_item = STMDFileTreeItem(
-                [file_name, file_type, file_path],
-                model.rootItem
-            )
-
-            # 3. Добавляем структуру файла
-            if file_type == "markdown":
-                self._add_md_structure(file_item, parsed_data)
-            elif file_type == "file":  # ST-файл
-                self._add_st_structure(file_item, parsed_data)
-
-            # 4. Добавляем в модель
-            model.beginInsertRows(QModelIndex(), model.rowCount(), model.rowCount())
-            model.rootItem.appendChild(file_item)
-            model.endInsertRows()
-
-        except Exception as e:
-            print(f"Ошибка добавления файла {file_path}: {str(e)}")
-
-    def _add_md_structure(self, parent_item: STMDFileTreeItem, parsed_data: dict):
-        """Добавляет структуру Markdown-файла"""
-        for section in parsed_data.get('structure', []):
-            section_item = STMDFileTreeItem(
-                [section['name'], 'section', section.get('content', '')],
-                parent_item
-            )
-            parent_item.appendChild(section_item)
-
-    def _add_st_structure(self, parent_item: STMDFileTreeItem, parsed_data: dict):
-        """Добавляет структуру ST-файла"""
-        for item in parsed_data.get('structure', []):
-            self._add_st_item(parent_item, item)
-
-    def _add_st_item(self, parent_item: STMDFileTreeItem, item_data: dict):
-        """Рекурсивно добавляет элементы ST-структуры"""
-        item = STMDFileTreeItem(
-            [item_data['name'], item_data['type']],
-            parent_item
-        )
-
-        if item_data['type'] == 'folder' and 'children' in item_data:
-            for child in item_data['children']:
-                self._add_st_item(item, child)
-
-        parent_item.appendChild(item)
-
-    def add_st_file(self, file_path, result_parser: dict):
-        """Добавляет ST-файл в модель через менеджер.
-
-        Args:
-            file_path: Путь к файлу
-            result_parser: Результаты парсинга (структура + имя корня)
-        """
-        # TODO 16.08.2025 Возможно прийдется удалить add_st_file
-        #model = self._get_or_create_model(file_path)
-        model = self.get_model(self.tab_name)
-
-        # Подготовка данных
-        # Извлекаем имя корневой папки (например, "Новый1")
-        root_name = result_parser['root_name']
-        # Извлекаем структуру файла для построения дерева
-        structure = result_parser['structure']
-
-        # Взаимодействие с моделью
-        model.beginInsertRows(QModelIndex(), model.rowCount(), model.rowCount())
-
-        # Создаем элемент для корневой папки с именем из файла
-        file_item = STMDFileTreeItem([root_name, "file", file_path], model.root_item)
-        # Строим поддерево на основе структуры файла
-        model._build_tree(structure, file_item)
-        # Добавляем элемент в корневую папку модели
-        model.root_item.child_items.append(file_item)
-
-        model.endInsertRows()
-    def _find_index(self, file_path: str) -> QModelIndex:
-        """Находит QModelIndex элемента по его полному пути"""
-
-        # TODO 🚧 В разработке: 15.07.2025
-        pass
-
-    def _parse_metadata(self, file_path: str) -> dict:
-        """Парсит только метаданные файла"""
-        # TODO 🚧 В разработке: 15.07.2025
-        if os.path.isdir(file_path):
-            return {"name": os.path.basename(file_path), "type": "folder"}
-
-        # Для файлов используем FileParserService
-        file_type, _ = FileParserService().parse_metadata(file_path)
-        return {
-            "name": os.path.basename(file_path),
-            "type": file_type,
-            "size": os.path.getsize(file_path),
-            "last_modified": os.path.getmtime(file_path)
-        }
+        self.metadata_cache = metadata_cache
+        self.tab_models = {}
     def build_skeleton_model(self, file_paths: list) -> STMDFileTreeModel:
-
-        """Создает модель дерева только с метаданными файлов.
-        Args:
-            file_paths: Список путей к файлам/папкам вкладки
-        Returns:
-            Готовая модель для отображения в QTreeView
-        """
-        # TODO 🚧 В разработке: 15.07.2025
-        # 1. Создаем корневой элемент
+        """Создает модель только с метаданными файлов"""
         root_item = STMDFileTreeItem(["Root", "folder"])
 
-        # 2. Добавляем элементы на верхний уровень
+
         for path in file_paths:
-            # Получаем метаданные из кэша (или парсим)
-            metadata = MetadataCache().get(path) or self._parse_metadata(path)
+            # Получаем метаданные (из кэша или парсим)
+            metadata = self.metadata_cache.get(path) or self._parse_metadata(path)
 
             # Создаем элемент дерева
-            item_data = [
+            item = STMDFileTreeItem([
                 metadata["name"],
                 metadata["type"],
                 path  # Полный путь для последующего парсинга
-            ]
-            item = STMDFileTreeItem(item_data, root_item)
+            ], root_item)
             root_item.appendChild(item)
 
-        # 3. Возвращаем модель
-        return STMDFileTreeModel(root_item)
+        self.model = STMDFileTreeModel(root_item)
 
-    def update_item(self, file_path):
-        # TODO 🚧 В разработке: 15.07.2025 - метод update_item не доработан
-        index = self._find_index(file_path)  # Находим индекс элемента
-        self.dataChanged.emit(index, index)  # Уведомляем UI
+        return self.model
+
+    def _parse_metadata(self, file_path: str) -> dict:
+        """Парсит метаданные файла (вызывает FileParserService)"""
+        return self.parser_service.parse_metadata(file_path)
