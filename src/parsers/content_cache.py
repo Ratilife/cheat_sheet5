@@ -4,6 +4,7 @@ import threading
 from typing import Optional, Dict, Any
 from collections import OrderedDict
 class ContentCache:
+    # ✅ Реализовано: 23.08.2025
     _instance = None
 
     def __new__(cls):
