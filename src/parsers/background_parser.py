@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Signal, QThreadPool, QRunnable, Q_ARG, QMeta
 from PySide6.QtGui import Qt
 
 from parsers.file_parser_service import FileParserService
-from parsers.metadata_cache import MetadataCache
+from parsers.content_cache import ContentCache
 
 
 class Priority(Enum):
@@ -31,6 +31,7 @@ class ParserTask(QRunnable):
     Наследуется от QRunnable для выполнения в пуле потоков Qt.
     Каждый экземпляр представляет собой задачу парсинга одного файла.
     """
+    finished = Signal(str, dict)  # Добавить сигнал
     def __init__(self,file_path: str, priority: Priority, parser_service: FileParserService):
         """
                 Инициализирует задачу парсинга.
@@ -57,21 +58,22 @@ class ParserTask(QRunnable):
             Exception: Любые исключения при парсинге логируются, но не пробрасываются дальше
         """
         try:
+            # 1. Логирование (для отладки)
             print(f"Парсим файл: {self.file_path} (приоритет: {self.priority.name})")
 
-            # Парсим файл (это может занять время)
-            file_type, parsed_data = self.parser_service.parse_and_get_type(self.file_path)
+            # 2. САМАЯ ВАЖНАЯ ЧАСТЬ: Синхронный вызов парсера
+            # Этот метод будет выполняться в фоновом потоке и может блокировать его надолго.
+            # Это нормально, ведь ради этого мы и создали отдельный поток!
+            parsed_data = self.parser_service.parse_and_get_type(self.file_path)
 
-            # Отправляем результат в главный поток через сигнал
-            QMetaObject.invokeMethod(
-                BackgroundParser.instance(),
-                "task_finished",
-                Qt.QueuedConnection,  # Асинхронный вызов
-                Q_ARG(str, self.file_path),
-                Q_ARG(dict, parsed_data)
-            )
+            # 3. Передача результата в главный поток
+            # Мы не можем обновлять GUI из фонового потока.
+            # Поэтому используем invokeMethod для безопасного вызова слота в главном потоке.
+            self.finished.emit(self.file_path, parsed_data)  # Использовать сигнал
 
         except Exception as e:
+            # 4. Обработка ошибок
+            # Ловим все исключения, чтобы аварийно не завершать поток.
             print(f"Ошибка парсинга {self.file_path}: {str(e)}")
 
 
@@ -95,7 +97,7 @@ class BackgroundParser(QObject):
     _instance = None
 
     @classmethod
-    def instance(cls):
+    def instance(cls, parser_service=None, content_cache=None):
         """
                 Возвращает единственный экземпляр класса (Singleton pattern).
 
@@ -103,20 +105,22 @@ class BackgroundParser(QObject):
                     BackgroundParser: Единственный экземпляр менеджера парсинга
         """
         if cls._instance is None:
-            cls._instance = BackgroundParser()
+            if parser_service is None or content_cache is None:
+                raise ValueError("При первом вызове instance() необходимо передать parser_service и content_cache")
+            cls._instance = BackgroundParser(parser_service, content_cache)
         return cls._instance
 
-    def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache):
+    def __init__(self, parser_service: FileParserService, content_cache: ContentCache):
         """
                 Инициализирует менеджер фонового парсинга.
 
                 Args:
                     parser_service: Сервис для парсинга различных типов файлов
-                    metadata_cache: Кэш для хранения результатов парсинга
+                    content_cache: Кэш для хранения результатов парсинга
         """
         super().__init__()
         self.parser_service = parser_service
-        self.metadata_cache = metadata_cache
+        self.content_cache = content_cache
 
         # Настройка пула потоков
         self.thread_pool = QThreadPool()
@@ -141,6 +145,7 @@ class BackgroundParser(QObject):
             return
 
         task = ParserTask(file_path, priority, self.parser_service)
+        task.finished.connect(self.on_task_finished)
         self.task_queue[priority].append(task)
         self._process_queue()
 
@@ -152,6 +157,7 @@ class BackgroundParser(QObject):
                 file_paths: Список путей к файлам для парсинга
                 priority: Приоритет для всех задач (по умолчанию PRELOAD)
         """
+        # TODO 🚧 В разработке: 24.08.2025 - мертвый код метод add_tasks,
         for file_path in file_paths:
             self.add_task(file_path, priority)
 
@@ -191,7 +197,7 @@ class BackgroundParser(QObject):
         self.active_tasks -= 1
 
         # Сохраняем результат в кэш
-        self.metadata_cache.set(file_path, parsed_data)
+        self.content_cache.set(file_path, parsed_data)
 
         # Уведомляем о завершении
         self.task_finished.emit(file_path, parsed_data)
