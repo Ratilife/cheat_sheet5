@@ -23,16 +23,16 @@ class FileParserService:
         Args:
             file_path: Путь к файлу или папке
         """
-        # TODO 🚧 В разработке: 15.08.2025
+        # ✅ Реализовано: 24.08.2025
 
         # Определяем тип по расширению и содержимому
         if file_path.endswith('.st'):
             res = self.st_parser.parse_st_metadata_level2(file_path)
-            self.metadata_cahce.set_st(file_path,res)
+            self.metadata_cahce.set(file_path,res,'file')
             return res
         elif file_path.endswith('.md'):
             res = self.md_parser.parse_md_metadata(file_path)
-            self.metadata_cahce.set_md(file_path,res)
+            self.metadata_cahce.set(file_path,res,'markdown')
             return res
 
 
