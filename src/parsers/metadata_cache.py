@@ -15,7 +15,7 @@ class MetadataCache:
             cls._instance._cache = {}
         return cls._instance
 
-    def set(self, file_path: str, metadata: dict, ttl: int = None, file_type: str = None) -> None:
+    def set(self, file_path: str, metadata: dict,  file_type: str = None, ttl: int = None) -> None:
         """
         Универсальный метод для сохранения метаданных в кэш.
         """
