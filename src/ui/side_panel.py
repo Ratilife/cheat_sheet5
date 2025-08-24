@@ -52,11 +52,6 @@ class SidePanel(QWidget):
         self.tab_names = self.file_operation.fetch_file_heararchy()
         self.tab_manager = DynamicTabManager()
 
-
-
-
-        self.content_cache = ContentCache()  # Инициализация кэша
-
         self._init_ui()
 
         self._init_managers()
@@ -123,6 +118,7 @@ class SidePanel(QWidget):
         # ✅ Реализовано: 20.08.2025
         # 1. Создаем кэш (синглтон)
         self.metadata_cache = MetadataCache()
+        self.content_cache = ContentCache()  # Инициализация кэша
 
         # 2. Создаем парсер сервис
         self.parser_service = FileParserService()
@@ -138,7 +134,7 @@ class SidePanel(QWidget):
         # 4. Создаем фоновый парсер
         self.background_parser = BackgroundParser(
             parser_service=self.parser_service,
-            metadata_cache=self.metadata_cache
+            metadata_cache=self.content_cache
         )
 
     def _create_tabs_with_trees(self, tab_name:dict):
