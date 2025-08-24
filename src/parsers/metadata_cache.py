@@ -1,9 +1,10 @@
 import os
+import sys
 import time
-from typing import Optional, Dict, Any, List
-from parsers.file_parser_service import FileParserService
+from typing import Optional, Dict, Any
+
 class MetadataCache:
-    # TODO 🚧 В разработке: 22.08.2025
+    # ✅ Реализовано: 24.08.2025
     _instance = None # Это "хранилище" для синглтон-объекта. Классовая переменная (принадлежит классу, а не экземпляру)
     _cache: Dict[str, Dict[str, Any]] = {}
     _default_ttl = 300  # 5 минут в секундах
@@ -14,38 +15,39 @@ class MetadataCache:
             cls._instance._cache = {}
         return cls._instance
 
-    def set_st(self, file_path: str, metadata: dict, ttl: int = None) -> None:
+    def set(self, file_path: str, metadata: dict, ttl: int = None, file_type: str = None) -> None:
         """
-        Сохраняет метаданные файла в кэш.
-
-        Args:
-            file_path: Путь к файлу (ключ кэша)
-            metadata: Словарь с метаданными от парсера
-            ttl: Время жизни записи в кэше (секунды)
+        Универсальный метод для сохранения метаданных в кэш.
         """
         try:
             # Получаем информацию о файле для проверки изменений
             file_stats = os.stat(file_path)
-
             # ТОЛЬКО необходимые данные для кэша
             self._cache[file_path] = {
-                'metadata': metadata,  # Основные данные от парсера
-                'timestamp': time.time(),  # Когда положили в кэш
-                'file_size': file_stats.st_size,  # Размер файла (для проверки изменений)
-                'file_mtime': file_stats.st_mtime,  # Время изменения (для проверки изменений)
-                'ttl': ttl or self._default_ttl  # Время жизни записи
+                'metadata': metadata,                   # Основные данные от парсера
+                'timestamp': time.time(),               # Когда положили в кэш
+                'file_size': file_stats.st_size,        # Размер файла (для проверки изменений)
+                'file_mtime': file_stats.st_mtime,      # Время изменений (для проверки изменений)
+                'ttl': ttl or self._default_ttl,        # Время жизни записи
+                'file_type': file_type                  # тип файла st или md
             }
-
         except Exception as e:
             # В случае ошибки создаем запись с базовой информацией
             self._cache[file_path] = {
-                'metadata': metadata,
+                'metadata': metadata or {
+                    "name": os.path.basename(file_path),
+                    "type": file_type or "unknown",
+                    "size": 0,
+                    "last_modified": 0
+                },
                 'timestamp': time.time(),
                 'file_size': 0,
                 'file_mtime': 0,
                 'ttl': ttl or self._default_ttl,
+                'file_type': file_type,
                 'error': str(e)
             }
+
 
     def get(self, file_path: str) -> Optional[dict]:
         """
@@ -78,12 +80,11 @@ class MetadataCache:
             return True
 
         try:
-            current_size = os.path.getsize(file_path)
-            current_mtime = os.path.getmtime(file_path)
+            current_stats = os.stat(file_path)
 
             # Файл изменился, если изменился размер или время модификации
-            return (current_size != cached_data['file_size'] or
-                    current_mtime != cached_data['file_mtime'])
+            return (current_stats.st_size != cached_data['file_size'] or
+                    current_stats.st_mtime != cached_data['file_mtime'])
         except OSError:
             return True
 
@@ -99,53 +100,10 @@ class MetadataCache:
         """Возвращает статистику кэша"""
         return {
             'total_items': len(self._cache),
-            'memory_usage': sum(len(str(v)) for v in self._cache.values())
+            'memory_usage_bytes': sum(sys.getsizeof(v) for v in self._cache.values())
         }
 
     #--------для MD-файлов-------------
-
-    def set_md(self, file_path: str, metadata: dict = None, ttl: int = None) -> None:
-        """
-        Сохраняет метаданные Markdown-файла в кэш.
-
-        Args:
-            file_path: Путь к MD-файлу
-            metadata: Опциональные метаданные (если None - парсим автоматически)
-            ttl: Время жизни записи в кэше (секунды)
-        """
-        try:
-
-
-            # Получаем информацию о файле
-            file_stats = os.stat(file_path)
-
-            # Создаем запись в кэше
-            self._cache[file_path] = {
-                'metadata': metadata,
-                'timestamp': time.time(),
-                'file_size': file_stats.st_size,
-                'file_mtime': file_stats.st_mtime,
-                'ttl': ttl or self._default_ttl,
-                'file_type': 'markdown'
-            }
-
-        except Exception as e:
-            # В случае ошибки создаем базовую запись
-            self._cache[file_path] = {
-                'metadata': metadata or {
-                    "name": os.path.basename(file_path),
-                    "type": "markdown",
-                    "size": 0,
-                    "last_modified": 0
-                },
-                'timestamp': time.time(),
-                'file_size': 0,
-                'file_mtime': 0,
-                'ttl': ttl or self._default_ttl,
-                'file_type': 'markdown',
-                'error': str(e)
-            }
-
 
     def get_md_title(self, file_path: str) -> Optional[str]:
         """
