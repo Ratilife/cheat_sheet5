@@ -25,7 +25,7 @@ class SidePanel(QWidget):
     # TODO 🚧 В разработке: 08.08.2025
         # 🏆task: Создание боковой панели;
         # 🏆task: Открыть боковую панель из стартовой панели;
-    def __init__(self,   parent=None):
+    def __init__(self,parent=None):
         """
             Инициализация боковой панели с динамическими вкладками
 
@@ -69,7 +69,6 @@ class SidePanel(QWidget):
 
         # Подключаем сигналы
         self.background_parser.task_finished.connect(self._on_parsing_done)
-        self.parser.task_finished.connect(self._on_parsing_done)
         self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
         #self.connect_signals()
 
@@ -123,7 +122,7 @@ class SidePanel(QWidget):
         # 2. Создаем парсер сервис
         self.parser_service = FileParserService()
 
-        self.parser = BackgroundParser()
+
 
         # 3. Создаем менеджер моделей с зависимостями
         self.tree_model_manager = TreeModelManager(
