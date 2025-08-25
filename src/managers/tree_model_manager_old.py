@@ -21,7 +21,7 @@ class TreeModelManager(QObject):
 
     def create_tree_model(self, file_paths: list) -> QAbstractItemModel:
         """Создает модель дерева для списка файлов"""
-        # TODO 🚧 В разработке: 13.07.2025
+        # TODO 🚧 В разработке: 13.07.2025 - расмотреть что бы добавить в модуль
         # 1. Создаем корневой элемент
         root_item = STMDFileTreeItem(["Root", "folder"])
 
@@ -94,7 +94,7 @@ class TreeModelManager(QObject):
             model (STMDFileTreeModel): Целевая модель
             file_path (str): Путь к файлу
         """
-        # TODO 🚧 В разработке: 13.07.2025
+        # TODO 🚧 В разработке: 13.07.2025 - расмотреть что бы добавить в модуль
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
             return
