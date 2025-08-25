@@ -22,7 +22,7 @@ class STMDFileTreeModel(QAbstractItemModel):
             "template": {"color": "#00008B", "icon": "text-x-script", "bold": False},
             "markdown": {"color": "#8B008B", "icon": "text-markdown", "bold": False}
         }
-        self.root_item = root_item or STMDFileTreeItem(["Root", "folder"])
+        self.root_item = root_item or STMDFileTreeItem(["Root", "root", ""])
     # Основные методы модели
     def index(self, row, column, parent=QModelIndex()):
         """
