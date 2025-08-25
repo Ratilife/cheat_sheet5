@@ -412,9 +412,9 @@ class MainWindow(QMainWindow):
         if not hasattr(self, '_side_manel'):
             # 1. Создаем сервисы
             parser_service = FileParserService()
-            tree_model_manager = TreeModelManager(parser_service)
+            #tree_model_manager = TreeModelManager(parser_service)
             # 2. Создаем SidePanel и передаем зависимости
-            self.side_panel = SidePanel(tree_model_manager)
+            self.side_panel = SidePanel()
 
             self.side_panel.show()
 
