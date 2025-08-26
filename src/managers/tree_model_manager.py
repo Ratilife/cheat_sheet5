@@ -1,35 +1,41 @@
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
+from src.parsers.content_cache import ContentCache
 class TreeModelManager(QObject):
-    def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache):
+    def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
+        self.content_cache = content_cache
         self.tab_models = {}
-    def build_initial_model(self, file_paths: list) -> STMDFileTreeModel:
-        """Создает модель только с метаданными файлов"""
-        #  TODO 🚧 В разработке: 22.08.2025 - устарел метод build_skeleton_model взамен  build_initial_model
-        root_item = STMDFileTreeItem(["Root", "folder"])
 
+    def build_model_for_tab(self, tab_name: str, file_paths: list[str]) -> STMDFileTreeModel:
+        # ✅ Реализовано: 26.08.2025
+        # 1. СОЗДАЕМ модель (в её конструкторе УЖЕ создан корневой элемент)
+        model = STMDFileTreeModel()
 
-        for path in file_paths:
-            # Получаем метаданные (из кэша или парсим)
-            metadata = self.metadata_cache.get(path) or self._parse_metadata(path)
+        for file_path in file_paths:
+            # 1. В первую очередь проверяем "богатый" кэш
+            full_data = self.content_cache.get(file_path)
+            if full_data:
+                # Используем полные данные для построения элемента
+                model.add_file(file_path, full_data)
+                continue
+            # 2. Если полных данных нет, проверяем "легкий" кэш метаданных
+            metadata = self.metadata_cache.get(file_path)
+            if not metadata:
+                # 3. Если данных нет вообще, парсим метаданные синхронно (это должно быть быстро)
+                metadata = self._parse_metadata(file_path)
+                # Кэшируем результат для будущего использования!
+                self.metadata_cache.set(file_path, metadata, file_type=metadata.get('type'))
+            # 4. Используем метаданные (из кэша или только что распарсенные)
+            model.add_file(file_path, metadata)
 
-            # Создаем элемент дерева
-            item = STMDFileTreeItem([
-                metadata["name"],
-                metadata["type"],
-                path  # Полный путь для последующего парсинга
-            ], root_item)
-            root_item.appendChild(item)
-
-        self.model = STMDFileTreeModel(root_item)
-
-        return self.model
+        self.tab_models[tab_name] = model
+        return model
 
 
     def _parse_metadata(self, file_path: str) -> dict:

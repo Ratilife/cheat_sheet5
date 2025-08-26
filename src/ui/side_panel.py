@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt, QRect, QSize
 from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
 from src.operation.file_operations import FileOperations
-from src.managers.tree_model_manager_old import TreeModelManager
+from src.managers.tree_model_manager import TreeModelManager
 from src.parsers.background_parser import BackgroundParser,Priority
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.metadata_cache import MetadataCache
@@ -163,7 +163,7 @@ class SidePanel(QWidget):
         file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
 
         # 2. Запрашиваем модель с метаданными
-        model = self.tree_model_manager.build_skeleton_model(file_paths)
+        model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
 
         # 3. Привязываем модель к дереву
         tree.setModel(model)
