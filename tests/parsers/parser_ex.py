@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 
 # Добавляем конкретный путь к файлам ANTLR4
 antlr_path = r"F:\Языки\Python\Partfolio\cheat_sheet5\cheat_sheet\src\ANTLR4"
@@ -371,7 +372,7 @@ def save_structure_to_txt(data_dict, output_file_path):
             # Если это список/словарь, преобразуем в читаемый формат
             structure = data_dict['structure']
             if isinstance(structure, (list, dict)):
-                import json
+
                 # Используем indent для красивого форматирования
                 f.write(json.dumps(structure, indent=2, ensure_ascii=False))
             else:
@@ -381,12 +382,80 @@ def save_structure_to_txt(data_dict, output_file_path):
         
     except Exception as e:
         print(f"Ошибка при записи в файл: {e}")
-        
-    
+
+
+def parse_markdown_file( file_path):
+    """
+    Парсит указанный Markdown-файл и возвращает его структуру.
+
+    Этот метод читает содержимое Markdown-файла по заданному пути, сохраняет его в структуре в виде словаря с ключами 'name', 'type' и 'content',
+    где:
+        - 'name' — имя файла без расширения,
+        - 'type' — тип документа ('markdown'),
+        - 'content' — содержимое файла в виде строки.
+
+    В случае успешного чтения файла возвращается словарь с двумя ключами:
+        - 'structure': список из одного элемента, содержащий структуру документа;
+        - 'root_name': имя корневого элемента (имя файла без расширения).
+
+    В случае возникновения ошибки чтения файла метод выводит сообщение об ошибке и возвращает пустую структуру и значение "Error" в качестве имени корневого элемента.
+
+    Parameters
+    ----------
+    file_path : str
+        Путь к Markdown-файлу, который необходимо распарсить.
+
+    Returns
+    -------
+    dict
+        Словарь с двумя ключами:
+            - 'structure' (list): список, содержащий структуру документа (или пустой список при ошибке);
+            - 'root_name' (str): имя файла без расширения (или "Error" при ошибке).
+
+    Примеры
+    -------
+    >>> parser = MdFileParser()
+    >>> parser.parse_markdown_file('example.md')
+    {
+        'structure': [{'name': 'example', 'type': 'markdown', 'content': '<содержимое файла>'}],
+        'root_name': 'example'
+    }
+
+    Notes
+    -----
+    Метод автоматически обрабатывает ошибки открытия и чтения файла, возвращая безопасный результат.
+    """
+    try:
+        # Чтение содержимого файла с указанием кодировки UTF-8
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Получение имени файла без расширения
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        # Формирование структуры документа
+        structure = [{
+            'name': file_name,  # Имя документа
+            'type': 'markdown',  # Тип документа
+            'content': content  # Содержимое файла
+        }]
+        # Возвращаем структуру и имя корневого элемента
+        return {
+            'structure': structure,
+            'root_name': file_name
+        }
+    except Exception as e:
+        # Обработка ошибок при чтении файла
+        print(f"Error parsing markdown file: {str(e)}")
+        # Возвращаем пустую структуру в случае ошибки
+        return {
+            'structure': [],
+            'root_name': "Error"
+        }
+
+
 def start():
-    rezultat = parse_st_metadata_level2(r"F:\Языки\Python\Partfolio\cheat_sheet5\root\cheat_sheet\bookmarks\1C\Новый1.st")
+    rezultat = parse_markdown_file(r"F:\Языки\Python\Partfolio\cheat_sheet5\root\cheat_sheet\bookmarks\python\Функция для форматирования номера телефона.md")
         
-    path = r"F:\Языки\Python\Partfolio\cheat_sheet5\cheat_sheet\tests\parser_ex\Новый1-огр2 уровнем.txt"
+    path = r"F:\Языки\Python\Partfolio\cheat_sheet5\cheat_sheet\tests\parsers\MD-файл.txt"
         
     save_structure_to_txt(rezultat,path)
         
