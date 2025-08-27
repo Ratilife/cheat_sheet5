@@ -127,13 +127,14 @@ class SidePanel(QWidget):
         # 3. Создаем менеджер моделей с зависимостями
         self.tree_model_manager = TreeModelManager(
             parser_service=self.parser_service,
-            metadata_cache=self.metadata_cache
+            metadata_cache=self.metadata_cache,
+            content_cache=self.content_cache
         )
 
         # 4. Создаем фоновый парсер
         self.background_parser = BackgroundParser(
             parser_service=self.parser_service,
-            metadata_cache=self.content_cache
+            content_cache=self.content_cache
         )
 
     def _create_tabs_with_trees(self, tab_name:dict):
@@ -169,10 +170,12 @@ class SidePanel(QWidget):
         tree.setModel(model)
 
         # 4. Запускаем фоновый парсинг
-        self.parser.add_task(
-            files=file_paths,
-            priority=Priority.VISIBLE
-        )
+        for file_path in file_paths:
+            # Проверяем, нет ли уже полных данных (на всякий случай)
+            if not self.content_cache.get(file_path):
+                # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
+                # которых еще нет в content_cache
+                self.background_parser.add_task(file_path, Priority.VISIBLE)
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""
