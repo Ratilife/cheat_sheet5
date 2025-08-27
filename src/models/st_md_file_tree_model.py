@@ -440,6 +440,28 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Проверяем наличие неподгруженных дочерних элементов
         return bool(item.child_items)  # True если есть хотя бы один ребенок
 
+    def _get_icon(self, icon_name):
+        """Возвращает QIcon для указанного имени иконки.
+
+        Args:
+            icon_name (str): Имя иконки из настроек стиля
+
+        Returns:
+            QIcon: Объект иконки или пустая иконка, если не найдена
+        """
+        # Создаем провайдер иконок файловой системы
+        icon_provider = QFileIconProvider()
+
+        # Сопоставление имен иконок с системными иконками
+        icon_mapping = {
+            "text-x-generic": icon_provider.icon(QFileIconProvider.IconType.File),
+            "folder": icon_provider.icon(QFileIconProvider.IconType.Folder),
+            "text-x-script": icon_provider.icon(QFileIconProvider.IconType.File),
+            "text-markdown": icon_provider.icon(QFileIconProvider.IconType.File)
+        }
+
+        # Возвращаем соответствующую иконку или пустую, если не найдена
+        return icon_mapping.get(icon_name, QIcon())
 
     def _calculate_item_level(self, item):
         """
