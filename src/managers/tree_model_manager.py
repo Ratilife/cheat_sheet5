@@ -5,7 +5,7 @@ from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 class TreeModelManager(QObject):
-    data_updated = Signal(str, str)  # tab_name, file_path
+
     def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
@@ -16,7 +16,7 @@ class TreeModelManager(QObject):
     def build_model_for_tab(self, tab_name: str, file_paths: list[str]) -> STMDFileTreeModel:
         # ✅ Реализовано: 26.08.2025
         # 1. СОЗДАЕМ модель (в её конструкторе УЖЕ создан корневой элемент)
-        model = STMDFileTreeModel()
+        model = STMDFileTreeModel(self.content_cache)
 
         for file_path in file_paths:
             # 1. В первую очередь проверяем "богатый" кэш
@@ -47,6 +47,5 @@ class TreeModelManager(QObject):
         """Обновляет модель при получении новых данных"""
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
-            if hasattr(model, 'update_item'):
-                model.update_item(file_path)
-                self.data_updated.emit(tab_name, file_path)
+            model.update_item(file_path)
+
