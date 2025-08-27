@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QTabWidget, QTreeWidget, QWidget, QVBoxLayout, QTreeView
+from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout, QTreeView
 
 
 class DynamicTabManager(QObject):
@@ -7,7 +7,7 @@ class DynamicTabManager(QObject):
         # 🏆task: Создание боковой панели;
         # 🏆task: Открыть боковую панель из стартовой панели;
     # Объявление сигнала
-    tab_created = Signal(str, QTreeWidget)  # Сигнал передает имя вкладки и дерево
+    tab_created = Signal(str, QTreeView)  # Сигнал передает имя вкладки и дерево
     def __init__(self, parent: QWidget = None):
         # TODO 🚧 В разработке: 08.08.2025
         super().__init__(parent)
@@ -35,7 +35,7 @@ class DynamicTabManager(QObject):
             self._add_tab(tab_name)
         return self.tab_widget
 
-    def _add_tab(self, name: str) -> QTreeWidget:
+    def _add_tab(self, name: str) -> QTreeView:
         """Добавляет одну вкладку с деревом."""
         # TODO 🚧 В разработке: 08.08.2025
         tree = QTreeView()
@@ -53,7 +53,7 @@ class DynamicTabManager(QObject):
         return tree
 
 
-    def _update_tree(self, tree: QTreeWidget, path: str):
+    def _update_tree(self, tree: QTreeView, path: str):
         """Обновляет дерево при изменении файлов."""
         # TODO 🚧 В разработке: 08.08.2025
         # Логика обновления дерева...
