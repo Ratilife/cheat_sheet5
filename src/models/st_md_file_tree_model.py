@@ -7,12 +7,15 @@ from PySide6.QtGui import QIcon, QFont
 from PySide6.QtGui import QColor
 
 from models.st_md_file_tree_item import STMDFileTreeItem
+from src.parsers.content_cache import ContentCache
 
 class STMDFileTreeModel(QAbstractItemModel):
     """Модель данных для отображения структуры ST-файлов и MD-файлов в дереве"""
     # TODO 🚧 В разработке: 13.07.2025
-    def __init__(self, root_item=None, parent=None):
+    def __init__(self, content_cache: ContentCache, root_item=None, parent=None):
         super().__init__(parent)
+
+        self.content_cache = content_cache
         self.style_settings = {
             "file": {"color": "#2a82da", "icon": "text-x-generic", "bold": False},
             "folder": {"color": "#006400", "icon": "folder", "bold": True},
@@ -719,15 +722,15 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Извлекаем тип элемента из данных (второй элемент в item_data)
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
-    def update_item(self, file_path: str):
+    def update_item(self, file_path: str ):
         """Обновляет элемент при получении новых данных"""
         # Найти элемент по file_path и обновить его
-        for i in range(self.rowCount()):
-            item = self.item(i)
-            if item.file_path == file_path:
+        for row in range(self.rowCount()):
+            item = self.item(row)
+            if item and hasattr(item, 'file_path') and item.file_path == file_path:
                 # Обновить данные элемента
                 new_data = self.content_cache.get(file_path)
                 if new_data:
                     item.update_data(new_data)
-                self.dataChanged.emit(self.index(i, 0), self.index(i, 0))
+                self.dataChanged.emit(self.index(row, 0), self.index(row, 0))
                 break
