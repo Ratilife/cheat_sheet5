@@ -1,10 +1,11 @@
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 class TreeModelManager(QObject):
+    data_updated = Signal(str, str)  # tab_name, file_path
     def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
@@ -41,3 +42,11 @@ class TreeModelManager(QObject):
     def _parse_metadata(self, file_path: str) -> dict:
         """Парсит метаданные файла (вызывает FileParserService)"""
         return self.parser_service.parse_metadata(file_path)
+
+    def update_model(self, tab_name: str, file_path: str):
+        """Обновляет модель при получении новых данных"""
+        if tab_name in self.tab_models:
+            model = self.tab_models[tab_name]
+            if hasattr(model, 'update_item'):
+                model.update_item(file_path)
+                self.data_updated.emit(tab_name, file_path)
