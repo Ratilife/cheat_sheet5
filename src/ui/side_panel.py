@@ -35,44 +35,33 @@ class SidePanel(QWidget):
         """
         # TODO 🚧 В разработке: 08.08.2025
         super().__init__(parent, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        # 1. Создаем экземпляр класса для сигналов
+        # Инициализация основных атрибутов
         self.observer = SidePanelObserver()
-
-        # 3. # Инициализация наблюдателя
-        self.file_watcher = FileWatcher()
-        self.file_watcher.file_updated.connect(self._on_file_updated)
-        self.file_watcher.file_deleted.connect(self._on_file_deleted)
-        self.file_watcher.dir_changed.connect(self._on_dir_changed)
-
-
-
-        # нижняя панель (отображение данных)
-        self.content_viewer = MarkdownViewer()
         self.file_operation = FileOperations()
+
+        # Получаем данные для вкладок
         self.tab_names = self.file_operation.fetch_file_heararchy()
-        self.tab_manager = DynamicTabManager()
+        if not isinstance(self.tab_names, dict):
+            #QMessageBox.warning(self, "Ошибка", "Некорректные данные для вкладок")  Перенести на собственый класс сообщений
+            self.tab_names = {"Documents": []}  # fallback
 
-        self._init_ui()
-
+        # Инициализация менеджеров
         self._init_managers()
+        # Инициализация наблюдателей
+        self._init_observers()
+        # рисуем интерфейс
+        self._init_ui()
+        # Инициализация сигналов
+        self._connect_signals()
 
-        # Подключение сигнала
-
-        self.toolbar_manager.editor_toggled.connect(self._open_editor)
 
         # Инициализация контекстного меню для управления позицией
         self._init_position_menu()
         # Настройка прикрепления к краям экрана
         self._setup_screen_edge_docking()
-
         self.setAttribute(Qt.WA_ShowWithoutActivating)
 
-        # Подключаем сигналы
-        self.background_parser.task_finished.connect(self._on_parsing_done)
-        self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
-        #self.connect_signals()
-
-    def _init_ui(self):
+    def _init_ui(self)->None:
         """Инициализация пользовательского интерфейса"""
         # TODO 🚧 В разработке: 08.08.2025
         # Устанавливаем минимальную ширину панели
@@ -80,7 +69,7 @@ class SidePanel(QWidget):
 
         self.ui = UIManager()
         self.tree_manager = None # TreeManager(self.tree_view)
-        self.toolbar_manager = ToolbarManager(self.tree_manager, self.close, self.showMinimized)
+
 
         # Создаем разделитель с вертикальной ориентацией
         self.splitter = self.ui.create_splitter(Qt.Vertical,
@@ -91,8 +80,10 @@ class SidePanel(QWidget):
         # Создаем основной вертикальный layout
         main_layout = QVBoxLayout(self)
         # Убираем отступы у layout
-
         main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Создаем toolbar manager с правильными зависимостями
+        self.toolbar_manager = ToolbarManager(self.tree_manager, self.close, self.showMinimized)
 
         # Создаем панель заголовка с кнопками управления
         title_layout = self.toolbar_manager.get_title_layout()
@@ -107,12 +98,15 @@ class SidePanel(QWidget):
 
         # Добавляем вкладки в основной layout
         main_layout.addWidget(self.tab_widget)
+
+        # нижняя панель (отображение данных)
+        self.content_viewer = MarkdownViewer()
         # Текстовое поле (нижняя часть)
         self.splitter.addWidget(self.content_viewer)
         # Добавляем разделитель в основной layout
         main_layout.addWidget(self.splitter)
 
-    def _init_managers(self):
+    def _init_managers(self)->None:
         """Инициализация всех менеджеров и сервисов"""
         # ✅ Реализовано: 20.08.2025
         # 1. Создаем кэш (синглтон)
@@ -121,8 +115,6 @@ class SidePanel(QWidget):
 
         # 2. Создаем парсер сервис
         self.parser_service = FileParserService()
-
-
 
         # 3. Создаем менеджер моделей с зависимостями
         self.tree_model_manager = TreeModelManager(
@@ -136,13 +128,27 @@ class SidePanel(QWidget):
             parser_service=self.parser_service,
             content_cache=self.content_cache
         )
+        # 5. Создаем менеджер вкладок
+        self.tab_manager = DynamicTabManager()
 
+        # 6. Сразу подключаем сигнал, который должен работать ДО создания UI
+        self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+
+    def _init_observers(self)->None:
+        """Инициализация наблюдателей"""
+        self.file_watcher = FileWatcher()
+        self.file_watcher.file_updated.connect(self._on_file_updated)
+        self.file_watcher.file_deleted.connect(self._on_file_deleted)
+        self.file_watcher.dir_changed.connect(self._on_dir_changed)
     def _create_tabs_with_trees(self, tab_name:dict):
         # ✅ Реализовано: 14.08.2025
         """Создает вкладки с деревьями файлов"""
         self.tab_manager.create_tabs(tab_name)
 
-
+    def _connect_signals(self):
+        """Подключение сигналов"""
+        self.toolbar_manager.editor_toggled.connect(self._open_editor)
+        self.background_parser.task_finished.connect(self._on_parsing_done)
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
@@ -160,32 +166,41 @@ class SidePanel(QWidget):
     def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
         """Заполняет дерево файлами из словаря tab_names."""
         # TODO 🚧 В разработке: 13.08.2025
-        # 1. Получаем пути файлов для этой вкладки
-        file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
+        try:
+            if tab_name not in self.tab_names:
+                return
 
-        # 2. Запрашиваем модель с метаданными
-        model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
+            # 1. Получаем пути файлов для этой вкладки
+            file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
 
-        # 3. Привязываем модель к дереву
-        tree.setModel(model)
+            # 2. Запрашиваем модель с метаданными
+            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
 
-        # 4. Запускаем фоновый парсинг
-        for file_path in file_paths:
-            # Проверяем, нет ли уже полных данных (на всякий случай)
-            if not self.content_cache.get(file_path):
-                # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
-                # которых еще нет в content_cache
-                self.background_parser.add_task(file_path, Priority.VISIBLE)
+            # 3. Привязываем модель к дереву
+            if model:
+                tree.setModel(model)
+
+            # 4. Запускаем фоновый парсинг
+            for file_path in file_paths:
+                # Проверяем, нет ли уже полных данных (на всякий случай)
+                if not self.content_cache.get(file_path):
+                    # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
+                    # которых еще нет в content_cache
+                    self.background_parser.add_task(file_path, Priority.VISIBLE)
+                else:
+                    print(f"Не удалось создать модель для вкладки {tab_name}")
+        except Exception as e:
+            print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""
         # 1. Сохраняем в кэш
-        self.content_cache.save(file_path, parsed_data)
+        self.content_cache.set(file_path, parsed_data)
 
         # 2. Находим модель для обновления
-        for tab_name, tree in self.tab_manager.trees.items():
+        for tree in self.tab_manager.trees.items():
             model = tree.model()
-            if model:  # Если модель привязана
+            if model and hasattr(model, 'update_item'):  # Если модель привязана и существует метод 'update_item'
                 model.update_item(file_path)  # Делегируем обновление модели
 
 
