@@ -8,9 +8,6 @@ from PySide6.QtGui import QColor
 
 from models.st_md_file_tree_item import STMDFileTreeItem
 
-
-
-
 class STMDFileTreeModel(QAbstractItemModel):
     """Модель данных для отображения структуры ST-файлов и MD-файлов в дереве"""
     # TODO 🚧 В разработке: 13.07.2025
@@ -722,4 +719,15 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Извлекаем тип элемента из данных (второй элемент в item_data)
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
-
+    def update_item(self, file_path: str):
+        """Обновляет элемент при получении новых данных"""
+        # Найти элемент по file_path и обновить его
+        for i in range(self.rowCount()):
+            item = self.item(i)
+            if item.file_path == file_path:
+                # Обновить данные элемента
+                new_data = self.content_cache.get(file_path)
+                if new_data:
+                    item.update_data(new_data)
+                self.dataChanged.emit(self.index(i, 0), self.index(i, 0))
+                break
