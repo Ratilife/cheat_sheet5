@@ -101,8 +101,10 @@ class MarkdownListener:
                 'root_name': "Error"
             }
 
-    def parse_md_metadata(self, file_path: str, first_lines: list) -> dict:
+    def parse_md_metadata(self, file_path: str, first_lines: list = None) -> dict:
         """Парсит метаданные Markdown-файла"""
+        if first_lines is None:
+            first_lines = []
         title = next((line.strip('# ') for line in first_lines if line.startswith('#')), None)
         return {
             "name": title or os.path.basename(file_path),

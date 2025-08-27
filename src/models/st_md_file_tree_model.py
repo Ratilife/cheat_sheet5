@@ -577,7 +577,7 @@ class STMDFileTreeModel(QAbstractItemModel):
         self._build_tree(structure, file_item)
 
         # 6. Добавляем корневой элемент файла в корень всей модели.
-        self.root_item.appendChild(file_item)
+        self.root_item.child_items.append(file_item)
 
         # 4. ОПОВЕЩАЕМ VIEW о завершении добавления!
         self.endInsertRows()  # <- ВЫЗОВ ЗДЕСЬ
