@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
-                               QTreeWidget, QTreeWidgetItem, QApplication,
+                               QTreeWidget,QApplication,
                                 QMenu)
 from PySide6.QtGui import QAction
 
@@ -150,8 +150,14 @@ class SidePanel(QWidget):
 
     def _connect_signals(self):
         """Подключение сигналов"""
+        # ВРЕМЕННО
+        print("Подключаем сигналы...")
+        # ------ ВРЕМЕННО КОНЕЦ
         self.toolbar_manager.editor_toggled.connect(self._open_editor)
         self.background_parser.task_finished.connect(self._on_parsing_done)
+        # ВРЕМЕННО
+        print("Сигналы подключены")
+        # ------ ВРЕМЕННО КОНЕЦ
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
@@ -189,22 +195,35 @@ class SidePanel(QWidget):
                 if not self.content_cache.get(file_path):
                     # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
                     # которых еще нет в content_cache
+                    # ВРЕМЕННО
+                    print(f"Добавляем в фоновый парсинг: {file_path}")
+                    # ----------ВРЕМЕННО КОНЕЦ
                     self.background_parser.add_task(file_path, Priority.VISIBLE)
                 else:
                     print(f"Не удалось создать модель для вкладки {tab_name}")
+                    # ВРЕМЕННО
+                    print(f"Файл уже в кэше: {file_path}")
+                    # ----------ВРЕМЕННО КОНЕЦ
         except Exception as e:
             print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""
+        # ВРЕМЕННО
+        print(f"Парсинг завершен для: {file_path}")
+        print(f"Данные: {list(parsed_data.keys()) if parsed_data else 'None'}")
+        #----------ВРЕМЕННО КОНЕЦ
+
         # 1. Сохраняем в кэш
         self.content_cache.set(file_path, parsed_data)
 
-        # 2. Находим модель для обновления
-        for tree in self.tab_manager.trees.items():
-            model = tree.model()
-            if model and hasattr(model, 'update_item'):  # Если модель привязана и существует метод 'update_item'
-                model.update_item(file_path)  # Делегируем обновление модели
+        # 2. Находим все вкладки, где есть этот файл
+        for tab_name, file_paths in self.tab_names.items():
+            if file_path in file_paths:
+                if (hasattr(self.tree_model_manager, 'update_model') and
+                        callable(getattr(self.tree_model_manager, 'update_model'))):
+                    # 3. Обновляем соответствующую модель
+                    self.tree_model_manager.update_model(tab_name, file_path)
 
 
     def _open_editor(self):
