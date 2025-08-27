@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QTabWidget, QTreeWidget, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QTabWidget, QTreeWidget, QWidget, QVBoxLayout, QTreeView
 
 
 class DynamicTabManager(QObject):
@@ -38,7 +38,7 @@ class DynamicTabManager(QObject):
     def _add_tab(self, name: str) -> QTreeWidget:
         """Добавляет одну вкладку с деревом."""
         # TODO 🚧 В разработке: 08.08.2025
-        tree = QTreeWidget()
+        tree = QTreeView()
         tree.setHeaderHidden(True)  # Пример настройки
 
         tab_content = QWidget()
