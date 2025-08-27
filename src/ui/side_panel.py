@@ -130,7 +130,10 @@ class SidePanel(QWidget):
         )
         # 5. Создаем менеджер вкладок
         self.tab_manager = DynamicTabManager()
-
+        # ВРЕМЕННО
+        print(f"Тип tab_created: {type(self.tab_manager.tab_created)}")
+        print(f"Это Signal? {hasattr(self.tab_manager.tab_created, 'connect')}")
+        #------ ВРЕМЕННО КОНЕЦ
         # 6. Сразу подключаем сигнал, который должен работать ДО создания UI
         self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
 
