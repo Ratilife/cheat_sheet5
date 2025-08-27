@@ -8,6 +8,7 @@
         3. Обработка ошибок чтения файлов
 """
 import os
+from pathlib import Path
 
 class MarkdownListener:
     """
@@ -106,8 +107,12 @@ class MarkdownListener:
         if first_lines is None:
             first_lines = []
         title = next((line.strip('# ') for line in first_lines if line.startswith('#')), None)
+
+        # Получаем имя файла без расширения через pathlib
+        file_name_without_extension = Path(file_path).stem
+
         return {
-            "name": title or os.path.basename(file_path),
+            "root_name": title or file_name_without_extension,
             "type": "markdown",
             "size": os.path.getsize(file_path),
             "last_modified": os.path.getmtime(file_path),
