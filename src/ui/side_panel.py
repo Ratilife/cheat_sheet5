@@ -169,6 +169,10 @@ class SidePanel(QWidget):
                 print("Подключаем task_finished...")
                 self.background_parser.task_finished.connect(self._on_parsing_done)
                 print("task_finished подключен!")
+            if hasattr(self, 'tree_model_manager'):
+                print("Подключаем model_updated...")
+                self.tree_model_manager.model_updated.connect(self._on_model_updated)
+                print("model_updated подключен!")
 
         except Exception as e:
             print(f"ОШИБКА при подключении сигналов: {e}")
@@ -216,12 +220,12 @@ class SidePanel(QWidget):
                 tree.setModel(model)
                 print(f"Модель установлена для {tab_name}")
             # ВРЕМЕННО: прямое добавление задач
-            for file_path in file_paths:
+            '''for file_path in file_paths:
                 if not self.content_cache.get(file_path):
                     print(f"Добавляем задачу: {file_path}")
-                    self.background_parser.add_task(file_path, Priority.VISIBLE)
+                    self.background_parser.add_task(file_path, Priority.VISIBLE)'''
             # 4. Запускаем фоновый парсинг
-            '''for file_path in file_paths:
+            for file_path in file_paths:
                 # Проверяем, нет ли уже полных данных (на всякий случай)
                 if not self.content_cache.get(file_path):
                     # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
@@ -235,7 +239,7 @@ class SidePanel(QWidget):
                     print(f"Не удалось создать модель для вкладки {tab_name}")
                     # ВРЕМЕННО
                     print(f"Файл уже в кэше: {file_path}")
-                    # ----------ВРЕМЕННО КОНЕЦ '''
+                    # ----------ВРЕМЕННО КОНЕЦ
         except Exception as e:
             print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")
 
@@ -247,9 +251,22 @@ class SidePanel(QWidget):
         self.content_cache.set(file_path, parsed_data)
 
         # 2. Обновляем ВО ВСЕХ вкладках через менеджер моделей
-        self.tree_model_manager.update_file_in_all_tabs(file_path)
+        updated = self.tree_model_manager.update_file_in_all_tabs(file_path)
 
+        if not updated:
+            print(f"Предупреждение: файл {file_path} не найден в активных моделях")
 
+    def _on_model_updated(self, tab_name: str, file_path: str):
+        """Обновляет view для конкретной вкладки после изменения модели"""
+        if tab_name in self.tab_manager.trees:
+            tree_view = self.tab_manager.trees[tab_name]
+            # Обновляем всю модель для этой вкладки
+            tree_view.viewport().update()
+
+            # Или если нужно обновить конкретные элементы:
+            model = tree_view.model()
+            if model:
+                model.refresh_view()
 
     def _open_editor(self):
         """Открыть окно редактора файла"""

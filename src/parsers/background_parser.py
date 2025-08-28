@@ -199,6 +199,7 @@ class BackgroundParser(QObject):
                 file_path: Путь к обработанному файлу
                 parsed_data: Результаты парсинга в виде словаря
         """
+        print(f"DEBUG: BackgroundParser задание завершено для  {file_path}")
         self.active_tasks -= 1
 
         # Сохраняем результат в кэш
@@ -206,7 +207,7 @@ class BackgroundParser(QObject):
 
         # Уведомляем о завершении
         self.task_finished.emit(file_path, parsed_data)
-
+        print(f"DEBUG:  сигнал task_finished, отправленный для {file_path}")
         # Обрабатываем следующую задачу
         self._process_queue()
 

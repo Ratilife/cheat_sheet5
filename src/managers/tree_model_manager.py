@@ -5,13 +5,13 @@ from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 class TreeModelManager(QObject):
-
+    model_updated = Signal(str, str)  # tab_name, file_path
     def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
         self.content_cache = content_cache
-        self.model_updated = Signal(str, str)  # tab_name, file_path
+
         self.tab_models = {}    # кэш моделей
         self.file_to_tabs = {}  # Отслеживаем, в каких вкладках какие файлы
 

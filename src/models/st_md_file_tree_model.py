@@ -803,3 +803,4 @@ class STMDFileTreeModel(QAbstractItemModel):
                 return True
         return False
     #------------(Нужно определится)
+
