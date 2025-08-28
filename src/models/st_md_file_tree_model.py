@@ -722,13 +722,20 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Извлекаем тип элемента из данных (второй элемент в item_data)
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
-    def update_file_item(self, file_path: str, new_data: dict):
+    def update_file_item(self, file_path: str, new_data: dict) -> bool:
         """Находит и обновляет элемент по пути файла с уведомлением view"""
         for row in range(self.rowCount()):
             index = self.index(row, 0)
-            item = index.internalPointer()
+            if not index.isValid():
+                continue
 
-            if (item and len(item.item_data) > 2 and
+            item = index.internalPointer()
+            if not item:
+                continue
+
+            # Проверяем, что это файл и путь совпадает
+            if (len(item.item_data) > 2 and
+                    item.item_data[1] in ['file', 'markdown'] and
                     item.item_data[2] == file_path):
 
                 # Сохраняем старые данные для сравнения
@@ -744,17 +751,20 @@ class STMDFileTreeModel(QAbstractItemModel):
                 root_name = new_data.get('root_name', 'Unknown')
                 structure = new_data.get('structure', [])
 
+                # Обновляем имя корневого элемента
+                if len(item.item_data) > 0:
+                    item.item_data[0] = root_name
+
                 # Добавляем новых детей с уведомлением
                 if structure:
-                    self.beginInsertRows(index, 0, len(structure) - 1)
+                    new_children_count = len(structure)
+                    self.beginInsertRows(index, 0, new_children_count - 1)
                     self._build_tree(structure, item)
                     self.endInsertRows()
 
                 # Уведомляем об изменении самого элемента
-                self.dataChanged.emit(index, index)
+                self.dataChanged.emit(index, index, [Qt.DisplayRole])
 
-                # Автоматически обновляем view
-                self.refresh_view()
                 return True
 
         return False

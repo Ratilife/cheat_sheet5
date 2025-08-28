@@ -209,25 +209,13 @@ class SidePanel(QWidget):
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""
-        # ВРЕМЕННО
         print(f"Парсинг завершен для: {file_path}")
-        print(f"Данные: {list(parsed_data.keys()) if parsed_data else 'None'}")
-        #----------ВРЕМЕННО КОНЕЦ
 
         # 1. Сохраняем в кэш
         self.content_cache.set(file_path, parsed_data)
 
-        # 2. Находим все вкладки, где есть этот файл
-        updated_tabs = []
-        for tab_name, file_paths in self.tab_names.items():
-            if file_path in file_paths:
-                # 3. Обновляем соответствующую модель
-                if self.tree_model_manager.update_model(tab_name, file_path):
-                    updated_tabs.append(tab_name)
-
-        # 4. Обновляем представления через менеджер моделей
-        if updated_tabs:
-            self.tree_model_manager.refresh_tab_models(updated_tabs)
+        # 2. Обновляем ВО ВСЕХ вкладках через менеджер моделей
+        self.tree_model_manager.update_file_in_all_tabs(file_path)
 
 
 
