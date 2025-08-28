@@ -722,15 +722,31 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Извлекаем тип элемента из данных (второй элемент в item_data)
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
-    def update_item(self, file_path: str ):
-        """Обновляет элемент при получении новых данных"""
-        # Найти элемент по file_path и обновить его
+    def update_file_item(self, file_path: str, new_data: dict):
+        """Находит и обновляет элемент по пути файла"""
+        # Ищем элемент с указанным file_path
         for row in range(self.rowCount()):
-            item = self.item(row)
-            if item and hasattr(item, 'file_path') and item.file_path == file_path:
-                # Обновить данные элемента
-                new_data = self.content_cache.get(file_path)
-                if new_data:
-                    item.update_data(new_data)
-                self.dataChanged.emit(self.index(row, 0), self.index(row, 0))
+            index = self.index(row, 0)
+            item = index.internalPointer()
+
+            # Проверяем, является ли этот элемент файлом с нужным путем
+            if (item and len(item.item_data) > 2 and
+                    item.item_data[2] == file_path):
+                # Обновляем данные элемента
+                root_name = new_data.get('root_name', 'Unknown')
+                structure = new_data.get('structure', [])
+
+                # Сохраняем старых детей (если нужно)
+                old_children = item.child_items.copy()
+
+                # Очищаем и перестраиваем детей
+                self.beginRemoveRows(index, 0, len(item.child_items))
+                item.child_items.clear()
+                self.endRemoveRows()
+
+                # Строим новую структуру
+                self._build_tree(structure, item)
+
+                # Уведомляем view об изменении
+                self.dataChanged.emit(index, index)
                 break

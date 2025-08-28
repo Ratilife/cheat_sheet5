@@ -45,7 +45,12 @@ class TreeModelManager(QObject):
 
     def update_model(self, tab_name: str, file_path: str):
         """Обновляет модель при получении новых данных"""
+        # ✅ Реализовано: 28.08.2025
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
-            model.update_item(file_path)
+            # Получаем полные данные из кэша
+            full_data = self.content_cache.get(file_path)
+            if full_data:
+                # Обновляем конкретный элемент в модели
+                model.update_file_item(file_path, full_data)
 
