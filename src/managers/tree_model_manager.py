@@ -75,6 +75,7 @@ class TreeModelManager(QObject):
 
     def refresh_tab_view(self, tab_name: str):
         """Принудительно обновляет view для вкладки"""
+        # TODO 🚧 В разработке: 28.08.2025 мертвый код refresh_tab_view
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
             # Обновляем всю модель

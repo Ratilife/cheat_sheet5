@@ -148,7 +148,7 @@ class SidePanel(QWidget):
         """Создает вкладки с деревьями файлов"""
         self.tab_manager.create_tabs(tab_name)
 
-    def _connect_signals(self):
+    '''def _connect_signals(self):
         print("=" * 50)
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - НАЧАЛО")
 
@@ -180,8 +180,58 @@ class SidePanel(QWidget):
             traceback.print_exc()
 
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - КОНЕЦ")
+        print("=" * 50)'''
+
+    def _connect_signals(self):
+        # Для проверки
+        print("=" * 50)
+        print("ДЕТАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - НАЧАЛО")
+
+        # Проверяем ВСЕ возможные сигналы
+        signals_to_check = [
+            (self.tab_manager, 'tab_created'),
+            (self.background_parser, 'task_finished'),
+            (self.background_parser, 'task_started'),
+            (self.background_parser, 'task_failed'),
+            (self.background_parser, 'queue_empty'),
+            (self.tree_model_manager, 'model_updated'),
+            (self.file_watcher, 'file_updated'),
+            (self.file_watcher, 'file_deleted'),
+            (self.file_watcher, 'dir_changed')
+        ]
+
+        for obj, signal_name in signals_to_check:
+            if hasattr(obj, signal_name):
+                sig_l = getattr(obj, signal_name)
+                print(
+                    f"✓ {obj.__class__.__name__}.{signal_name}: {type(sig_l)} (has connect: {hasattr(sig_l, 'connect')})")
+            else:
+                print(f"✗ {obj.__class__.__name__}.{signal_name}: NOT FOUND")
+
+        print("ДЕТАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - КОНЕЦ")
         print("=" * 50)
 
+        # Теперь пробуем подключить
+        try:
+            print("Пытаемся подключить tab_created...")
+            self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+            print("✓ tab_created подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения tab_created: {e}")
+
+        try:
+            print("Пытаемся подключить task_finished...")
+            self.background_parser.task_finished.connect(self._on_parsing_done)
+            print("✓ task_finished подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения task_finished: {e}")
+
+        try:
+            print("Пытаемся подключить model_updated...")
+            self.tree_model_manager.model_updated.connect(self._on_model_updated)
+            print("✓ model_updated подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения model_updated: {e}")
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
@@ -196,15 +246,18 @@ class SidePanel(QWidget):
         # TODO 🚧 В разработке: 10.08.2025
         pass
 
-    def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
+    '''def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
         """Заполняет дерево файлами из словаря tab_names."""
         # TODO 🚧 В разработке: 13.08.2025
+        print(f"DEBUG: _on_fill_tab_tree вычисляется для: {tab_name}")
         try:
             if tab_name not in self.tab_names:
+                print(f"DEBUG: вкладка {tab_name} не найдена в tab_names")
                 return
 
             # 1. Получаем пути файлов для этой вкладки
             file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
+            print(f"DEBUG: Найдены {len(file_paths)} файлы для вкладки {tab_name}")
 
             # Проверяем, что менеджер моделей инициализирован ВРЕМЕННО
             if not hasattr(self, 'tree_model_manager'):
@@ -219,11 +272,8 @@ class SidePanel(QWidget):
             if model:
                 tree.setModel(model)
                 print(f"Модель установлена для {tab_name}")
-            # ВРЕМЕННО: прямое добавление задач
-            '''for file_path in file_paths:
-                if not self.content_cache.get(file_path):
-                    print(f"Добавляем задачу: {file_path}")
-                    self.background_parser.add_task(file_path, Priority.VISIBLE)'''
+
+
             # 4. Запускаем фоновый парсинг
             for file_path in file_paths:
                 # Проверяем, нет ли уже полных данных (на всякий случай)
@@ -241,7 +291,61 @@ class SidePanel(QWidget):
                     print(f"Файл уже в кэше: {file_path}")
                     # ----------ВРЕМЕННО КОНЕЦ
         except Exception as e:
+            print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")'''
+
+    def _on_fill_tab_tree(self, tab_name: str, tree: QTreeWidget):
+        # Для проверки
+        print(f"DEBUG: _on_fill_tab_tree вызывается для вкладки: {tab_name}")
+
+        try:
+            if tab_name not in self.tab_names:
+                print(f"DEBUG: tab {tab_name} not found in tab_names")
+                return
+
+            # 1. Получаем пути файлов для этой вкладки
+            file_paths = self.tab_names[tab_name]
+            print(f"DEBUG: Найдено {len(file_paths)} файловдля вкладки {tab_name}")
+
+            # Проверяем, что менеджер моделей инициализирован
+            if not hasattr(self, 'tree_model_manager'):
+                print("ОШИБКА: tree_model_manager не инициализирован!")
+                return
+
+            # 2. Запрашиваем модель с метаданными
+            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
+
+            # 3. Привязываем модель к дереву
+            if model:
+                tree.setModel(model)
+                print(f"Модель установлена для {tab_name}")
+
+            # 4. Запускаем фоновый парсинг
+            for file_path in file_paths:
+                print(f"DEBUG: Обрабатывающий файл: {file_path}")
+
+                # Проверяем кэш
+                cached_data = self.content_cache.get(file_path)
+                if not cached_data:
+                    print(f"DEBUG: Файл {file_path} отсутствующий в content_cache, добавляется в синтаксический анализатор")
+
+                    # ПРОВЕРКА ПЕРЕД ДОБАВЛЕНИЕМ ЗАДАЧИ
+                    print(f"background_parser тип: {type(self.background_parser)}")
+                    print(f"background_parser.add_task имеет connect: {hasattr(self.background_parser, 'add_task')}")
+
+                    try:
+                        self.background_parser.add_task(file_path, Priority.VISIBLE)
+                        print(f"DEBUG: Задача, добавленная для {file_path}")
+                    except Exception as e:
+                        print(f"ОШИБКА при добавлении задачи: {e}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print(f"DEBUG: Файл {file_path} уже находится в кэше")
+
+        except Exception as e:
             print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")
+
+            traceback.print_exc()
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""

@@ -4,12 +4,25 @@
 '''
 import os
 from enum import Enum
-from PySide6.QtCore import QObject, Signal, QThreadPool, QRunnable, Q_ARG, QMetaObject
-from PySide6.QtGui import Qt
+from PySide6.QtCore import Signal as QtSignal
+from PySide6.QtCore import QObject, QThreadPool, QRunnable
 
 from parsers.file_parser_service import FileParserService
 from parsers.content_cache import ContentCache
 
+
+print("=" * 50)
+print("ДИАГНОСТИКА SIGNAL:")
+print(f"Signal тип: {type(QtSignal)}")
+print(f"Signal(str, dict) тип: {type(QtSignal(str, dict))}")
+print(f"Signal(str, dict) имеет connect: {hasattr(QtSignal(str, dict), 'connect')}")
+print(f"Signal(str, dict) имеет emit: {hasattr(QtSignal(str, dict), 'emit')}")
+print("=" * 50)
+
+class ParserSignals(QObject):
+    # Объявляем сигналы внутри класса, наследующего от QObject
+    finished = QtSignal(str, dict)  # file_path, parsed_data
+    error = QtSignal(str, str)      # file_path, error_message
 
 class Priority(Enum):
     """
@@ -31,8 +44,13 @@ class ParserTask(QRunnable):
     Наследуется от QRunnable для выполнения в пуле потоков Qt.
     Каждый экземпляр представляет собой задачу парсинга одного файла.
     """
-    finished = Signal(str, dict)  # Добавить сигнал
-    def __init__(self,file_path: str, priority: Priority, parser_service: FileParserService):
+
+
+    finished = QtSignal(str, dict)  # Добавить сигнал
+    def __init__(self,file_path: str,
+                 priority: Priority,
+                 parser_service: FileParserService,
+                 on_finished_callback: callable):
         """
                 Инициализирует задачу парсинга.
 
@@ -42,10 +60,19 @@ class ParserTask(QRunnable):
                     parser_service: Сервис для выполнения парсинга файлов
         """
         super().__init__()
+
+
+        print(f"ParserTask.__init__: finished имеет connect = {hasattr(self.finished, 'connect')}")
+        print(f"ParserTask.__init__: finished имеет emit = {hasattr(self.finished, 'emit')}")
+
         self.file_path = file_path
         self.priority = priority
         self.parser_service = parser_service
+        self.on_finished_callback = on_finished_callback
         self.setAutoDelete(True)  # Автоматическое удаление после выполнения
+
+        #self.signals = ParserSignals()
+
 
     def run(self):
         """
@@ -72,8 +99,10 @@ class ParserTask(QRunnable):
             # Поэтому используем invokeMethod для безопасного вызова слота в главном потоке.
             self.finished.emit(self.file_path, parsed_data)  # Использовать сигнал
             print(f"ParserTask: Сигнал finished испущен для {self.file_path}")
+            #4 ВЫЗЫВАЕМ callback функцию с результатами
+            self.on_finished_callback(self.file_path, parsed_data)
         except Exception as e:
-            # 4. Обработка ошибок
+            # 5. Обработка ошибок
             # Ловим все исключения, чтобы аварийно не завершать поток.
             print(f"Ошибка парсинга {self.file_path}: {str(e)}")
 
@@ -90,10 +119,10 @@ class BackgroundParser(QObject):
     """
 
     # Сигналы
-    task_started = Signal(str, Priority)  # Начало парсинга файла
-    task_finished = Signal(str, dict)  # Успешный парсинг (file_path, data)
-    task_failed = Signal(str, str)  # Ошибка парсинга (file_path, error)
-    queue_empty = Signal()  # Все задачи выполнены
+    task_started = QtSignal(str, Priority)  # Начало парсинга файла
+    task_finished = QtSignal(str, dict)  # Успешный парсинг (file_path, data)
+    task_failed = QtSignal(str, str)  # Ошибка парсинга (file_path, error)
+    queue_empty = QtSignal()  # Все задачи выполнены
 
     _instance = None
 
@@ -147,8 +176,20 @@ class BackgroundParser(QObject):
             print(f"BackgroundParser: Файл не существует {file_path}")
             return
         print(f"BackgroundParser: Создаем ParserTask для {file_path}")
-        task = ParserTask(file_path, priority, self.parser_service)
-        task.finished.connect(self.on_task_finished)
+
+        task = ParserTask(file_path=file_path,
+                          priority=priority,
+                          parser_service=self.parser_service,
+                          on_finished_callback=self.on_task_finished)
+
+        #print(f"ParserTask.finished тип: {type(task.finished)}")
+        print(f"ParserTask.finished имеет connect: {hasattr(task.finished, 'connect')}")
+        try:
+            task.finished.connect(self.on_task_finished)
+            print("✓ Сигнал finished подключен к on_task_finished")
+        except Exception as e:
+            print(f"✗ Ошибка подключения finished: {e}")
+
         self.task_queue[priority].append(task)
         print(f"BackgroundParser: Задача добавлена в очередь, активных задач: {self.active_tasks}")
         self._process_queue()
