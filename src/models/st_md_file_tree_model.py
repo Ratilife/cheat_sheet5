@@ -723,30 +723,73 @@ class STMDFileTreeModel(QAbstractItemModel):
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
     def update_file_item(self, file_path: str, new_data: dict):
-        """Находит и обновляет элемент по пути файла"""
-        # Ищем элемент с указанным file_path
+        """Находит и обновляет элемент по пути файла с уведомлением view"""
         for row in range(self.rowCount()):
             index = self.index(row, 0)
             item = index.internalPointer()
 
-            # Проверяем, является ли этот элемент файлом с нужным путем
             if (item and len(item.item_data) > 2 and
                     item.item_data[2] == file_path):
-                # Обновляем данные элемента
+
+                # Сохраняем старые данные для сравнения
+                old_children_count = len(item.child_items)
+
+                # Очищаем старых детей с уведомлением
+                if old_children_count > 0:
+                    self.beginRemoveRows(index, 0, old_children_count - 1)
+                    item.child_items.clear()
+                    self.endRemoveRows()
+
+                # Строим новую структуру
                 root_name = new_data.get('root_name', 'Unknown')
                 structure = new_data.get('structure', [])
 
-                # Сохраняем старых детей (если нужно)
-                old_children = item.child_items.copy()
+                # Добавляем новых детей с уведомлением
+                if structure:
+                    self.beginInsertRows(index, 0, len(structure) - 1)
+                    self._build_tree(structure, item)
+                    self.endInsertRows()
 
-                # Очищаем и перестраиваем детей
-                self.beginRemoveRows(index, 0, len(item.child_items))
-                item.child_items.clear()
-                self.endRemoveRows()
-
-                # Строим новую структуру
-                self._build_tree(structure, item)
-
-                # Уведомляем view об изменении
+                # Уведомляем об изменении самого элемента
                 self.dataChanged.emit(index, index)
-                break
+
+                # Автоматически обновляем view
+                self.refresh_view()
+                return True
+
+        return False
+    def refresh_view(self, parent_index=QModelIndex()):
+        """
+        Принудительно обновляет представление для указанного родительского элемента
+        и всех его потомков.
+
+        Args:
+            parent_index: Индекс родительского элемента для обновления
+                         (по умолчанию - корневой уровень)
+        """
+        if not parent_index.isValid():
+            # Обновление всей модели
+            self.beginResetModel()
+            self.endResetModel()
+        else:
+            # Обновление конкретной ветки
+            row_count = self.rowCount(parent_index)
+            if row_count > 0:
+                top_left = self.index(0, 0, parent_index)
+                bottom_right = self.index(row_count - 1, 0, parent_index)
+                self.dataChanged.emit(top_left, bottom_right)
+
+    # Если нужно обновлять конкретные элементы(Нужно определится)
+    def refresh_item(self, file_path: str):
+        """Обновляет конкретный элемент по пути файла"""
+        # TODO 🚧 В разработке: 28.08.2025 мертвый код refresh_item
+        for row in range(self.rowCount()):
+            index = self.index(row, 0)
+            item = index.internalPointer()
+
+            if (item and len(item.item_data) > 2 and
+                    item.item_data[2] == file_path):
+                self.dataChanged.emit(index, index)
+                return True
+        return False
+    #------------(Нужно определится)

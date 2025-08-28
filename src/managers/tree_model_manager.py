@@ -44,13 +44,32 @@ class TreeModelManager(QObject):
         return self.parser_service.parse_metadata(file_path)
 
     def update_model(self, tab_name: str, file_path: str):
-        """Обновляет модель при получении новых данных"""
+        """ООбновляет модель при получении новых данных и возвращает успешность"""
         # ✅ Реализовано: 28.08.2025
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
             # Получаем полные данные из кэша
             full_data = self.content_cache.get(file_path)
             if full_data:
-                # Обновляем конкретный элемент в модели
-                model.update_file_item(file_path, full_data)
+                return model.update_file_item(file_path, full_data)
+        return False
 
+    def refresh_tab_models(self, tab_names: list):
+        """
+        Обновляет представления для указанных вкладок
+
+        Args:
+            tab_names: Список имен вкладок для обновления
+        """
+        for tab_name in tab_names:
+            if tab_name in self.tab_models:
+                model = self.tab_models[tab_name]
+                model.refresh_view()
+
+    # Если нужно обновлять конкретные элементы(Нужно определится)
+    def refresh_file_in_tabs(self, file_path: str):
+        """Обновляет конкретный файл во всех вкладках"""
+        # TODO 🚧 В разработке: 28.08.2025 мертвый код refresh_file_in_tabs
+        for tab_name, model in self.tab_models.items():
+            model.refresh_item(file_path)
+    # ------------(Нужно определится)

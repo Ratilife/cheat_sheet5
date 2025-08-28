@@ -218,15 +218,17 @@ class SidePanel(QWidget):
         self.content_cache.set(file_path, parsed_data)
 
         # 2. Находим все вкладки, где есть этот файл
+        updated_tabs = []
         for tab_name, file_paths in self.tab_names.items():
             if file_path in file_paths:
                 # 3. Обновляем соответствующую модель
-                if tab_name in self.tree_model_manager.tab_models:
-                    self.tree_model_manager.update_model(tab_name, file_path)
+                if self.tree_model_manager.update_model(tab_name, file_path):
+                    updated_tabs.append(tab_name)
 
-                    # 4. Принудительно обновляем view
-                    model = self.tree_model_manager.tab_models[tab_name]
-                    model.layoutChanged.emit()
+        # 4. Обновляем представления через менеджер моделей
+        if updated_tabs:
+            self.tree_model_manager.refresh_tab_models(updated_tabs)
+
 
 
     def _open_editor(self):
