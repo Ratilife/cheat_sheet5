@@ -58,6 +58,7 @@ class ParserTask(QRunnable):
             Exception: Любые исключения при парсинге логируются, но не пробрасываются дальше
         """
         try:
+            print(f"ParserTask: Начало парсинга {self.file_path}")
             # 1. Логирование (для отладки)
             print(f"Парсим файл: {self.file_path} (приоритет: {self.priority.name})")
 
@@ -65,12 +66,12 @@ class ParserTask(QRunnable):
             # Этот метод будет выполняться в фоновом потоке и может блокировать его надолго.
             # Это нормально, ведь ради этого мы и создали отдельный поток!
             parsed_data = self.parser_service.parse_and_get_type(self.file_path)
-
+            print(f"ParserTask: Парсинг завершен для {self.file_path}, данные: {bool(parsed_data)}")
             # 3. Передача результата в главный поток
             # Мы не можем обновлять GUI из фонового потока.
             # Поэтому используем invokeMethod для безопасного вызова слота в главном потоке.
             self.finished.emit(self.file_path, parsed_data)  # Использовать сигнал
-
+            print(f"ParserTask: Сигнал finished испущен для {self.file_path}")
         except Exception as e:
             # 4. Обработка ошибок
             # Ловим все исключения, чтобы аварийно не завершать поток.
@@ -141,13 +142,17 @@ class BackgroundParser(QObject):
                 file_path: Путь к файлу для парсинга
                 priority: Приоритет задачи (по умолчанию PRELOAD)
         """
+        print(f"BackgroundParser: Добавляем задачу для {file_path} с приоритетом {priority}")
         if not file_path or not os.path.exists(file_path):
+            print(f"BackgroundParser: Файл не существует {file_path}")
             return
-
+        print(f"BackgroundParser: Создаем ParserTask для {file_path}")
         task = ParserTask(file_path, priority, self.parser_service)
         task.finished.connect(self.on_task_finished)
         self.task_queue[priority].append(task)
+        print(f"BackgroundParser: Задача добавлена в очередь, активных задач: {self.active_tasks}")
         self._process_queue()
+        print(f"BackgroundParser: Задач в очереди {priority}: {len(self.task_queue[priority])}")
 
     def add_tasks(self, file_paths: list, priority: Priority = Priority.PRELOAD):
         """

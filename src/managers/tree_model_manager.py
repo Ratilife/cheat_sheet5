@@ -5,17 +5,18 @@ from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 class TreeModelManager(QObject):
-    model_updated = Signal(str, str)  # tab_name, file_path
+
     def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
         self.content_cache = content_cache
-        self.tab_models = {}
+        self.model_updated = Signal(str, str)  # tab_name, file_path
+        self.tab_models = {}    # кэш моделей
         self.file_to_tabs = {}  # Отслеживаем, в каких вкладках какие файлы
 
     def build_model_for_tab(self, tab_name: str, file_paths: list[str]) -> STMDFileTreeModel:
-        # ✅ Реализовано: 26.08.2025
+        # ✅ Реализовано: 28.08.2025
         # Сохраняем связь файлов с вкладками
         for file_path in file_paths:
             if file_path not in self.file_to_tabs:
@@ -62,8 +63,8 @@ class TreeModelManager(QObject):
         return self.parser_service.parse_metadata(file_path)
 
     def update_model(self, tab_name: str, file_path: str):
-        """ООбновляет модель при получении новых данных и возвращает успешность"""
-        # TODO 🚧 В разработке: 28.08.2025 мертвый код
+        """Обновляет модель при получении новых данных и возвращает успешность"""
+        # TODO 🚧 В разработке: 28.08.2025
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
             # Получаем полные данные из кэша

@@ -51,8 +51,13 @@ class SidePanel(QWidget):
         self._init_observers()
         # рисуем интерфейс
         self._init_ui()
+
         # Инициализация сигналов
         self._connect_signals()
+
+        # Создаем деревья для каждой вкладки
+        self._create_tabs_with_trees(self.tab_names)
+
 
 
         # Инициализация контекстного меню для управления позицией
@@ -93,8 +98,7 @@ class SidePanel(QWidget):
         self.tab_widget = self.tab_manager.tab_widget
         self.tab_widget.setTabPosition(QTabWidget.West)  # Вкладки слева
 
-        # Создаем деревья для каждой вкладки
-        self._create_tabs_with_trees(self.tab_names)
+
 
         # Добавляем вкладки в основной layout
         main_layout.addWidget(self.tab_widget)
@@ -122,7 +126,7 @@ class SidePanel(QWidget):
             metadata_cache=self.metadata_cache,
             content_cache=self.content_cache
         )
-
+        print("SidePanel: Инициализация BackgroundParser")
         # 4. Создаем фоновый парсер
         self.background_parser = BackgroundParser(
             parser_service=self.parser_service,
@@ -130,10 +134,6 @@ class SidePanel(QWidget):
         )
         # 5. Создаем менеджер вкладок
         self.tab_manager = DynamicTabManager()
-        # ВРЕМЕННО
-        print(f"Тип tab_created: {type(self.tab_manager.tab_created)}")
-        print(f"Это Signal? {hasattr(self.tab_manager.tab_created, 'connect')}")
-        #------ ВРЕМЕННО КОНЕЦ
         # 6. Сразу подключаем сигнал, который должен работать ДО создания UI
         self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
 
@@ -149,15 +149,35 @@ class SidePanel(QWidget):
         self.tab_manager.create_tabs(tab_name)
 
     def _connect_signals(self):
-        """Подключение сигналов"""
-        # ВРЕМЕННО
-        print("Подключаем сигналы...")
-        # ------ ВРЕМЕННО КОНЕЦ
-        self.toolbar_manager.editor_toggled.connect(self._open_editor)
-        self.background_parser.task_finished.connect(self._on_parsing_done)
-        # ВРЕМЕННО
-        print("Сигналы подключены")
-        # ------ ВРЕМЕННО КОНЕЦ
+        print("=" * 50)
+        print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - НАЧАЛО")
+
+        try:
+            # Проверяем существование менеджеров
+            print(f"tab_manager exists: {hasattr(self, 'tab_manager')}")
+            print(f"background_parser exists: {hasattr(self, 'background_parser')}")
+
+            if hasattr(self, 'tab_manager'):
+                print("Подключаем tab_created...")
+                print(f"Type of tab_created: {type(self.tab_manager.tab_created)}")
+                print(f"Has connect: {hasattr(self.tab_manager.tab_created, 'connect')}")
+
+                self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+                print("tab_created подключен!")
+
+            if hasattr(self, 'background_parser'):
+                print("Подключаем task_finished...")
+                self.background_parser.task_finished.connect(self._on_parsing_done)
+                print("task_finished подключен!")
+
+        except Exception as e:
+            print(f"ОШИБКА при подключении сигналов: {e}")
+            import traceback
+            traceback.print_exc()
+
+        print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - КОНЕЦ")
+        print("=" * 50)
+
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
@@ -182,15 +202,26 @@ class SidePanel(QWidget):
             # 1. Получаем пути файлов для этой вкладки
             file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
 
+            # Проверяем, что менеджер моделей инициализирован ВРЕМЕННО
+            if not hasattr(self, 'tree_model_manager'):
+                print("ОШИБКА: tree_model_manager не инициализирован!")
+                return
+
+
             # 2. Запрашиваем модель с метаданными
             model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
 
             # 3. Привязываем модель к дереву
             if model:
                 tree.setModel(model)
-
-            # 4. Запускаем фоновый парсинг
+                print(f"Модель установлена для {tab_name}")
+            # ВРЕМЕННО: прямое добавление задач
             for file_path in file_paths:
+                if not self.content_cache.get(file_path):
+                    print(f"Добавляем задачу: {file_path}")
+                    self.background_parser.add_task(file_path, Priority.VISIBLE)
+            # 4. Запускаем фоновый парсинг
+            '''for file_path in file_paths:
                 # Проверяем, нет ли уже полных данных (на всякий случай)
                 if not self.content_cache.get(file_path):
                     # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
@@ -199,11 +230,12 @@ class SidePanel(QWidget):
                     print(f"Добавляем в фоновый парсинг: {file_path}")
                     # ----------ВРЕМЕННО КОНЕЦ
                     self.background_parser.add_task(file_path, Priority.VISIBLE)
+                    print(f"Задача добавлена в парсер для: {file_path}")
                 else:
                     print(f"Не удалось создать модель для вкладки {tab_name}")
                     # ВРЕМЕННО
                     print(f"Файл уже в кэше: {file_path}")
-                    # ----------ВРЕМЕННО КОНЕЦ
+                    # ----------ВРЕМЕННО КОНЕЦ '''
         except Exception as e:
             print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")
 

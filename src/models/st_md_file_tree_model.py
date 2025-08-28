@@ -15,7 +15,7 @@ class STMDFileTreeModel(QAbstractItemModel):
     def __init__(self, content_cache: ContentCache, root_item=None, parent=None):
         super().__init__(parent)
 
-        self.content_cache = content_cache
+        self.content_cache = content_cache   # TODO 28.08.2025 мертвый код self.content_cache
         self.style_settings = {
             "file": {"color": "#2a82da", "icon": "text-x-generic", "bold": False},
             "folder": {"color": "#006400", "icon": "folder", "bold": True},
