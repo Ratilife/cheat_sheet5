@@ -18,7 +18,9 @@ class TreeModelManager(QObject):
     def build_model_for_tab(self, tab_name: str, file_paths: list[str]) -> STMDFileTreeModel:
         # ✅ Реализовано: 28.08.2025
         # Сохраняем связь файлов с вкладками
+        print(f"DEBUG✅: построение модели для вкладки '{tab_name}' с файлами {len(file_paths)}")
         for file_path in file_paths:
+            print(f"DEBUG✅: привязка файла  {file_path} к вкладке {tab_name}")
             if file_path not in self.file_to_tabs:
                 self.file_to_tabs[file_path] = []
             if tab_name not in self.file_to_tabs[file_path]:
@@ -40,11 +42,21 @@ class TreeModelManager(QObject):
                 model.add_file(file_path, metadata)
 
         self.tab_models[tab_name] = model
+        print(f"DEBUG💾: Модель для вкладки '{tab_name}' сохранена в tab_models")
+        print(f"DEBUG: Теперь в tab_models: {list(self.tab_models.keys())}")
         return model
 
     def update_file_in_all_tabs(self, file_path: str):
         """Обновляет файл во всех вкладках, где он присутствует"""
         if file_path not in self.file_to_tabs:
+            return False
+
+        print(f"DEBUG✅: update_file_in_all_tabs для {file_path}")
+        print(f"DEBUG✅: файл в file_to_tabs: {file_path in self.file_to_tabs}")
+
+        if file_path not in self.file_to_tabs:
+            print(f"DEBUG✅: Файл {file_path} нет в  file_to_tabs")
+            print(f"DEBUG✅: доступные файлы: {list(self.file_to_tabs.keys())}")
             return False
 
         full_data = self.content_cache.get(file_path)
@@ -65,12 +77,23 @@ class TreeModelManager(QObject):
     def update_model(self, tab_name: str, file_path: str):
         """Обновляет модель при получении новых данных и возвращает успешность"""
         # TODO 🚧 В разработке: 28.08.2025
+
+        # Проверяем существование вкладки временно для отладки
+        if tab_name not in self.tab_models:
+            print(f"DEBUG❌: Вкладка '{tab_name}' не найдена в tab_models!")
+            print(f"DEBUG: Доступные вкладки: {list(self.tab_models.keys())}")
+            return False
+
         if tab_name in self.tab_models:
             model = self.tab_models[tab_name]
+            print(f"DEBUG: Модель для вкладки '{tab_name}' найдена")
             # Получаем полные данные из кэша
             full_data = self.content_cache.get(file_path)
             if full_data:
+                print(f"DEBUG: Данные из кэша получены, обновляем элемент")
                 return model.update_file_item(file_path, full_data)
+
+        print(f"DEBUG❌: Данные для файла '{file_path}' не найдены в кэше")
         return False
 
     def refresh_tab_view(self, tab_name: str):
@@ -89,3 +112,15 @@ class TreeModelManager(QObject):
         for tab_name, model in self.tab_models.items():
             model.refresh_item(file_path)
     # ------------(Нужно определится)
+    def debug_file_to_tabs(self):
+        """Выводит содержимое file_to_tabs для отладки"""
+        # временно проверочный метод
+        print("=" * 50)
+        print("DEBUG: file_to_tabs contents:")
+        if not self.file_to_tabs:
+            print("  EMPTY - no files linked to tabs!")
+            return
+
+        for file_path, tabs in self.file_to_tabs.items():
+            print(f"  {file_path}: {tabs}")
+        print("=" * 50)

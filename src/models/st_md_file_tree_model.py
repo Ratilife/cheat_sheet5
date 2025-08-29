@@ -724,6 +724,11 @@ class STMDFileTreeModel(QAbstractItemModel):
 
     def update_file_item(self, file_path: str, new_data: dict) -> bool:
         """Находит и обновляет элемент по пути файла с уведомлением view"""
+        # Добавляем проверку на валидность new_data
+        print(f"DEBUG🔍: Поиск файла '{file_path}' в модели")
+        if not new_data or not isinstance(new_data, dict):
+            print(f"Warning: недопустимые новые данные для файла {file_path}")
+            return False
         for row in range(self.rowCount()):
             index = self.index(row, 0)
             if not index.isValid():
@@ -748,8 +753,9 @@ class STMDFileTreeModel(QAbstractItemModel):
                     self.endRemoveRows()
 
                 # Строим новую структуру
-                root_name = new_data.get('root_name', 'Unknown')
-                structure = new_data.get('structure', [])
+                # Безопасное получение данных с проверками
+                root_name = new_data.get('root_name', 'Unknown') if new_data else 'Unknown'
+                structure = new_data.get('structure', []) if new_data else []
 
                 # Обновляем имя корневого элемента
                 if len(item.item_data) > 0:
@@ -764,9 +770,13 @@ class STMDFileTreeModel(QAbstractItemModel):
 
                 # Уведомляем об изменении самого элемента
                 self.dataChanged.emit(index, index, [Qt.DisplayRole])
-
+                print(f"DEBUG✅: Файл найден в строке {row}, обновляем...")
                 return True
-
+            #временно для проверки
+            else:
+                if len(item.item_data) > 2:
+                    print(f"DEBUG: Строка {row}: {item.item_data[2]} (тип: {item.item_data[1]})")
+        print(f"DEBUG❌: Файл '{file_path}' не найден в модели")
         return False
     def refresh_view(self, parent_index=QModelIndex()):
         """

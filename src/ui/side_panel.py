@@ -147,7 +147,7 @@ class SidePanel(QWidget):
         # ✅ Реализовано: 14.08.2025
         """Создает вкладки с деревьями файлов"""
         self.tab_manager.create_tabs(tab_name)
-
+        self.tree_model_manager.debug_file_to_tabs()
     '''def _connect_signals(self):
         print("=" * 50)
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - НАЧАЛО")
@@ -349,7 +349,7 @@ class SidePanel(QWidget):
 
     def _on_parsing_done(self, file_path: str, parsed_data: dict):
         """Обработчик завершения фонового парсинга"""
-        print(f"Парсинг завершен для: {file_path}")
+        print(f"✅ Парсинг завершен для: {file_path}")
 
         # 1. Сохраняем в кэш
         self.content_cache.set(file_path, parsed_data)
@@ -359,9 +359,10 @@ class SidePanel(QWidget):
 
         if not updated:
             print(f"Предупреждение: файл {file_path} не найден в активных моделях")
-
+            print(f"DEBUG: Файл {file_path} Существует в кэше: {file_path in self.content_cache._cache}")
     def _on_model_updated(self, tab_name: str, file_path: str):
         """Обновляет view для конкретной вкладки после изменения модели"""
+        print(f"DEBUG✅: _on_model_updated вызывается для вкладки {tab_name}, файла {file_path}")
         if tab_name in self.tab_manager.trees:
             tree_view = self.tab_manager.trees[tab_name]
             # Обновляем всю модель для этой вкладки
