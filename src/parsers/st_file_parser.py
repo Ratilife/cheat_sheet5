@@ -434,7 +434,7 @@ class STFileParserWrapper:
         """
         Рекурсивно ограничивает структуру вторым уровнем вложенности.
         """
-        if current_level > 1:
+        if current_level > 0:
             return []
 
         limited_structure = []
