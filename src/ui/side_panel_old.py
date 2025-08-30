@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
-                               QTreeWidget, QApplication,
-                               QMenu, QLabel, QPushButton, )
+                               QTreeWidget,QApplication,
+                                QMenu)
 from PySide6.QtGui import QAction
 
-from src.parsers.content_cache import ContentCache
+from parsers.content_cache import ContentCache
 from src.managers.dynamic_tabs import DynamicTabManager
 from src.observers.file_watcher import FileWatcher
 from src.observers.my_base_observer import MyBaseObserver
@@ -16,156 +16,101 @@ from src.managers.tree_model_manager import TreeModelManager
 from src.parsers.background_parser import BackgroundParser,Priority
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.metadata_cache import MetadataCache
+
 class SidePanelObserver(MyBaseObserver):
     # ✅ Реализовано: 29.06.2025
     def __init__(self):
         super().__init__()
 class SidePanel(QWidget):
-    # TODO 🚧 В разработке: 30.08.2025
-    def __init__(self, parent=None):
-        super().__init__(parent, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+    # TODO 🚧 В разработке: 08.08.2025
+        # 🏆task: Создание боковой панели;
+        # 🏆task: Открыть боковую панель из стартовой панели;
+    def __init__(self,parent=None):
+        """
+            Инициализация боковой панели с динамическими вкладками
 
-        # Базовая минимальная инициализация
+            Args:
+                tab_names: Список имен для вкладок (например, ["Documents", "Projects"])
+                parent: Родительский виджет
+        """
+        # TODO 🚧 В разработке: 08.08.2025
+        super().__init__(parent, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        # Инициализация основных атрибутов
         self.observer = SidePanelObserver()
         self.file_operation = FileOperations()
 
-        # Установите минимальные размеры и флаги
-        self.setMinimumWidth(300)
+
+
+        # Получаем данные для вкладок
+        self.tab_names = self.file_operation.fetch_file_heararchy()
+        if not isinstance(self.tab_names, dict):
+            #QMessageBox.warning(self, "Ошибка", "Некорректные данные для вкладок")  Перенести на собственый класс сообщений
+            self.tab_names = {"Documents": []}  # fallback
+
+        # Инициализация менеджеров
+        self._init_managers()
+        # Инициализация наблюдателей
+        self._init_observers()
+        # рисуем интерфейс
+        self._init_ui()
+
+        # Инициализация сигналов
+        self._connect_signals()
+
+        # Создаем деревья для каждой вкладки
+        self._create_tabs_with_trees(self.tab_names)
+
+
+
+        # Инициализация контекстного меню для управления позицией
+        self._init_position_menu()
+        # Настройка прикрепления к краям экрана
+        self._setup_screen_edge_docking()
         self.setAttribute(Qt.WA_ShowWithoutActivating)
 
-        # Создайте placeholder для быстрого показа
-        self._setup_loading_ui()
+    def _init_ui(self)->None:
+        """Инициализация пользовательского интерфейса"""
+        # TODO 🚧 В разработке: 08.08.2025
+        # Устанавливаем минимальную ширину панели
+        self.setMinimumWidth(300)
 
-        # Отложите тяжелую инициализацию
-        QTimer.singleShot(0, self._delayed_full_init)
-
-    def _setup_loading_ui(self):
-        """Быстрый UI placeholder с индикатором загрузки"""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        # Простой индикатор загрузки
-        loading_label = QLabel("Загрузка боковой панели...")
-        loading_label.setAlignment(Qt.AlignCenter)
-        loading_label.setStyleSheet("""
-            QLabel {
-                background-color: #f0f0f0;
-                padding: 20px;
-                color: #666;
-                font-size: 12px;
-            }
-        """)
-
-        layout.addWidget(loading_label)
-        self.setLayout(layout)
-
-    def _delayed_full_init(self):
-        """Полная инициализация после показа окна"""
-        try:
-            # 1. Получите данные для вкладок
-            self.tab_names = self.file_operation.fetch_file_heararchy()
-            if not isinstance(self.tab_names, dict):
-                self.tab_names = {"Documents": []}
-
-            # 2. Инициализируйте менеджеры
-            self._init_managers()
-
-            # 3. Инициализируйте наблюдателей
-            self._init_observers()
-
-            # 4. Создайте основной UI (заменит placeholder)
-            self._init_ui()
-
-            # 5. Подключите сигналы
-            self._connect_signals()
-
-            # 6. Создайте вкладки с деревьями
-            self._create_tabs_with_trees(self.tab_names)
-
-            # 7. Инициализируйте меню позиционирования
-            self._init_position_menu()
-
-            # 8. Настройте прикрепление к краям
-            self._setup_screen_edge_docking()
-
-            # 9. Отладочная информация
-            self.tree_model_manager.debug_file_to_tabs()
-
-            # 10. ПОКАЗАТЬ панель после инициализации
-            self.show()
-
-        except Exception as e:
-            print(f"Ошибка при инициализации SidePanel: {e}")
-            import traceback
-            traceback.print_exc()
-
-            # В случае ошибки покажите сообщение
-            self._show_error_ui(str(e))
-
-    def _show_error_ui(self, error_message):
-        """Показать UI с ошибкой"""
-        # Очистить текущий layout
-        if self.layout():
-            QWidget().setLayout(self.layout())
-
-        layout = QVBoxLayout(self)
-
-        error_label = QLabel(f"Ошибка загрузки:\n{error_message}")
-        error_label.setAlignment(Qt.AlignCenter)
-        error_label.setStyleSheet("""
-                QLabel {
-                    background-color: #ffe6e6;
-                    padding: 20px;
-                    color: #d32f2f;
-                    font-size: 12px;
-                    border: 1px solid #d32f2f;
-                }
-        """)
-
-        retry_button = QPushButton("Повторить")
-        retry_button.clicked.connect(self._delayed_full_init)
-
-        layout.addWidget(error_label)
-        layout.addWidget(retry_button)
-        self.setLayout(layout)
-
-    def _init_ui(self):
-        """Инициализация пользовательского интерфейса (заменяет placeholder)"""
-        # Очистить предыдущий layout (placeholder)
-        if self.layout():
-            QWidget().setLayout(self.layout())
-
-        # Создать основной layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # ... остальной код _init_ui без изменений
         self.ui = UIManager()
-        self.tree_manager = None
+        self.tree_manager = None # TreeManager(self.tree_view)
 
+
+        # Создаем разделитель с вертикальной ориентацией
         self.splitter = self.ui.create_splitter(Qt.Vertical,
                                                 sizes=[300, 100],
                                                 handle_width=5,
                                                 handle_style="QSplitter::handle { background: #ccc; }")
 
-        # Создаем toolbar manager
+        # Создаем основной вертикальный layout
+        main_layout = QVBoxLayout(self)
+        # Убираем отступы у layout
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Создаем toolbar manager с правильными зависимостями
         self.toolbar_manager = ToolbarManager(self.tree_manager, self.close, self.showMinimized)
 
-        # Создаем панель заголовка
+        # Создаем панель заголовка с кнопками управления
         title_layout = self.toolbar_manager.get_title_layout()
-        main_layout.addWidget(title_layout)
+        main_layout.addWidget(title_layout)  # Добавляем панель инструментов в основной layout(макет)
 
         # Создаем виджет вкладок
         self.tab_widget = self.tab_manager.tab_widget
-        self.tab_widget.setTabPosition(QTabWidget.West)
+        self.tab_widget.setTabPosition(QTabWidget.West)  # Вкладки слева
+
+
+
+        # Добавляем вкладки в основной layout
         main_layout.addWidget(self.tab_widget)
 
-        # Нижняя панель
+        # нижняя панель (отображение данных)
         self.content_viewer = MarkdownViewer()
+        # Текстовое поле (нижняя часть)
         self.splitter.addWidget(self.content_viewer)
+        # Добавляем разделитель в основной layout
         main_layout.addWidget(self.splitter)
-
-        self.setLayout(main_layout)
 
     def _init_managers(self)->None:
         """Инициализация всех менеджеров и сервисов"""
@@ -185,11 +130,10 @@ class SidePanel(QWidget):
         )
         print("SidePanel: Инициализация BackgroundParser")
         # 4. Создаем фоновый парсер
-        self.background_parser = BackgroundParser.instance(
+        self.background_parser = BackgroundParser(
             parser_service=self.parser_service,
             content_cache=self.content_cache
         )
-
         # 5. Создаем менеджер вкладок
         self.tab_manager = DynamicTabManager()
         # 6. Сразу подключаем сигнал, который должен работать ДО создания UI
@@ -201,8 +145,12 @@ class SidePanel(QWidget):
         self.file_watcher.file_updated.connect(self._on_file_updated)
         self.file_watcher.file_deleted.connect(self._on_file_deleted)
         self.file_watcher.dir_changed.connect(self._on_dir_changed)
-
-    def _connect_signals(self):
+    def _create_tabs_with_trees(self, tab_name:dict):
+        # ✅ Реализовано: 14.08.2025
+        """Создает вкладки с деревьями файлов"""
+        self.tab_manager.create_tabs(tab_name)
+        self.tree_model_manager.debug_file_to_tabs()
+    '''def _connect_signals(self):
         print("=" * 50)
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - НАЧАЛО")
 
@@ -234,29 +182,58 @@ class SidePanel(QWidget):
             traceback.print_exc()
 
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - КОНЕЦ")
+        print("=" * 50)'''
+
+    def _connect_signals(self):
+        # Для проверки
+        print("=" * 50)
+        print("ДЕТАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - НАЧАЛО")
+
+        # Проверяем ВСЕ возможные сигналы
+        signals_to_check = [
+            (self.tab_manager, 'tab_created'),
+            (self.background_parser, 'task_finished'),
+            (self.background_parser, 'task_started'),
+            (self.background_parser, 'task_failed'),
+            (self.background_parser, 'queue_empty'),
+            (self.tree_model_manager, 'model_updated'),
+            (self.file_watcher, 'file_updated'),
+            (self.file_watcher, 'file_deleted'),
+            (self.file_watcher, 'dir_changed')
+        ]
+
+        for obj, signal_name in signals_to_check:
+            if hasattr(obj, signal_name):
+                sig_l = getattr(obj, signal_name)
+                print(
+                    f"✓ {obj.__class__.__name__}.{signal_name}: {type(sig_l)} (has connect: {hasattr(sig_l, 'connect')})")
+            else:
+                print(f"✗ {obj.__class__.__name__}.{signal_name}: NOT FOUND")
+
+        print("ДЕТАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - КОНЕЦ")
         print("=" * 50)
 
-    def _create_tabs_with_trees(self, tab_name: dict):
-        """Создает вкладки с отложенной загрузкой деревьев"""
-        self.tab_manager.create_tabs(tab_name)
+        # Теперь пробуем подключить
+        try:
+            print("Пытаемся подключить tab_created...")
+            self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+            print("✓ tab_created подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения tab_created: {e}")
 
-        # Вместо немедленной загрузки всех деревьев,
-        # загружаем только первую активную вкладку
-        if self.tab_manager.tab_widget.count() > 0:
-            current_index = self.tab_manager.tab_widget.currentIndex()
-            current_tab_name = self.tab_manager.tab_widget.tabText(current_index)
-            self._load_tab_data(current_tab_name)
+        try:
+            print("Пытаемся подключить task_finished...")
+            self.background_parser.task_finished.connect(self._on_parsing_done)
+            print("💪 task_finished подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения task_finished: {e}")
 
-        # Подключаем загрузку при переключении вкладок
-        self.tab_manager.tab_widget.currentChanged.connect(self._on_tab_changed)
-
-    #----Обработка сигналов
-    def _on_tab_changed(self, index):
-        """Загружает данные только для активной вкладки"""
-        if index >= 0:
-            tab_name = self.tab_manager.tab_widget.tabText(index)
-            self._load_tab_data(tab_name)
-
+        try:
+            print("Пытаемся подключить model_updated...")
+            self.tree_model_manager.model_updated.connect(self._on_model_updated)
+            print("✓ model_updated подключен!")
+        except Exception as e:
+            print(f"✗ Ошибка подключения model_updated: {e}")
     def _on_file_deleted(self, path):
         """Реагирует на удаление файла."""
         # TODO 🚧 В разработке: 08.08.2025
@@ -270,6 +247,53 @@ class SidePanel(QWidget):
     def _on_dir_changed(self):
         # TODO 🚧 В разработке: 10.08.2025
         pass
+
+    '''def _on_fill_tab_tree(self,tab_name: str, tree: QTreeWidget):
+        """Заполняет дерево файлами из словаря tab_names."""
+        # TODO 🚧 В разработке: 13.08.2025
+        print(f"DEBUG: _on_fill_tab_tree вычисляется для: {tab_name}")
+        try:
+            if tab_name not in self.tab_names:
+                print(f"DEBUG: вкладка {tab_name} не найдена в tab_names")
+                return
+
+            # 1. Получаем пути файлов для этой вкладки
+            file_paths = self.tab_names[tab_name]  # Например: ["/path/file1.st", ...]
+            print(f"DEBUG: Найдены {len(file_paths)} файлы для вкладки {tab_name}")
+
+            # Проверяем, что менеджер моделей инициализирован ВРЕМЕННО
+            if not hasattr(self, 'tree_model_manager'):
+                print("ОШИБКА: tree_model_manager не инициализирован!")
+                return
+
+
+            # 2. Запрашиваем модель с метаданными
+            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
+
+            # 3. Привязываем модель к дереву
+            if model:
+                tree.setModel(model)
+                print(f"Модель установлена для {tab_name}")
+
+
+            # 4. Запускаем фоновый парсинг
+            for file_path in file_paths:
+                # Проверяем, нет ли уже полных данных (на всякий случай)
+                if not self.content_cache.get(file_path):
+                    # Ставим в очередь на фоновый парсинг ТОЛЬКО те файлы,
+                    # которых еще нет в content_cache
+                    # ВРЕМЕННО
+                    print(f"Добавляем в фоновый парсинг: {file_path}")
+                    # ----------ВРЕМЕННО КОНЕЦ
+                    self.background_parser.add_task(file_path, Priority.VISIBLE)
+                    print(f"Задача добавлена в парсер для: {file_path}")
+                else:
+                    print(f"Не удалось создать модель для вкладки {tab_name}")
+                    # ВРЕМЕННО
+                    print(f"Файл уже в кэше: {file_path}")
+                    # ----------ВРЕМЕННО КОНЕЦ
+        except Exception as e:
+            print(f"Ошибка при заполнении дерева для вкладки {tab_name}: {e}")'''
 
     def _on_fill_tab_tree(self, tab_name: str, tree: QTreeWidget):
         # Для проверки
@@ -330,7 +354,12 @@ class SidePanel(QWidget):
         print(f"🚨🚨🚨 _on_parsing_done ВЫЗВАН! args: {args}, kwargs: {kwargs}")
         print(f"🌤️Парсинг завершен для: {file_path}")
 
-        #  Обновляем ВО ВСЕХ вкладках через менеджер моделей
+        # 1. Сохраняем в кэш
+        #self.content_cache.set(file_path, parsed_data) проверить изменение
+
+
+
+        # 2. Обновляем ВО ВСЕХ вкладках через менеджер моделей
         updated = self.tree_model_manager.update_file_in_all_tabs(file_path)
 
         if not updated:
@@ -349,36 +378,11 @@ class SidePanel(QWidget):
             if model:
                 model.refresh_view()
 
-    #----------------------
-
-    def _load_tab_data(self, tab_name):
-        """Загружает данные для конкретной вкладки"""
-        if tab_name not in self.tab_names:
-            return
-
-        file_paths = self.tab_names[tab_name]
-        if not file_paths:
-            return
-
-        # Получаем дерево для этой вкладки
-        tree_view = self.tab_manager.trees.get(tab_name)
-        if tree_view and not tree_view.model():
-            # Создаем модель только если она еще не создана
-            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
-            if model:
-                tree_view.setModel(model)
-
-                # Запускаем фоновый парсинг для этой вкладки
-                for file_path in file_paths:
-                    if not self.content_cache.get(file_path):
-                        self.background_parser.add_task(file_path, Priority.VISIBLE)
-
     def _open_editor(self):
         """Открыть окно редактора файла"""
         pass
 
     # Метод инициализации контекстного меню
-
     def _init_position_menu(self):
         """
         Инициализирует контекстное меню управления положением боковой панели и настраивает связанные действия и обработчики.
@@ -566,7 +570,7 @@ class SidePanel(QWidget):
         # Отступ от края экрана
         self.dock_margin = 5
 
-        self.setWindowFlags(self.windowFlags())
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)  # <- ОТКЛЮЧАЕМ поверх всех окон
         # Обновляем позицию
         self.update_dock_position()
         # Устанавливаем прозрачность окна
