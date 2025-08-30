@@ -285,15 +285,15 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Проверка валидности переданного индекса
         if not index.isValid():
             # Возвращаем пустые флаги для невалидных индексов
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         # Базовые флаги, применяемые ко всем элементам:
         # - ItemIsEnabled: элемент доступен для взаимодействия
         # - ItemIsSelectable: элемент можно выделять
         # - ItemIsDragEnabled: элемент можно перетаскивать
-        flags = (Qt.ItemIsEnabled |
-                 Qt.ItemIsSelectable |
-                 Qt.ItemIsDragEnabled)
+        flags = (Qt.ItemFlag.ItemIsEnabled |
+                 Qt.ItemFlag.ItemIsSelectable |
+                 Qt.ItemFlag.ItemIsDragEnabled)
 
         # Получаем объект элемента, связанный с индексом
         item = index.internalPointer()
@@ -303,20 +303,20 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Флаги для редактируемых элементов
         if item.type in ["file", "markdown", "template"]:
             # ItemIsEditable позволяет редактировать текст элемента
-            flags |= Qt.ItemIsEditable
+            flags |= Qt.ItemFlag.ItemIsEditable
 
         # Специальные флаги для элементов типа "folder":
         if item.type == "folder":
             # ItemIsDropEnabled разрешает "бросать" другие элементы в эту папку
-            flags |= Qt.ItemIsDropEnabled
+            flags |= Qt.ItemFlag.ItemIsDropEnabled
             # Дополнительные флаги для непустых папок:
             if len(item.child_items) > 0:
                 # ItemIsAutoTristate: автоматическое тристатное состояние для чекбоксов
                 # ItemIsUserCheckable: элемент может быть отмечен чекбоксом
                 # ItemIsTristate: поддерживает три состояния (выбран/не выбран/частично выбран)
-                flags |= (Qt.ItemIsAutoTristate |
-                          Qt.ItemIsUserCheckable |
-                          Qt.ItemIsTristate)
+                flags |= (Qt.ItemFlag.ItemIsAutoTristate |
+                          Qt.ItemFlag.ItemIsUserCheckable |
+                          Qt.ItemFlag.ItemIsTristate)
         # Возвращаем итоговую комбинацию флагов
         return flags
 
@@ -432,7 +432,7 @@ class STMDFileTreeModel(QAbstractItemModel):
 
         # Проверка невалидного родителя (корневого уровня)
         if not parent.isValid():
-            return False  # Корневой уровень всегда полностью загружен
+            return False  # Корневой уровень всегда полностью загружен  ???
 
         # Получаем объект элемента, связанный с индексом
         item = parent.internalPointer()
@@ -568,7 +568,7 @@ class STMDFileTreeModel(QAbstractItemModel):
          """
         # ✅ Реализовано: 26.08.2025
         if not parsed_data or not isinstance(parsed_data, dict):
-            print(f"Warning: Invalid parsed_data for file {file_path}")
+            print(f"Warning: недопустимые обработанные данные для файла {file_path}")
             return
 
         # 1. Извлекаем данные из словаря. Это ЕДИНЫЙ формат для всех парсеров.
@@ -722,8 +722,9 @@ class STMDFileTreeModel(QAbstractItemModel):
         # Извлекаем тип элемента из данных (второй элемент в item_data)
         return item.item_data[1]  # 'folder', 'file' и т.д.
 
-    def update_file_item(self, file_path: str, new_data: dict) -> bool:
+    def update_file_item_old(self, file_path: str, new_data: dict) -> bool:
         """Находит и обновляет элемент по пути файла с уведомлением view"""
+        # TODO 🚧 В разработке: 29.08.2025 метод устарел update_file_item_old можно удалить
         # Добавляем проверку на валидность new_data
         print(f"DEBUG🔍: Поиск файла '{file_path}' в модели")
         if not new_data or not isinstance(new_data, dict):
@@ -776,6 +777,81 @@ class STMDFileTreeModel(QAbstractItemModel):
             else:
                 if len(item.item_data) > 2:
                     print(f"DEBUG: Строка {row}: {item.item_data[2]} (тип: {item.item_data[1]})")
+        print(f"DEBUG❌: Файл '{file_path}' не найден в модели")
+        return False
+
+    def update_file_item(self, file_path: str, new_data: tuple) -> bool:
+        """Находит и обновляет элемент по пути файла с уведомлением view"""
+        print(f"DEBUG🔍: Поиск файла '{file_path}' в модели")
+
+        # Проверяем, что new_data - кортеж и содержит 2 элемента
+        if not new_data or not isinstance(new_data, tuple) or len(new_data) != 2:
+            print(f"Warning: недопустимые новые данные для файла {file_path}: {type(new_data)}")
+            return False
+
+        # Извлекаем тип файла и данные
+        file_type, parsed_data = new_data
+
+        # Проверяем, что данные парсинга - словарь
+        if not isinstance(parsed_data, dict):
+            print(f"Warning: недопустимые данные парсинга для файла {file_path}: {type(parsed_data)}")
+            return False
+
+        # Проверяем, что это поддерживаемый тип файла
+        if file_type not in ['file', 'markdown']:
+            print(f"Warning: неподдерживаемый тип файла {file_type} для {file_path}")
+            return False
+
+        # Работаем с данными парсинга
+        for row in range(self.rowCount()):
+            index = self.index(row, 0)
+            if not index.isValid():
+                continue
+
+            item = index.internalPointer()
+            if not item:
+                continue
+
+            # Проверяем, что это файл и путь совпадает
+            if (len(item.item_data) > 2 and
+                    item.item_data[1] in ['file', 'markdown'] and
+                    item.item_data[2] == file_path):
+
+                # Сохраняем старые данные для сравнения
+                old_children_count = len(item.child_items)
+
+                # Очищаем старых детей с уведомлением
+                if old_children_count > 0:
+                    self.beginRemoveRows(index, 0, old_children_count - 1)
+                    item.child_items.clear()
+                    self.endRemoveRows()
+
+                # Строим новую структуру
+                # Безопасное получение данных с проверками
+                root_name = parsed_data.get('root_name', 'Unknown')
+                structure = parsed_data.get('structure', [])
+
+                # Обновляем имя корневого элемента
+                if len(item.item_data) > 0:
+                    item.item_data[0] = root_name
+
+                # Добавляем новых детей с уведомлением
+                if structure:
+                    new_children_count = len(structure)
+                    self.beginInsertRows(index, 0, new_children_count - 1)
+                    self._build_tree(structure, item)
+                    self.endInsertRows()
+
+                # Уведомляем об изменении самого элемента
+                self.dataChanged.emit(index, index, [Qt.DisplayRole])
+                print(f"DEBUG✅: Файл найден в строке {row}, обновляем...")
+                return True
+
+            # Временно для проверки
+            else:
+                if len(item.item_data) > 2:
+                    print(f"DEBUG: Строка {row}: {item.item_data[2]} (тип: {item.item_data[1]})")
+
         print(f"DEBUG❌: Файл '{file_path}' не найден в модели")
         return False
     def refresh_view(self, parent_index=QModelIndex()):

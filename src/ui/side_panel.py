@@ -222,7 +222,7 @@ class SidePanel(QWidget):
         try:
             print("Пытаемся подключить task_finished...")
             self.background_parser.task_finished.connect(self._on_parsing_done)
-            print("✓ task_finished подключен!")
+            print("💪 task_finished подключен!")
         except Exception as e:
             print(f"✗ Ошибка подключения task_finished: {e}")
 
@@ -347,12 +347,15 @@ class SidePanel(QWidget):
 
             traceback.print_exc()
 
-    def _on_parsing_done(self, file_path: str, parsed_data: dict):
+    def _on_parsing_done(self, file_path: str, parsed_data: dict,*args, **kwargs):
         """Обработчик завершения фонового парсинга"""
-        print(f"✅ Парсинг завершен для: {file_path}")
+        print(f"🚨🚨🚨 _on_parsing_done ВЫЗВАН! args: {args}, kwargs: {kwargs}")
+        print(f"🌤️Парсинг завершен для: {file_path}")
 
         # 1. Сохраняем в кэш
-        self.content_cache.set(file_path, parsed_data)
+        #self.content_cache.set(file_path, parsed_data) проверить изменение
+
+
 
         # 2. Обновляем ВО ВСЕХ вкладках через менеджер моделей
         updated = self.tree_model_manager.update_file_in_all_tabs(file_path)
