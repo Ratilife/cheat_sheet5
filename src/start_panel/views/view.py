@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton,
                                QMenu, QWidget, QInputDialog,
                                QHBoxLayout, QStyle, QDialog)
 from PySide6.QtGui import QIcon, QPixmap, QAction
-from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QSize, Qt, QPoint
+from PySide6.QtCore import Qt, QPoint
 from src.start_panel.models.model import ButtonListModel
 from src.start_panel.views.view_delete_buttons import DeleteButtonsDialog
 from src.start_panel.view_models.view_model_delete_buttons import DeleteButtonsViewModel
@@ -12,7 +12,6 @@ import sys
 from src.ui.customization_start_panel import CostStartPanel
 from src.ui.side_panel import SidePanel
 from src.parsers.file_parser_service import FileParserService
-from src.managers.tree_model_manager_old import TreeModelManager
 
 
 class MainWindow(QMainWindow):
