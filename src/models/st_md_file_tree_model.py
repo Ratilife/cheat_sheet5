@@ -315,8 +315,8 @@ class STMDFileTreeModel(QAbstractItemModel):
                 # ItemIsUserCheckable: элемент может быть отмечен чекбоксом
                 # ItemIsTristate: поддерживает три состояния (выбран/не выбран/частично выбран)
                 flags |= (Qt.ItemFlag.ItemIsAutoTristate |
-                          Qt.ItemFlag.ItemIsUserCheckable |
-                          Qt.ItemFlag.ItemIsTristate)
+                          Qt.ItemFlag.ItemIsUserCheckable
+                          )
         # Возвращаем итоговую комбинацию флагов
         return flags
 
