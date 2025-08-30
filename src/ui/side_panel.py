@@ -79,19 +79,22 @@ class SidePanel(QWidget):
             # 5. Подключите сигналы
             self._connect_signals()
 
-            # 6. Создайте вкладки с деревьями
+            # 6. Подключение сигналов контейнеров
+            self._connect_selection_signals()
+
+            # 7. Создайте вкладки с деревьями
             self._create_tabs_with_trees(self.tab_names)
 
-            # 7. Инициализируйте меню позиционирования
+            # 8. Инициализируйте меню позиционирования
             self._init_position_menu()
 
-            # 8. Настройте прикрепление к краям
+            # 9. Настройте прикрепление к краям
             self._setup_screen_edge_docking()
 
-            # 9. Отладочная информация
+            # 10. Отладочная информация
             self.tree_model_manager.debug_file_to_tabs()
 
-            # 10. ПОКАЗАТЬ панель после инициализации
+            # 11. ПОКАЗАТЬ панель после инициализации
             self.show()
 
         except Exception as e:
@@ -236,9 +239,23 @@ class SidePanel(QWidget):
         print("ПОДКЛЮЧЕНИЕ СИГНАЛОВ - КОНЕЦ")
         print("=" * 50)
 
+    def _connect_selection_signals(self):
+        """Подключает сигналы контроллера выделения"""
+        controller = self.tree_model_manager.selection_controller
+
+        controller.content_requested.connect(self.on_display_content)
+        controller.selection_changed.connect(self.on_update_selection_status)
+        controller.error_occurred.connect(self.on_show_selection_error)
+
+        print("Сигналы контроллера выделения подключены")
+
     def _create_tabs_with_trees(self, tab_name: dict):
         """Создает вкладки с отложенной загрузкой деревьев"""
         self.tab_manager.create_tabs(tab_name)
+        # Подключаем контейнер к деревьям
+        self.tree_model_manager.connect_tree_views(self.tab_manager.trees)
+
+
 
         # Вместо немедленной загрузки всех деревьев,
         # загружаем только первую активную вкладку
@@ -270,6 +287,20 @@ class SidePanel(QWidget):
     def _on_dir_changed(self):
         # TODO 🚧 В разработке: 10.08.2025
         pass
+
+    def on_display_content(self, content_type, content):
+        """Отображает контент в редакторе"""
+        # TODO 🚧 В разработке: 30.08.2025
+        pass
+
+    def on_update_selection_status(self, metadata):
+        """Обновляет статус выделения"""
+        # TODO 🚧 В разработке: 30.08.2025
+        pass
+
+    def on_show_selection_error(self, error_message):
+        """Показывает ошибку выделения"""
+        print(f"Ошибка выделения: {error_message}")
 
     def _on_fill_tab_tree(self, tab_name: str, tree: QTreeWidget):
         # Для проверки
@@ -375,6 +406,7 @@ class SidePanel(QWidget):
 
     def _open_editor(self):
         """Открыть окно редактора файла"""
+        # TODO 🚧 В разработке: 30.08.2025
         pass
 
     # Метод инициализации контекстного меню

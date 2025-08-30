@@ -4,6 +4,7 @@ from src.models.st_md_file_tree_item import STMDFileTreeItem
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
+from src.controllers.selection_controller import TreeSelectionController
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
     def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
@@ -14,6 +15,15 @@ class TreeModelManager(QObject):
 
         self.tab_models = {}    # кэш моделей
         self.file_to_tabs = {}  # Отслеживаем, в каких вкладках какие файлы
+
+        # Добавляем контейнер выделения
+        self.selection_controller = TreeSelectionController(content_cache)
+
+    def connect_tree_views(self, trees_dict: dict):
+        """Подключает контроллер выделения ко всем деревьям"""
+        for tab_name, tree_view in trees_dict.items():
+            self.selection_controller.connect_tree_view(tree_view)
+            print(f"DEBUG: Контроллер подключен к дереву вкладки '{tab_name}'")
 
     def build_model_for_tab(self, tab_name: str, file_paths: list[str]) -> STMDFileTreeModel:
         # ✅ Реализовано: 28.08.2025
