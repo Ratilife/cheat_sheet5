@@ -1,4 +1,5 @@
 from src.managers.ui_manager import UIManager
+from src.operation.file_operations import FileOperations
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QIcon
 class ToolbarManager(QObject):
@@ -28,16 +29,16 @@ class ToolbarManager(QObject):
     copy_action = Signal()
     paste_action = Signal()
 
-    def __init__(self, tree_manager=None, close=None, showMinimized=None):
+    def __init__(self,file_operation: FileOperations,tree_manager=None, close=None, showMinimized=None  ):
         super().__init__()
         self.ui = UIManager()  # Создаем экземпляр UIManager
         self.tree_manager = tree_manager
         self.close = close
+        self.file_operation = file_operation
         self.showMinimized = showMinimized
-        self.tree_model = None
         self._setup_buttons()
         self._setup_toolbars()
-        self._connect_tree_manager()
+        #self._connect_tree_manager()
 
     def _connect_tree_manager(self):
         """Подключает методы TreeManager к кнопкам."""
@@ -78,7 +79,7 @@ class ToolbarManager(QObject):
             fixed_width=20,
             fixed_height=20
         )
-        # self.ui.buttons["collapse_panel_btn"].clicked.connect(self.showMinimized)
+        self.ui.buttons["collapse_panel_btn"].clicked.connect(self.showMinimized)
 
         # Кнопка закрыть панель
         self.ui.create_button(
@@ -99,7 +100,7 @@ class ToolbarManager(QObject):
             fixed_height=20
         )
         self.ui.buttons["edit_btn"].clicked.connect(
-            lambda: self.editor_toggled.emit(True)  # TODO - нет подключения к этому сгналу
+            lambda: self.editor_toggled.emit(True)  # TODO - нет подключения к этому сигналу
         )
         # Кнопка загрузить файл
         self.ui.create_button(
@@ -109,7 +110,7 @@ class ToolbarManager(QObject):
             fixed_width=20,
             fixed_height=20
         )
-        # self.ui.buttons["load_btn"].clicked.connect(self.tree_model.load_st_md_files)
+        self.ui.buttons["load_btn"].clicked.connect(self.file_operation.load_st_md_files)
 
         # Кнопка Создать st-файл
         self.ui.create_button(
@@ -217,29 +218,7 @@ class ToolbarManager(QObject):
             buttons=["cut_btn", "copy_btn", "delete_btn", "paste_btn", "save_btn"]
         )
 
-    def set_tree_model(self, tree_model=None):
-        """
-            Устанавливает модель дерева для ToolbarManager и настраивает связанные сигналы.
 
-            Этот метод выполняет две основные функции:
-            1. Сохраняет переданную модель дерева для последующего использования
-            2. Если модель существует и содержит метод load_st_md_files, автоматически
-             связывает кнопку загрузки (load_btn) с этим методом
-
-            Параметры:
-              tree_model: Модель дерева, реализующая интерфейс работы с файлами.
-                         Должна содержать метод load_st_md_files() для корректной работы
-                         кнопки загрузки. Может быть None для сброса текущей модели.
-
-          Примечание:
-              - Метод безопасно обрабатывает случай, когда tree_model=None
-              - Проверка наличия метода load_st_md_files выполняется динамически,
-                что делает код более гибким к изменениям в интерфейсе модели
-          """
-        # ✅ Реализовано: 10.08.2025
-        self.tree_model = tree_model
-        if self.tree_model and hasattr(self.tree_model, 'load_st_md_files'):
-            self.ui.buttons["load_btn"].clicked.connect(self.tree_model.load_st_md_files)
 
     def get_title_layout(self):
         # ✅ Реализовано: 10.08.2025
