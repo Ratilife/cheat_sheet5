@@ -40,6 +40,7 @@ class TreeModelManager(QObject):
         model = STMDFileTreeModel(self.content_cache)
 
         for file_path in file_paths:
+
             full_data = self.content_cache.get(file_path)
             if full_data:
                 model.add_file(file_path, full_data)
@@ -48,13 +49,52 @@ class TreeModelManager(QObject):
                 if not metadata:
                     metadata = self._parse_metadata(file_path)
                     self.metadata_cache.set(file_path, metadata,
-                                            file_type=metadata.get('type'))
-                model.add_file(file_path, metadata)
+                                        file_type=metadata.get('type'))
+                    model.add_file(file_path, metadata)
 
         self.tab_models[tab_name] = model
         print(f"DEBUG💾: Модель для вкладки '{tab_name}' сохранена в tab_models")
         print(f"DEBUG: Теперь в tab_models: {list(self.tab_models.keys())}")
         return model
+
+    def add_files_to_tab(self, tab_name: str, file_paths: list[str]):
+        """
+        Добавляет файлы в указанную вкладку
+        Args:
+            tab_name: имя целевой вкладки
+            file_paths: список путей к файлам для добавления
+        Returns:
+            bool: успешность операции
+        """
+        # Проверяем существование модели для вкладки
+        if tab_name not in self.tab_models:
+            print(f"DEBUG❌: Модель для вкладки '{tab_name}' не найдена")
+            return False
+
+        # Получаем модель вкладки
+        model = self.tab_models[tab_name]
+
+        # Парсим файлы
+        parsed_data_list = self._parse_content_data(file_paths)
+
+        # Добавляем каждый файл в модель
+        for file_path, parsed_data in zip(file_paths, parsed_data_list):
+            # Добавляем файл в модель
+            success = model.add_file(file_path, parsed_data)
+
+            if success:
+                # Обновляем связи файлов с вкладками
+                if file_path not in self.file_to_tabs:
+                    self.file_to_tabs[file_path] = []
+                if tab_name not in self.file_to_tabs[file_path]:
+                    self.file_to_tabs[file_path].append(tab_name)
+                print(f"DEBUG✅: Файл '{file_path}' добавлен в вкладку '{tab_name}'")
+            else:
+                print(f"DEBUG❌: Не удалось добавить файл '{file_path}'")
+
+        return True
+
+
 
     def update_file_in_all_tabs(self, file_path: str):
         """Обновляет файл во всех вкладках, где он присутствует"""
@@ -84,6 +124,15 @@ class TreeModelManager(QObject):
         """Парсит метаданные файла (вызывает FileParserService)"""
         return self.parser_service.parse_metadata(file_path)
 
+    def _parse_content_data(self,file_paths: list[str]) -> list:
+
+        parser_list= []
+        for file_path in file_paths:
+            parser = self.parser_service.parse_and_get_type(file_path=file_path)
+            # Извлекаем тип файла и данные
+            parser_list.append(parser[1])
+
+        return parser_list
     def update_model(self, tab_name: str, file_path: str):
         """Обновляет модель при получении новых данных и возвращает успешность"""
         # TODO 🚧 В разработке: 28.08.2025
