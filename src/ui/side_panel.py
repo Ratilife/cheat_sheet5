@@ -291,7 +291,18 @@ class SidePanel(QWidget):
     def on_display_content(self, content_type, content):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
-        pass
+
+        # Очищаем предыдущее содержимое
+        self.content_viewer.set_content("") # используем метод MarkdownViewer
+
+        # Обработка разных типов элементов
+        if content_type == 'template':
+            self.content_viewer.set_content(content)
+            self.content_viewer.set_view_mode("text")  # <-- Устанавливаем текстовый режим для ST файлов
+        elif content_type == 'markdown':
+            self.content_viewer.set_content(content)
+            self.content_viewer.set_view_mode("markdown")  # <-- Устанавливаем markdown режим для MD файлов
+
 
     def on_update_selection_status(self, metadata):
         """Обновляет статус выделения"""
@@ -491,7 +502,7 @@ class SidePanel(QWidget):
     def _enable_floating(self):
 
         # TODO 🚧 В разработке: 11.08.2025
-        self.update_dock_position = "float"
+        self.dock_position = "float"
         self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
         self.setWindowTitle("Боковая панель")  # Устанавливаем заголовок окна
         # Снимаем фиксированные размеры и задаем допустимый диапазон
