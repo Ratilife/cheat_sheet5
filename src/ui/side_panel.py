@@ -152,7 +152,7 @@ class SidePanel(QWidget):
                                                 handle_style="QSplitter::handle { background: #ccc; }")
 
         # Создаем toolbar manager
-        self.toolbar_manager = ToolbarManager(self.tree_manager, self.close, self.showMinimized)
+        self.toolbar_manager = ToolbarManager(self.file_operation, self.tree_manager, self.close, self.showMinimized)
 
         # Создаем панель заголовка
         title_layout = self.toolbar_manager.get_title_layout()
