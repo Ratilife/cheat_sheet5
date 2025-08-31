@@ -241,3 +241,10 @@ class FileManager:
 
         return dict_dir_files
 
+
+    def dialog_st_md_files(self):
+        """Загрузка ST-файлов, MD-файлов через диалог"""
+        # ✅ Реализовано: 31.08.2025
+        files, _ = QFileDialog.getOpenFileNames(None,
+                "Открыть файлы", "", "ST Files (*.st);;Markdown Files (*.md)")
+        return files
