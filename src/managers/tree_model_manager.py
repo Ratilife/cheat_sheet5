@@ -50,7 +50,7 @@ class TreeModelManager(QObject):
                     metadata = self._parse_metadata(file_path)
                     self.metadata_cache.set(file_path, metadata,
                                         file_type=metadata.get('type'))
-                    model.add_file(file_path, metadata)
+                model.add_file(file_path, metadata)
 
         self.tab_models[tab_name] = model
         print(f"DEBUG💾: Модель для вкладки '{tab_name}' сохранена в tab_models")
