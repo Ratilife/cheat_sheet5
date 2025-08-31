@@ -10,6 +10,7 @@ class MarkdownViewer(QWidget):
         self._init_ui()
         self._current_mode = 'markdown'
         self.highlighter = None  # Ссылка на экземпляр подсветки синтаксиса
+        self.converter_to_html = MarkdownConverter()
 
     def _init_ui(self):
         """Инициализация интерфейса просмотрщика MD"""
@@ -70,11 +71,12 @@ class MarkdownViewer(QWidget):
         else:
             # Активация markdown режима
             self._current_mode = 'markdown'
-            html = MarkdownConverter.convert_md_to_html(self.text_editor.toPlainText())
+            html = self.converter_to_html.convert_md_to_html(self.text_editor.toPlainText())
             self.markdown_editor.setHtml(html)
 
             self.text_editor.setVisible(False)
             self.markdown_editor.setVisible(True)
+
 
     def set_content(self, text):
         """Установка содержимого редактора"""
@@ -82,7 +84,7 @@ class MarkdownViewer(QWidget):
         self.text_editor.setPlainText(text)
         if self._current_mode == 'markdown':
             # Если в режиме markdown, сразу конвертируем в HTML
-            html = self._convert_md_to_html(text) # TODO 10.08.2025 _convert_md_to_html метод не определен
+            html = self.converter_to_html.convert_md_to_html(text)
             self.markdown_editor.setHtml(html)
 
     def get_content(self):
@@ -106,3 +108,4 @@ class MarkdownViewer(QWidget):
 
         # Вызываем _change_mode для обновления отображения
         self._change_mode()
+
