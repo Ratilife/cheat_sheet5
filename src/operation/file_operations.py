@@ -7,10 +7,10 @@ from src.managers.tree_model_manager import TreeModelManager
 
 
 class FileOperations:
-    def __init__(self, tree_model_manager:TreeModelManager ,file_watcher=None):
+    def __init__(self,file_watcher=None):
         self.file_manager = FileManager()
         self.messenger = DialogManager(console_output=False, gui_output= True)
-        self.tree_model_manager = tree_model_manager
+
     def create_root_folder(self):
         """Создает корневую папку проекта на основе JSON-конфигурации.
 
