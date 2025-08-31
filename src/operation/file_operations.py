@@ -3,12 +3,14 @@ from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks
+from src.managers.tree_model_manager import TreeModelManager
 
 
 class FileOperations:
-    def __init__(self,  file_watcher=None):
+    def __init__(self, tree_model_manager:TreeModelManager ,file_watcher=None):
         self.file_manager = FileManager()
         self.messenger = DialogManager(console_output=False, gui_output= True)
+        self.tree_model_manager = tree_model_manager
     def create_root_folder(self):
         """Создает корневую папку проекта на основе JSON-конфигурации.
 
@@ -108,3 +110,11 @@ class FileOperations:
 
         return dict_dir_files
 
+
+    def load_st_md_files(self, target_tab_name: str):
+        files = self.file_manager.dialog_st_md_files()
+        if files and target_tab_name:
+            self.tree_model_manager.add_files_to_tab(target_tab_name, files)
+        elif not target_tab_name:
+            print("DEBUG: Не выбрана целевая вкладка")
+        #self.file_manager.save_data_to_json()
