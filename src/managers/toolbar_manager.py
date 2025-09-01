@@ -1,5 +1,5 @@
 from src.managers.ui_manager import UIManager
-from src.operation.file_operations import FileOperations
+from src.managers.tree_model_manager import TreeModelManager
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QIcon
 class ToolbarManager(QObject):
@@ -29,12 +29,11 @@ class ToolbarManager(QObject):
     copy_action = Signal()
     paste_action = Signal()
 
-    def __init__(self,file_operation: FileOperations,tree_manager=None, close=None, showMinimized=None  ):
+    def __init__(self,tree_manager=None, close=None, showMinimized=None  ):
         super().__init__()
         self.ui = UIManager()  # Создаем экземпляр UIManager
         self.tree_manager = tree_manager
         self.close = close
-        self.file_operation = file_operation
         self.showMinimized = showMinimized
         self._setup_buttons()
         self._setup_toolbars()
@@ -110,7 +109,7 @@ class ToolbarManager(QObject):
             fixed_width=20,
             fixed_height=20
         )
-        self.ui.buttons["load_btn"].clicked.connect(self.file_operation.load_st_md_files)
+        self.ui.buttons["load_btn"].clicked.connect(self.tree_manager.launching_download)
 
         # Кнопка Создать st-файл
         self.ui.create_button(
