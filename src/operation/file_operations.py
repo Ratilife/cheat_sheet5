@@ -110,11 +110,15 @@ class FileOperations:
 
         return dict_dir_files
 
+    def get_tree_model_manager(self,tree_model_manager: TreeModelManager):
+        self.tree_model_manager = tree_model_manager
 
     def load_st_md_files(self, target_tab_name: str):
+
+        """Обработчик кнопки загрузки файлов"""
         files = self.file_manager.dialog_st_md_files()
         if files and target_tab_name:
-            self.tree_model_manager.add_files_to_tab(target_tab_name, files)
+            #self.file_manager.save_data_to_json()
+            return files
         elif not target_tab_name:
             print("DEBUG: Не выбрана целевая вкладка")
-        #self.file_manager.save_data_to_json()
