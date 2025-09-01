@@ -1,4 +1,5 @@
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
+from PySide6.QtWidgets import QTabWidget
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.models.st_md_file_tree_item import STMDFileTreeItem
 from src.parsers.metadata_cache import MetadataCache
@@ -7,17 +8,31 @@ from src.parsers.content_cache import ContentCache
 from src.controllers.selection_controller import TreeSelectionController
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
-    def __init__(self, parser_service: FileParserService, metadata_cache: MetadataCache, content_cache:ContentCache):
+    def __init__(self, parser_service: FileParserService,metadata_cache: MetadataCache, content_cache:ContentCache):
         super().__init__()
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
         self.content_cache = content_cache
 
+        self._file_operations = None
+
         self.tab_models = {}    # кэш моделей
         self.file_to_tabs = {}  # Отслеживаем, в каких вкладках какие файлы
 
+        self.tab_widgets = {}  # {"side_panel": tab_widget1, "file_editor": tab_widget2}
+        self.widget_priorities = []  # Приоритет окон для поиска
+
         # Добавляем контейнер выделения
         self.selection_controller = TreeSelectionController(content_cache)
+
+    @property
+    def file_operations(self):
+        """Ленивая загрузка FileOperations при первом обращении"""
+        if self._file_operations is None:
+            # Отложенный импорт для избежания циклической зависимости
+            from src.operation.file_operations import FileOperations
+            self._file_operations = FileOperations()
+        return self._file_operations
 
     def connect_tree_views(self, trees_dict: dict):
         """Подключает контроллер выделения ко всем деревьям"""
@@ -94,8 +109,6 @@ class TreeModelManager(QObject):
 
         return True
 
-
-
     def update_file_in_all_tabs(self, file_path: str):
         """Обновляет файл во всех вкладках, где он присутствует"""
         if file_path not in self.file_to_tabs:
@@ -165,7 +178,71 @@ class TreeModelManager(QObject):
             model.beginResetModel()
             model.endResetModel()
 
-    # Если нужно обновлять конкретные элементы(Нужно определится)
+    def register_tab_widget(self, widget_name: str, tab_widget: QTabWidget, priority: int = 0):
+        """
+        Регистрирует tab_widget с приоритетом
+        Args:
+            widget_name: уникальное имя окна
+            tab_widget: ссылка на QTabWidget
+            priority: приоритет (чем выше число, тем выше приоритет)
+        """
+        self.tab_widgets[widget_name] = tab_widget
+        # Обновляем приоритеты
+        self.widget_priorities = sorted(
+            self.tab_widgets.keys(),
+            key=lambda x: priority,
+            reverse=True
+        )
+        print(f"DEBUG: Зарегистрирован '{widget_name}' с приоритетом {priority}")
+
+    def get_active_tab_name_from_any(self) -> tuple[str, str] | None:
+        """
+        Возвращает активную вкладку из любого зарегистрированного окна
+        Returns:
+            tuple: (имя_окна, имя_вкладки) или None
+        """
+        # Ищем по приоритету
+        for widget_name in self.widget_priorities:
+            tab_widget = self.tab_widgets[widget_name]
+            if tab_widget and tab_widget.count() > 0:
+                current_index = tab_widget.currentIndex()
+                if current_index >= 0:
+                    tab_name = tab_widget.tabText(current_index)
+                    print(f"DEBUG: Активная вкладка '{tab_name}' в окне '{widget_name}'")
+                    return widget_name, tab_name
+
+        print("DEBUG: Ни в одном окне нет активных вкладок")
+        return None
+
+    def get_active_tab_info(self) -> dict | None:
+        """
+        Расширенная информация об активной вкладке
+        Returns:
+            dict: {widget_name: str, tab_name: str, tab_widget: QTabWidget}
+        """
+
+        result = self.get_active_tab_name_from_any()
+        if result:
+            widget_name, tab_name = result
+            return {
+                'widget_name': widget_name,
+                'tab_name': tab_name,
+                'tab_widget': self.tab_widgets[widget_name]
+            }
+        return None
+
+    def launching_download(self):
+        result = self.get_active_tab_info()
+
+        if not result:
+           print("Нет активных вкладок ни в одном окне")
+           return
+
+        # Получаем информацию о вкладке
+        tab_name = result['tab_name']
+        files = self.file_operations.load_st_md_files(tab_name)
+        self.add_files_to_tab(tab_name=tab_name,file_paths=files)
+        # Если нужно обновлять конкретные элементы(Нужно определится)
     def refresh_file_in_tabs(self, file_path: str):
         """Обновляет конкретный файл во всех вкладках"""
         # TODO 🚧 В разработке: 28.08.2025 мертвый код refresh_file_in_tabs
