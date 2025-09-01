@@ -110,8 +110,7 @@ class FileOperations:
 
         return dict_dir_files
 
-    def get_tree_model_manager(self,tree_model_manager: TreeModelManager):
-        self.tree_model_manager = tree_model_manager
+
 
     def load_st_md_files(self, target_tab_name: str):
 
