@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from PySide6.QtWidgets import QFileDialog
 from pathlib import Path
 from typing import Dict, List, Union
+from src.global_var.config import get_for_program_path
 
 @dataclass
 class FolderCreationResult:
@@ -44,6 +45,50 @@ class FileManager:
             options=QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
         )
         return folder_path if folder_path else None
+
+    def save_path_for_program(self, path_files: list) -> None:
+        """
+        Сохраняет путь к файлу в папке for_program.
+        Добавляет данные к существующему файлу, если он уже есть.
+        """
+        # ✅ Реализовано: 01.09.2025
+        json_path = Path(os.path.join(get_for_program_path(), "saved_files.json"))
+
+        # 1. Загружаем существующие данные
+        try:
+            existing_data = self.load_json_file(json_path)
+        except RuntimeError:
+            existing_data = []  # Инициализируем пустой список, если загрузка не удалась, чтобы избежать сбоя
+
+        # 2. Формируем новые данные из path_files
+        new_data = []
+        for path_file in path_files:
+            extension_file = Path(path_file).suffix
+            file_type = 'unknown'  # Используем file_type, чтобы не путать с встроенным type()
+            if extension_file.lower() == '.st':
+                file_type = 'file'
+            elif extension_file.lower() == '.md':
+                file_type = 'markdown'
+
+            new_data.append({
+                "path": path_file,
+                "type": file_type
+            })
+
+        # 3. Объединяем существующие данные с новыми
+        if existing_data:
+            # Предполагаем, что данные — это список.
+            # Если данные в JSON могут быть другого типа, нужна дополнительная проверка.
+            merged_data = list(existing_data)
+            merged_data.extend(new_data)
+        else:
+            merged_data = new_data
+
+        # 4. Сохраняем объединённые данные обратно в файл
+        self.save_data_to_json(json_file=json_path, data=merged_data)
+
+
+
 
     def create_root_folder_structure(self, config_path: Union[str, Path],
                                      folder_path: Union[str, Path, None] = None) -> FolderCreationResult:
@@ -146,7 +191,7 @@ class FileManager:
             FileNotFoundError: Если указанный root_path не существует
             RuntimeError: Если target_name существует, но это файл (а не папка)
         """
-        # TODO 04.08.2025 - метод check_path_exists мертвый код, так как метод save_path_root_folder из модуля file_jperation тоже  мертвый код, повторяет функционал метода is_path_already_exists
+        # TODO 04.08.2025 - метод check_path_exists мертвый код, так как метод save_path_root_folder из модуля file_operation тоже  мертвый код, повторяет функционал метода is_path_already_exists
 
             # 🏆task: Работа с окном Настройка для стартовой панели;
         base_path = Path(root_path)
@@ -201,8 +246,9 @@ class FileManager:
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Ошибка парсинга JSON в файле {file_path}: {str(e)}")
 
-    def save_data_to_json(self, json_file: Path, data: dict) -> None:
-        # TODO 🚧 В разработке: 03.08.2025 - метод save_data_to_json Мертвый код, пока не удалять
+    def save_data_to_json(self, json_file: Path, data: any) -> None:
+        """Сохраняет любые данные, совместимые с JSON, в файл."""
+        # ✅ Реализовано: 01.09.2025
 
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)

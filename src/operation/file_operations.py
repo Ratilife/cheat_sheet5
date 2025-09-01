@@ -117,7 +117,7 @@ class FileOperations:
         """Обработчик кнопки загрузки файлов"""
         files = self.file_manager.dialog_st_md_files()
         if files and target_tab_name:
-            #self.file_manager.save_data_to_json()
+            self.file_manager.save_path_for_program(files)
             return files
         elif not target_tab_name:
             print("DEBUG: Не выбрана целевая вкладка")
