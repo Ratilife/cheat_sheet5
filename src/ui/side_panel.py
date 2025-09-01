@@ -97,6 +97,15 @@ class SidePanel(QWidget):
             # 11. ПОКАЗАТЬ панель после инициализации
             self.show()
 
+            # 12. Регистрируем с высоким приоритетом
+            self.tree_model_manager.register_tab_widget(
+                "side_panel",
+                self.tab_widget,
+                priority=100  # Высокий приоритет
+            )
+
+
+
         except Exception as e:
             print(f"Ошибка при инициализации SidePanel: {e}")
             import traceback
@@ -152,7 +161,9 @@ class SidePanel(QWidget):
                                                 handle_style="QSplitter::handle { background: #ccc; }")
 
         # Создаем toolbar manager
-        self.toolbar_manager = ToolbarManager(self.file_operation, self.tree_manager, self.close, self.showMinimized)
+        self.toolbar_manager = ToolbarManager( tree_manager=self.tree_model_manager,
+                                               close=self.close,
+                                               showMinimized=self.showMinimized)
 
         # Создаем панель заголовка
         title_layout = self.toolbar_manager.get_title_layout()
@@ -169,6 +180,9 @@ class SidePanel(QWidget):
         main_layout.addWidget(self.splitter)
 
         self.setLayout(main_layout)
+
+
+
 
     def _init_managers(self)->None:
         """Инициализация всех менеджеров и сервисов"""
