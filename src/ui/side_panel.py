@@ -105,7 +105,6 @@ class SidePanel(QWidget):
             )
 
 
-
         except Exception as e:
             print(f"Ошибка при инициализации SidePanel: {e}")
             import traceback
