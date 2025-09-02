@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
-from src.global_var.config import update_root_folder, get_bookmarks
+from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
 from src.managers.tree_model_manager import TreeModelManager
 
 
@@ -51,7 +51,6 @@ class FileOperations:
                 exception=e
             )
 
-
     def save_path_root_folder(self,root_path: str, target_name: str):
          # TODO 🚧 В разработке: 03.08.2025 - метод уже не актуален (мертвый код) Нужен пока как пример
             # 🏆task: Работа с окном Настройка для стартовой панели;
@@ -90,14 +89,11 @@ class FileOperations:
              self.file_manager.save_data_to_json(json_file, data)
              self.messenger.show_info("Файл успешно создан", timeout_ms=5000)
 
-
     def get_path_root_folder(self,json_file):
         # TODO 🚧 В разработке: 04.08.2025 - мертвый код get_path_root_folder
             # 🏆task: Работа с окном Настройка для стартовой панели;
         if self.file_manager.is_path_already_exists(json_file):
             pass
-
-    
 
     def fetch_file_heararchy(self):
         """Получает иерархию файлов из папки закладок в виде словаря.
@@ -132,8 +128,6 @@ class FileOperations:
 
         return dict_dir_files
 
-
-
     def load_st_md_files(self, target_tab_name: str)->list:
 
         """Обработчик кнопки загрузки файлов"""
@@ -144,3 +138,22 @@ class FileOperations:
             return files
         elif not target_tab_name:
             print("DEBUG: Не выбрана целевая вкладка")
+
+    def extend_dict_with_file(self,file_name: str,tab_names:dict)->dict:
+        # ✅ Реализовано: 02.09.2025
+
+        path_folder_for_program = get_for_program_path()
+        path_file = Path(path_folder_for_program) / file_name
+
+        if self.file_manager.is_path_already_exists(path_file):
+            data_file = self.file_manager.load_json_file(path_file)
+
+            for item in data_file:
+                tab_name = item['tab_name']
+                path_item = item['path']
+                if tab_name in tab_names:
+                    tab_names[tab_name].append(path_item)
+                else:
+                    tab_names[tab_name] = [path_item]
+
+        return tab_names
