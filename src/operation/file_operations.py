@@ -97,6 +97,7 @@ class FileOperations:
         if self.file_manager.is_path_already_exists(json_file):
             pass
 
+    
 
     def fetch_file_heararchy(self):
         # ✅ Реализовано: 12.08.2025
@@ -112,12 +113,13 @@ class FileOperations:
 
 
 
-    def load_st_md_files(self, target_tab_name: str):
+    def load_st_md_files(self, target_tab_name: str)->list:
 
         """Обработчик кнопки загрузки файлов"""
+        # ✅ Реализовано: 01.09.2025
         files = self.file_manager.dialog_st_md_files()
         if files and target_tab_name:
-            self.file_manager.save_path_for_program(files)
+            self.file_manager.save_path_for_program(target_tab_name,files)
             return files
         elif not target_tab_name:
             print("DEBUG: Не выбрана целевая вкладка")

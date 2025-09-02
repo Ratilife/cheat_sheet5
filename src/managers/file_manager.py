@@ -46,7 +46,7 @@ class FileManager:
         )
         return folder_path if folder_path else None
 
-    def save_path_for_program(self, path_files: list) -> None:
+    def save_path_for_program(self, tab_name: str,path_files: list) -> None:
         """
         Сохраняет путь к файлу в папке for_program.
         Добавляет данные к существующему файлу, если он уже есть.
@@ -72,7 +72,8 @@ class FileManager:
 
             new_data.append({
                 "path": path_file,
-                "type": file_type
+                "type": file_type,
+                "tab_name": tab_name
             })
 
         # 3. Объединяем существующие данные с новыми
