@@ -16,6 +16,7 @@ from src.managers.tree_model_manager import TreeModelManager
 from src.parsers.background_parser import BackgroundParser,Priority
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.metadata_cache import MetadataCache
+from src.ui.file_editor import FileEditorWindow
 class SidePanelObserver(MyBaseObserver):
     # ✅ Реализовано: 29.06.2025
     def __init__(self):
@@ -247,6 +248,8 @@ class SidePanel(QWidget):
                 self.tree_model_manager.model_updated.connect(self._on_model_updated)
                 print("model_updated подключен!")
 
+            self.toolbar_manager.editor_toggled.connect(self._open_editor)
+
         except Exception as e:
             print(f"ОШИБКА при подключении сигналов: {e}")
             import traceback
@@ -457,8 +460,10 @@ class SidePanel(QWidget):
 
     def _open_editor(self):
         """Открыть окно редактора файла"""
-        # TODO 🚧 В разработке: 30.08.2025
-        pass
+        # ✅ Реализовано: 02.09.2025
+        if not hasattr(self,'editor_window'):
+            self.editor_window = FileEditorWindow(self)
+        self.editor_window.show()
 
     # Метод инициализации контекстного меню
 
