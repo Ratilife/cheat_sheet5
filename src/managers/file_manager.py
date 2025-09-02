@@ -1,3 +1,19 @@
+"""
+FileManager - модуль для управления файлами и папками.
+
+Класс FileManager предоставляет методы для работы с файловой системой:
+- ✅ get_create_folder_path() - диалог выбора папки с созданием новой
+- ✅ save_path_for_program() - сохранение путей файлов в JSON
+- ✅ create_root_folder_structure() - создание иерархии папок из JSON-конфига
+- ❌check_path_exists() - проверка существования пути  мертвый код
+- ✅ is_path_already_exists() - проверка существования файла/папки
+- ✅ load_json_file() - загрузка данных из JSON-файла
+- ✅ save_data_to_json() - сохранение данных в JSON-файл
+- ✅ create_files_dict_with_paths() - создание словаря файлов .md и .st
+- ✅ dialog_st_md_files() - диалог выбора ST/MD файлов
+
+Вспомогательный класс FolderCreationResult хранит результат создания папки.
+"""
 import json
 import os
 from dataclasses import dataclass
