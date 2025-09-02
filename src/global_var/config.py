@@ -46,7 +46,7 @@ ROOT_FOLDER_DATA: Dict[str, Optional[str]] = {
 }
 FOR_PROGRAM_PATH:  Optional[str] = None
 BOOKMARKS_PATH:  Optional[str] = None
-def set_for_program_path():
+def set_for_program_path()-> None:
     """ Устанавливает глобальный путь для директории 'for_program'.
 
         Эта функция определяет корневую директорию приложения с помощью
@@ -64,7 +64,7 @@ def set_for_program_path():
     for_program_path = os.path.join(root_folder_path['path'], "for_program")
     FOR_PROGRAM_PATH = for_program_path
 
-def get_for_program_path():
+def get_for_program_path()-> str:
     return  FOR_PROGRAM_PATH
 
 def set_bookmarks():
