@@ -310,7 +310,6 @@ class SidePanel(QWidget):
     def on_display_content(self, content_type, content):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
-        pass
 
         # Очищаем предыдущее содержимое
         self.content_viewer.set_content("") # используем метод MarkdownViewer
@@ -326,7 +325,7 @@ class SidePanel(QWidget):
 
     def on_update_selection_status(self, metadata):
         """Обновляет статус выделения"""
-        # TODO 🚧 В разработке: 30.08.2025
+        # TODO 🚧 В разработке: 30.08.2025 - забыл зачем нужен этот метод on_update_selection_status
         pass
 
     def on_show_selection_error(self, error_message):
