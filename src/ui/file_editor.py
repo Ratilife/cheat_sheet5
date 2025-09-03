@@ -1,7 +1,7 @@
 from src.observers.my_base_observer import MyBaseObserver
-
-from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout,QWidget)
-
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter)
+from src.widgets.markdown_viewer_widget import MarkdownViewer
 class FileEditorWindowObserver(MyBaseObserver):
     # ✅ Реализовано: 30.06.2025
     def __init__(self):
@@ -29,23 +29,55 @@ class FileEditorWindow(QMainWindow):
 
     def _init_ui(self):
         """Инициализация пользовательского интерфейса"""
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-        layout = QVBoxLayout(main_widget)
+        main_widget = QWidget()                          # Создаем центральный виджет окна
+        self.setCentralWidget(main_widget)               # Устанавливаем его как центральный виджет окна
+        main_layout = QVBoxLayout(main_widget)                # Создаем вертикальный layout для основного виджета
+        main_layout.setContentsMargins(5, 5, 5, 5)            # Устанавливаем минимальные отступы layout
+
+        # Разделитель для дерева и редактора
+        self.splitter = QSplitter(Qt.Vertical)  # Вертикальный разделитель
+
+        # Создаем панель инструментов над деревом
+        toolbar_to_tree_layout = self.toolbar_manager.get_above_tree_toolbar_editor()
+        main_layout.addWidget(toolbar_to_tree_layout)
 
         # Добавляем tab_widget с всеми вкладками
-        layout.addWidget(self.tab_widget)
+        main_layout.addWidget(self.tab_widget)
 
         # Текстовый редактор и другие элементы...
         self.text_editor = QTextEdit()
-        layout.addWidget(self.text_editor)
+        self.text_editor.setAcceptRichText(False)  # Режим plain text  Отключаем форматированный текст
+
+
+
+        # Контейнер для редактора и кнопок
+        editor_container = QWidget()  # Контейнерный виджет
+        editor_layout = QVBoxLayout(editor_container)  # Вертикальный layout
+        editor_layout.setContentsMargins(0, 0, 0, 0)  # Без отступов
+        editor_layout.setSpacing(0)  # Без промежутков
+
+        # Создаем панель инструментов над редактаром
+        editor_toolbar = self.toolbar_manager.get_editor_toolbar()
+
+        # Добавляем кнопки над редактором
+        editor_layout.addWidget(editor_toolbar)
+        editor_layout.addWidget(self.text_editor)
+
+
+
+
+        #Добавляем разделитель
+        #self.splitter.addWidget(self.tree_view)
+        self.splitter.addWidget(editor_container)
+        # Добавляем разделитель в основной layout
+        main_layout.addWidget(self.splitter)
+
+        #main_layout.addWidget(self.text_editor)
 
         # Подключаем сигналы
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         # Подключаемся к сигналу обновления моделей
         self.tree_model_manager.model_updated.connect(self._on_model_updated)
-
-
 
     def  _setup_managers(self, tree_model_manager, toolbar_manager):
         """Устанавливает менеджеры и инициализирует интерфейс"""
@@ -65,7 +97,9 @@ class FileEditorWindow(QMainWindow):
         for tab_name, model in self.all_models.items():
             tree_view = QTreeView()
             tree_view.setModel(model)
+            tree_view.header().hide()  # Скрываем заголовок колонки
             self.tab_widget.addTab(tree_view, tab_name)
+
 
         # Устанавливаем активную вкладку как в SidePanel
         active_info = tree_model_manager.get_active_tab_info()
@@ -75,6 +109,14 @@ class FileEditorWindow(QMainWindow):
             )
 
         self._init_ui()
+
+    def _connect_selection_signals(self):
+        """Подключает сигналы контроллера выделения"""
+        controller = self.tree_model_manager.selection_controller
+        controller.content_requested.connect(self.on_display_content)
+        controller.error_occurred.connect(self.on_show_selection_error)
+
+        print("Сигналы контроллера выделения подключены")
 
     def _refresh_view_for_file(self, model, file_path):
         """Принудительно обновляет view для конкретного файла"""
@@ -154,7 +196,8 @@ class FileEditorWindow(QMainWindow):
         active_info = self.tree_model_manager.get_active_tab_info()
         if active_info and active_info['tab_name'] != tab_name:
             # Устанавливаем активную вкладку в менеджере
-            self.tree_model_manager.set_active_tab(tab_name)
+            #self.tree_model_manager.set_active_tab(tab_name)
+            pass
 
         # 2. Обновление UI
         self.setWindowTitle(f"Редактор файлов - {tab_name}")
@@ -165,7 +208,7 @@ class FileEditorWindow(QMainWindow):
             # Обновляем содержимое редактора на основе выбранного элемента
             selected_indexes = self.tree_view.selectedIndexes()
             if selected_indexes:
-                self._on_tree_selection_changed(selected_indexes[0])
+                self._on_tree_selection_changed(selected_indexes[0])  # TODO тут будет ошибка
             else:
                 self.text_editor.clear()
 
@@ -177,3 +220,20 @@ class FileEditorWindow(QMainWindow):
 
         # 5. Логирование для отладки
         print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
+
+    def _on_tree_selection_changed(self):
+        # взять данные из полного кэш
+        pass
+
+    def on_display_content(self, content_type, content):
+        """Отображает контент в редакторе"""
+        # TODO 🚧 В разработке: 30.08.2025
+
+        # Очищаем предыдущее содержимое редактора
+
+
+        # Обработка разных типов элементов
+        if content_type == 'template':
+            pass
+        elif content_type == 'markdown':
+            pass
