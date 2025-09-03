@@ -17,9 +17,9 @@ import os
 # Импорт компонентов ANTLR
 from antlr4 import FileStream, CommonTokenStream, ParseTreeWalker
 from antlr4.error.ErrorListener import ErrorListener
-from src.ANTLR4.STFileLexer import STFileLexer
-from src.ANTLR4.STFileParser import STFileParser
-from src.ANTLR4.STFileListener import STFileListener
+from ANTLR4.st_grammar.STFileLexer import STFileLexer
+from ANTLR4.st_grammar.STFileParser import STFileParser
+from ANTLR4.st_grammar.STFileListener import STFileListener
 # ===================================================================
 # КЛАССЫ ДЛЯ ПАРСИНГА ST-ФАЙЛОВ
 # ===================================================================
