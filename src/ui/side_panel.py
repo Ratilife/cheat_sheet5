@@ -30,6 +30,8 @@ class SidePanel(QWidget):
         self.observer = SidePanelObserver()
         self.file_operation = FileOperations()
 
+        self._template_name = "Тут будет текст"
+
         # Установите минимальные размеры и флаги
         self.setMinimumWidth(300)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
@@ -176,6 +178,20 @@ class SidePanel(QWidget):
         self.tab_widget = self.tab_manager.tab_widget
         self.tab_widget.setTabPosition(QTabWidget.West)
         main_layout.addWidget(self.tab_widget)
+
+        # Отображение template_name
+        template_label = QLabel(f"Шаблон: {self.template_name}")
+        template_label.setStyleSheet("""
+                    QLabel {
+                        background-color: #e0e0e0;
+                        padding: 5px;
+                        color: #555;
+                        font-size: 10px;
+                        border-bottom: 1px solid #ccc;
+                    }
+                """)
+        template_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(template_label)
 
         # Нижняя панель
         self.content_viewer = MarkdownViewer()
@@ -682,3 +698,8 @@ class SidePanel(QWidget):
 
     def set_manedger(self,tree_model_manager:TreeModelManager):
         self.tree_model_manager = tree_model_manager
+
+    @property
+    def template_name(self):
+        """Возвращает имя шаблона (только для чтения)"""
+        return self._template_name
