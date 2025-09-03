@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
                                QTreeWidget, QApplication,
                                QMenu, QLabel, QPushButton, )
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QCursor
 
 from src.parsers.content_cache import ContentCache
 from src.managers.dynamic_tabs import DynamicTabManager
@@ -462,7 +462,28 @@ class SidePanel(QWidget):
         # ✅ Реализовано: 02.09.2025
         if not hasattr(self,'editor_window'):
             self.editor_window = FileEditorWindow(self)
+            # Центрируем окно на экране
+            self._center_window(self.editor_window)
         self.editor_window.show()
+
+    def _center_window(self, window):
+        """Центрирует окно на активном мониторе"""
+        # Получаем монитор, на котором находится курсор
+        cursor_pos = QCursor.pos()
+        screen = QApplication.screenAt(cursor_pos)
+
+        if not screen:
+            # Если не нашли монитор, используем основной
+            screen = QApplication.primaryScreen()
+
+        screen_geometry = screen.availableGeometry()
+
+        # Вычисляем центральную позицию
+        x = screen_geometry.x() + (screen_geometry.width() - window.width()) // 2
+        y = screen_geometry.y() + (screen_geometry.height() - window.height()) // 2
+
+        # Устанавливаем позицию окна
+        window.move(x, y)
 
     # Метод инициализации контекстного меню
 
