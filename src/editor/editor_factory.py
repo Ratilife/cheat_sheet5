@@ -19,4 +19,5 @@ class EditorFactory:
             # Можно добавить другие форматы
         }
 
-        return editor_registry.get(extension, PlainTextEditor)(parent)
+        editor_class = editor_registry.get(extension, PlainTextEditor)
+        return editor_class(parent)

@@ -33,3 +33,4 @@ class BaseFileEditor(ABC):
     def restore_state(self):
         # восстановление_состояния
         pass
+
