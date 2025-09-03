@@ -1,6 +1,7 @@
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter)
+from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
+                               QHBoxLayout, QLabel, QLineEdit)
 from src.widgets.markdown_viewer_widget import MarkdownViewer
 class FileEditorWindowObserver(MyBaseObserver):
     # ✅ Реализовано: 30.06.2025
@@ -21,6 +22,7 @@ class FileEditorWindow(QMainWindow):
         # Создаем экземпляр класса для сигналов
         self.observer = FileEditorWindowObserver()
 
+        self.template_name = "Тут будет текст"
         self.setWindowTitle("Редактор файлов")
         self.setMinimumSize(800,500)
 
@@ -38,6 +40,7 @@ class FileEditorWindow(QMainWindow):
 
         # Создаем горизонтальный разделитель для дерева и редактора
         self.main_splitter = QSplitter(Qt.Horizontal)  # Горизонтальный разделитель!
+
         #  Контейнер для дерева файлов (вкладок)
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
@@ -63,10 +66,29 @@ class FileEditorWindow(QMainWindow):
         editor_layout.setContentsMargins(0, 0, 0, 0)  # Без отступов
         editor_layout.setSpacing(0)  # Без промежутков
 
+        # Создаем горизонтальный контейнер для панели инструментов и имени шаблона
+        toolbar_template_container = QWidget()
+        toolbar_template_layout = QHBoxLayout(toolbar_template_container)
+        toolbar_template_layout.setContentsMargins(0, 0, 0, 0)
+        toolbar_template_layout.setSpacing(5)
 
         # Создаем панель инструментов над редактаром
         editor_toolbar = self.toolbar_manager.get_editor_toolbar()
-        editor_layout.addWidget(editor_toolbar)
+        toolbar_template_layout.addWidget(editor_toolbar)
+
+        #  Поле для отображения и редактирования template_name в той же строке
+        template_label = QLabel()
+        self.template_edit = QLineEdit(self.template_name)
+        self.template_edit.textChanged.connect(self._on_template_changed)
+
+        # Добавляем растягивающее пространство между toolbar и template
+        toolbar_template_layout.addStretch()  # Добавляем растягивающее пространство
+
+        toolbar_template_layout.addWidget(template_label)
+        toolbar_template_layout.addWidget(self.template_edit)
+
+        #  Добавляем общий контейнер в editor_layout
+        editor_layout.addWidget(toolbar_template_container)
 
         # Текстовый редактор и другие элементы...
         self.text_editor = QTextEdit()
@@ -250,3 +272,9 @@ class FileEditorWindow(QMainWindow):
             pass
         elif content_type == 'markdown':
             pass
+
+    def _on_template_changed(self, text):
+        """Обработчик изменения имени шаблона"""
+        # ✅ Реализовано: 03.09.2025
+        self.template_name = text
+        print(f"Имя шаблона изменено на: {self.template_name}")
