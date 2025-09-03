@@ -33,20 +33,27 @@ class FileEditorWindow(QMainWindow):
         self.setCentralWidget(main_widget)               # Устанавливаем его как центральный виджет окна
         main_layout = QVBoxLayout(main_widget)                # Создаем вертикальный layout для основного виджета
         main_layout.setContentsMargins(5, 5, 5, 5)            # Устанавливаем минимальные отступы layout
+        main_layout.setSpacing(5)                        # Устанавливаем промежуток между виджетами
 
-        # Разделитель для дерева и редактора
-        self.splitter = QSplitter(Qt.Vertical)  # Вертикальный разделитель
+
+        # Создаем горизонтальный разделитель для дерева и редактора
+        self.main_splitter = QSplitter(Qt.Horizontal)  # Горизонтальный разделитель!
+        #  Контейнер для дерева файлов (вкладок)
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        tree_layout.setContentsMargins(0, 0, 0, 0)
+        tree_layout.setSpacing(0)
+
+        # Добавляем tab_widget с всеми вкладками
+        tree_layout.addWidget(self.tab_widget)
+
+        # Контейнер с деревом добавлен в разделитель
+        self.main_splitter.addWidget(tree_container)
+
 
         # Создаем панель инструментов над деревом
         toolbar_to_tree_layout = self.toolbar_manager.get_above_tree_toolbar_editor()
         main_layout.addWidget(toolbar_to_tree_layout)
-
-        # Добавляем tab_widget с всеми вкладками
-        main_layout.addWidget(self.tab_widget)
-
-        # Текстовый редактор и другие элементы...
-        self.text_editor = QTextEdit()
-        self.text_editor.setAcceptRichText(False)  # Режим plain text  Отключаем форматированный текст
 
 
 
@@ -56,21 +63,27 @@ class FileEditorWindow(QMainWindow):
         editor_layout.setContentsMargins(0, 0, 0, 0)  # Без отступов
         editor_layout.setSpacing(0)  # Без промежутков
 
+
         # Создаем панель инструментов над редактаром
         editor_toolbar = self.toolbar_manager.get_editor_toolbar()
-
-        # Добавляем кнопки над редактором
         editor_layout.addWidget(editor_toolbar)
+
+        # Текстовый редактор и другие элементы...
+        self.text_editor = QTextEdit()
+        self.text_editor.setAcceptRichText(False)  # Режим plain text  Отключаем форматированный текст
         editor_layout.addWidget(self.text_editor)
 
-
-
-
         #Добавляем разделитель
-        #self.splitter.addWidget(self.tree_view)
-        self.splitter.addWidget(editor_container)
+        self.main_splitter.addWidget(editor_container)
+
+        # Устанавливаем начальные пропорции (дерево 30%, редактор 70%)
+        self.main_splitter.setSizes([300, 700])
+
+        #  Разрешаем пользователю изменять размеры
+        self.main_splitter.setChildrenCollapsible(False)  # Не позволяем полностью скрывать части
+
         # Добавляем разделитель в основной layout
-        main_layout.addWidget(self.splitter)
+        main_layout.addWidget(self.main_splitter)
 
         #main_layout.addWidget(self.text_editor)
 
