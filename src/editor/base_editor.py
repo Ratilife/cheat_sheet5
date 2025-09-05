@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QWidget
 
+class Meta(type(QObject), type(ABC)):
+    """Метакласс для разрешения конфликта между QObject и ABC"""
+    pass
 
-class BaseFileEditor(QWidget, ABC):
+
+class BaseFileEditor(QWidget, ABC, metaclass=Meta):
     """
         Абстрактный базовый класс для всех редакторов файлов.
         Наследуется от QWidget, так как каждый редактор будет виджетом для размещения в UI.
