@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from editor.base_editor import BaseFileEditor
+from editor.editor_factory import EditorFactory
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
@@ -150,6 +154,7 @@ class FileEditorWindow(QMainWindow):
         controller = self.tree_model_manager.selection_controller
         controller.content_requested.connect(self.on_display_content)
         controller.error_occurred.connect(self.on_show_selection_error)
+        controller.selection_changed.connect(self._on_selection_changed)
 
         print("Сигналы контроллера выделения подключены")
 
@@ -212,8 +217,15 @@ class FileEditorWindow(QMainWindow):
 
     def _on_tab_changed(self, index):
         """
-        Обрабатывает переключение между вкладками в FileEditorWindow
-        и синхронизирует состояние с другими окнами
+        Слот-обработчик сигнала currentChanged от QTabWidget.
+        Вызывается автоматически в двух случаях:
+            1. ✅ При ПРЯМОМ ВЗАИМОДЕЙСТВИИ ПОЛЬЗОВАТЕЛЯ: клик на другую вкладку
+            2. ✅ При ПРОГРАММНОМ ИЗМЕНЕНИИ ВКЛАДКИ: вызов tab_widget.setCurrentIndex()
+
+            ВКЛЮЧАЯ первоначальную установку вкладки при создании окна в _setup_managers().
+
+            Обрабатывает переключение между вкладками в FileEditorWindow
+            и синхронизирует состояние с другими окнами.
 
         Args:
             index (int): Индекс новой активной вкладки
@@ -228,26 +240,22 @@ class FileEditorWindow(QMainWindow):
         print(f"DEBUG: Переключена вкладка: {tab_name}")
 
         # 1. Синхронизация с TreeModelManager
-        active_info = self.tree_model_manager.get_active_tab_info()
-        if active_info and active_info['tab_name'] != tab_name:
+        #active_info = self.tree_model_manager.get_active_tab_info()
+
+        #if active_info and active_info['tab_name'] != tab_name:
             # Устанавливаем активную вкладку в менеджере
             #self.tree_model_manager.set_active_tab(tab_name)
-            pass
+
 
         # 2. Обновление UI
         self.setWindowTitle(f"Редактор файлов - {tab_name}")
 
         # 3. Получаем модель для текущей вкладки
         current_model = self.all_models.get(tab_name)
-        if current_model:
-            # Обновляем содержимое редактора на основе выбранного элемента
-            selected_indexes = self.tree_view.selectedIndexes()
-            if selected_indexes:
-                self._on_tree_selection_changed(selected_indexes[0])  # TODO тут будет ошибка
-            else:
-                self.text_editor.clear()
+
 
         # 4. Обновление статусбара
+        # TODO 05.09.2025 технически правильно, но логически неверно
         file_count = current_model.rowCount() if current_model else 0
         self.statusBar().showMessage(
             f"Вкладка: {tab_name} | Файлов: {file_count} | Готово"
@@ -256,25 +264,103 @@ class FileEditorWindow(QMainWindow):
         # 5. Логирование для отладки
         print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
 
-    def _on_tree_selection_changed(self):
-        # взять данные из полного кэш
-        pass
+
 
     def on_display_content(self, content_type, content):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
+        try:
+            # 1. Создаем appropriate редактор через фабрику
+            editor = EditorFactory.create_editor_for_type(content_type, self)  # TODO 05.09.2025 написать метод create_editor_for_type
 
-        # Очищаем предыдущее содержимое редактора
+            # 2. Устанавливаем контент в редактор
+            editor.set_content(content)
 
+            # 3. Заменяем текущий редактор в UI
+            self._set_current_editor(editor)
 
-        # Обработка разных типов элементов
+            # 4. Обновляем статус
+            self.statusBar().showMessage(f"Загружен контент типа: {content_type}")
+        except Exception as e:
+            print(f"Ошибка при отображении контента: {e}")
+            self.statusBar().showMessage(f"Ошибка загрузки: {str(e)}")
+            # Можно показать ошибку в редакторе
+            self.text_editor.setPlainText(f"Ошибка загрузки контента:\n{str(e)}")
+
+    '''    # Обработка разных типов элементов
         if content_type == 'template':
             pass
         elif content_type == 'markdown':
             pass
+    '''
+
 
     def _on_template_changed(self, text):
         """Обработчик изменения имени шаблона"""
         # ✅ Реализовано: 03.09.2025
         self.template_name = text
         print(f"Имя шаблона изменено на: {self.template_name}")
+
+    def _set_current_editor(self, editor: BaseFileEditor):
+        """
+        Заменяет текущий редактор в пользовательском интерфейсе.
+        Args:
+            editor: Новый экземпляр редактора (наследник BaseFileEditor)
+        """
+        # 1. Удаляем старый редактор (если был)
+        if hasattr(self, 'current_editor') and self.current_editor:
+            # Отключаем все сигналы от старого редактора
+            try:
+                self.current_editor.modification_changed.disconnect()
+            except:
+                pass
+
+            # Удаляем виджет старого редактора из layout
+            old_editor_widget = self.current_editor.get_editor_widget()
+            self.editor_layout.removeWidget(old_editor_widget)
+            old_editor_widget.deleteLater()
+
+        # 2. Сохраняем ссылку на новый редактор
+        self.current_editor = editor
+
+        # 3. Добавляем виджет нового редактора в layout
+        editor_widget = editor.get_editor_widget()
+        self.editor_layout.addWidget(editor_widget)
+
+        # 4. Подключаем сигналы нового редактора
+        editor.modification_changed.connect(self._on_editor_modified)
+        # Можно подключить другие сигналы: error_occurred, validation_finished
+
+        # 5. Обновляем UI в соответствии с состоянием нового редактора
+        self._update_window_title(editor.is_modified)
+        self._update_toolbar_actions(editor.get_available_actions())
+
+    def _on_editor_modified(self, is_modified: bool):
+        """Обновляет UI при изменении состояния редактора"""
+        # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _on_editor_modified
+        # Обновляем заголовок окна (добавляем/убираем *)
+        title = self.windowTitle().replace(' *', '')
+        if is_modified:
+            title += ' *'
+        self.setWindowTitle(title)
+
+        # Активируем/деактивируем кнопку Сохранить
+        if hasattr(self, 'save_action'):
+            self.save_action.setEnabled(is_modified)
+
+    def _update_toolbar_actions(self, actions: list):
+        """Обновляет панель инструментов actions редактора"""
+        # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
+        # Очищаем текущую панель
+        self.editor_toolbar.clear()
+
+        # Добавляем общие действия (Сохранить, Отменить)
+        self.editor_toolbar.addAction(self.save_action)
+        self.editor_toolbar.addAction(self.undo_action)
+
+        # Добавляем разделитель
+        self.editor_toolbar.addSeparator()
+
+        # Добавляем специфичные actions редактора
+        for action in actions:
+            self.editor_toolbar.addAction(action)
