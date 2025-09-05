@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Type, Dict, Optional, List
 from PySide6.QtWidgets import QWidget
 
-from src.editors.base_editor import BaseFileEditor
+from src.editor.base_editor import BaseFileEditor
 # Предполагается, что конкретные редакторы будут реализованы в этих модулях
 from src.editor.markdown_editor import MarkdownEditor
 from src.editor.st_editor import STEditor
