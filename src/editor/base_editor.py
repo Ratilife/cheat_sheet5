@@ -21,8 +21,7 @@ class BaseFileEditor(QWidget, ABC):
 
     def __init__(self, parent=None):
         # Важно: инициализируем оба родительских класса
-        QWidget.__init__(self, parent=parent)
-        ABC.__init__(self)
+        super().__init__(parent=parent)
         self._file_path = None
         self._is_modified = False
 
