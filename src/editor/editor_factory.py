@@ -14,10 +14,8 @@ from src.editor.plain_text_editor import PlainTextEditor
 class EditorFactory:
     """
     Фабрика для создания редакторов файлов на основе расширения.
-
     Класс предоставляет статические методы для создания экземпляров редакторов,
     соответствующих различным типам файлов. Реализует паттерн "Фабричный метод".
-
     Attributes:
         _registry (Dict[str, Type[BaseFileEditor]]): Реестр сопоставления
             расширений файлов классам редакторов.
@@ -25,9 +23,9 @@ class EditorFactory:
 
     # Реестр сопоставления расширений файлов классам редакторов
     _registry: Dict[str, Type[BaseFileEditor]] = {
-        '.md': MarkdownEditor,  # Редактор для Markdown-файлов
-        '.st': STEditor,  # Редактор для Structured Text файлов
-        '.txt': PlainTextEditor,  # Редактор для простого текста
+        '.md': MarkdownEditor,          # Редактор для Markdown-файлов
+        '.st': STEditor,                # Редактор для Structured Text файлов
+        '.txt': PlainTextEditor,        # Редактор для простого текста
         # Можно добавлять другие расширения по мере реализации редакторов
     }
 
@@ -35,14 +33,11 @@ class EditorFactory:
     def create_editor(extension: str, parent: Optional[QWidget] = None) -> BaseFileEditor:
         """
         Создает и возвращает редактор для указанного расширения файла.
-
         Args:
             extension (str): Расширение файла (с точкой, например: '.md', '.st').
             parent (Optional[QWidget]): Родительский виджет для редактора.
-
         Returns:
             BaseFileEditor: Экземпляр редактора, соответствующий расширению.
-
         Raises:
             ValueError: Если расширение не поддерживается и нет редактора по умолчанию.
         """
@@ -64,7 +59,6 @@ class EditorFactory:
     def get_supported_extensions() -> List[str]:
         """
         Возвращает список всех поддерживаемых расширений файлов.
-
         Returns:
             List[str]: Список расширений, для которых есть зарегистрированные редакторы.
         """
@@ -75,10 +69,8 @@ class EditorFactory:
     def get_editor_description(extension: str) -> str:
         """
         Возвращает описание редактора для указанного расширения.
-
         Args:
             extension (str): Расширение файла.
-
         Returns:
             str: Человекочитаемое описание типа редактора.
         """
@@ -99,11 +91,9 @@ class EditorFactory:
     def register_editor(extension: str, editor_class: Type[BaseFileEditor]) -> None:
         """
         Регистрирует новый редактор для указанного расширения.
-
         Args:
             extension (str): Расширение файла (с точкой).
             editor_class (Type[BaseFileEditor]): Класс редактора.
-
         Raises:
             ValueError: Если editor_class не является подклассом BaseFileEditor.
         """
@@ -121,10 +111,8 @@ class EditorFactory:
     def unregister_editor(extension: str) -> None:
         """
         Удаляет регистрацию редактора для указанного расширения.
-
         Args:
             extension (str): Расширение файла.
-
         Returns:
             bool: True если регистрация была удалена, False если расширение не было найдено.
         """
