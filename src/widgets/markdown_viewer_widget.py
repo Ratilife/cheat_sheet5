@@ -109,3 +109,13 @@ class MarkdownViewer(QWidget):
         # Вызываем _change_mode для обновления отображения
         self._change_mode()
 
+    def get_editor_widget(self) -> QWidget:
+        """
+        Возвращает основной виджет для редактирования.
+        В режиме 'text' возвращает text_editor, в 'markdown' - markdown_editor
+        """
+        if self._current_mode == 'text':
+            return self.text_editor
+        else:
+            return self.markdown_editor
+
