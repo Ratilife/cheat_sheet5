@@ -122,3 +122,6 @@ class EditorFactory:
             del EditorFactory._registry[ext]
             return True
         return False
+
+    def create_editor_for_type(self):
+        pass

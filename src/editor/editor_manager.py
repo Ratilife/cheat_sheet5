@@ -4,14 +4,14 @@ from PySide6.QtCore import QObject, Signal
 from .editor_factory import EditorFactory
 from src.parsers.content_cache import ContentCache
 from src.parsers.metadata_cache import MetadataCache
-
+from src.parsers.background_parser import BackgroundParser,Priority
 
 class EditorManager(QObject):
     """Менеджер для управления редакторами и их состоянием"""
 
-    editor_ready = Signal(object, str)  # Сигнал: редактор, file_path
-    loading_started = Signal(str)  # Сигнал: file_path
-    loading_finished = Signal(str)  # Сигнал: file_path
+    editor_ready = Signal(object, str)  # Сигнал: редактор, file_path  редактор готов
+    loading_started = Signal(str)  # Сигнал: file_path                        загрузка началась
+    loading_finished = Signal(str)  # Сигнал: file_path                       загрузка завершена
 
     def __init__(self):
         super().__init__()
@@ -66,7 +66,8 @@ class EditorManager(QObject):
 
     def _parse_in_background(self, file_path: str, editor):
         """Фоновый парсинг файла"""
-        # Здесь интегрируемся с твоим BackgroundParser
+        # Здесь интегрируемся с BackgroundParser
+        self.background_parser.add_task(file_path, Priority.VISIBLE)
         # Например, через сигналы:
         # background_parser.task_finished.connect(self._on_parse_finished)
         pass
