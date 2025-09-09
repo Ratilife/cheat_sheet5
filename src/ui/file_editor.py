@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import os
 from editor.base_editor import BaseFileEditor
 from editor.editor_factory import EditorFactory
 from src.observers.my_base_observer import MyBaseObserver
@@ -19,7 +19,7 @@ class FileEditorWindow(QMainWindow):
         Главное окно редактора файлов с поддержкой форматов .st и .md.
         Обеспечивает создание, редактирование и сохранение файлов.
     """
-    def __init__(self,parent = None ):
+    def __init__(self,parent = None):
         super().__init__(parent)
         self.parent = parent
         self.tree_view = QTreeView()
@@ -118,7 +118,7 @@ class FileEditorWindow(QMainWindow):
         # Подключаемся к сигналу обновления моделей
         self.tree_model_manager.model_updated.connect(self._on_model_updated)
 
-    def  _setup_managers(self, tree_model_manager, toolbar_manager):
+    def _setup_managers(self, tree_model_manager, toolbar_manager):
         """Устанавливает менеджеры и инициализирует интерфейс"""
         # TODO 🚧 В разработке: 02.09.2025
         if not tree_model_manager or not toolbar_manager:
@@ -132,13 +132,22 @@ class FileEditorWindow(QMainWindow):
         # Создаем QTabWidget для отображения всех вкладок
         self.tab_widget = QTabWidget()
 
+        # Словарь для хранения tree_view по именам вкладок
+        self.tree_views = {}
+
         # Добавляем каждую модель как отдельную вкладку
         for tab_name, model in self.all_models.items():
             tree_view = QTreeView()
             tree_view.setModel(model)
             tree_view.header().hide()  # Скрываем заголовок колонки
             self.tab_widget.addTab(tree_view, tab_name)
+            self.tree_views[tab_name] = tree_view  # Сохраняем ссылку
 
+        # ПОДКЛЮЧАЕМ КОНТРОЛЛЕР К ДЕРЕВЬЯМ - ВАЖНО!
+        self.tree_model_manager.connect_tree_views(self.tree_views)
+
+        # ПОДКЛЮЧАЕМ СИГНАЛЫ КОНТРОЛЛЕРА
+        self._connect_selection_signals()
 
         # Устанавливаем активную вкладку как в SidePanel
         active_info = tree_model_manager.get_active_tab_info()
@@ -149,12 +158,24 @@ class FileEditorWindow(QMainWindow):
 
         self._init_ui()
 
+        '''# Подключаем сигнал выделения от активного дерева
+        current_tab_index = self.tab_widget.currentIndex()
+        if current_tab_index >= 0:
+            current_tab_name = self.tab_widget.tabText(current_tab_index)
+            tree_view = self.tab_widget.widget(current_tab_index)
+            if hasattr(tree_view, 'selectionModel'):
+                tree_view.selectionModel().selectionChanged.connect(self.on_selection_changed)
+
+        # Также подключаем изменение вкладок
+        self.tab_widget.currentChanged.connect(self._connect_tree_selection)
+        '''
+
     def _connect_selection_signals(self):
         """Подключает сигналы контроллера выделения"""
         controller = self.tree_model_manager.selection_controller
-        controller.content_requested.connect(self.on_display_content)
-        controller.error_occurred.connect(self.on_show_selection_error)
-        controller.selection_changed.connect(self._on_selection_changed)
+        controller.content_requested.connect(self.on_display_content) #тут получаем данные
+        #controller.error_occurred.connect(self.on_show_selection_error)
+        controller.selection_changed.connect(self.on_selection_changed) # тут обработка выбранного элемента
 
         print("Сигналы контроллера выделения подключены")
 
@@ -213,8 +234,6 @@ class FileEditorWindow(QMainWindow):
             import traceback
             traceback.print_exc()
 
-
-
     def _on_tab_changed(self, index):
         """
         Слот-обработчик сигнала currentChanged от QTabWidget.
@@ -264,12 +283,11 @@ class FileEditorWindow(QMainWindow):
         # 5. Логирование для отладки
         print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
 
-
-
     def on_display_content(self, content_type, content):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
         try:
+            print("👍 Работает метод on_display_content()")
             # 1. Создаем appropriate редактор через фабрику
             editor = EditorFactory.create_editor_for_type(content_type, self)  # TODO 05.09.2025 написать метод create_editor_for_type
 
@@ -295,11 +313,60 @@ class FileEditorWindow(QMainWindow):
     '''
 
 
+    def on_selection_changed(self, metadata):
+        if not metadata.get('has_selection', False):
+            return
+
+        item_type = metadata.get('type')
+        file_path = metadata.get('path')
+        # Получаем контент из кэша или другим способом
+        content = self._get_content_for_file(file_path, item_type)
+        if content:
+            self.on_display_content(item_type, content)
+
+    def _get_content_for_file(self, file_path, content_type):
+        """Получает контент файла для отображения"""
+        try:
+            # Попробуйте получить из кэша
+            if hasattr(self, 'content_cache'):
+                cached_data = self.content_cache.get(file_path)
+                if cached_data:
+                    return cached_data.get('content', '')
+
+            # Или прочитайте файл напрямую
+            if file_path and os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+
+        except Exception as e:
+            print(f"Ошибка чтения файла {file_path}: {e}")
+
+        return None
+
     def _on_template_changed(self, text):
         """Обработчик изменения имени шаблона"""
         # ✅ Реализовано: 03.09.2025
         self.template_name = text
         print(f"Имя шаблона изменено на: {self.template_name}")
+
+    def _connect_tree_selection(self, index):
+        """Подключает сигналы выделения для активного дерева"""
+        if index < 0:
+            return
+
+        # Отключаем старые соединения
+        try:
+            for i in range(self.tab_widget.count()):
+                tree = self.tab_widget.widget(i)
+                if hasattr(tree, 'selectionModel'):
+                    tree.selectionModel().selectionChanged.disconnect()
+        except:
+            pass
+
+        # Подключаем к активному дереву
+        tree_view = self.tab_widget.widget(index)
+        if hasattr(tree_view, 'selectionModel'):
+            tree_view.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def _set_current_editor(self, editor: BaseFileEditor):
         """
