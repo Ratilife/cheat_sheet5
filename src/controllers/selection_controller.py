@@ -10,9 +10,9 @@ class TreeSelectionController(QObject):
     """
 
     # Основные сигналы
-    content_requested = Signal(str, str)  # content_type, content
-    selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}
-    error_occurred = Signal(str)  # error_message
+    content_requested = Signal(str, str)  # content_type, content           запрашиваемый данные
+    selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}  выбранный параметр изменен
+    error_occurred = Signal(str)  # error_message                                  произошла ошибка
 
     def __init__(self, content_cache, parent=None):
         super().__init__(parent)
@@ -44,11 +44,11 @@ class TreeSelectionController(QObject):
                 'has_selection': True
             }
 
-            self.selection_changed.emit(metadata)
+            self.selection_changed.emit(metadata)      # ✅ Сигнал о изменении выделения
 
             # Обрабатываем контент для поддерживаемых типов
             if metadata['type'] in ['markdown', 'template']:
-                self._process_content(metadata, item)
+                self._process_content(metadata, item)  # ✅ Запуск обработки контента
 
         except Exception as e:
             self.error_occurred.emit(f"Selection error: {str(e)}")
