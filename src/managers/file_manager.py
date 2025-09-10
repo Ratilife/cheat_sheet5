@@ -105,8 +105,6 @@ class FileManager:
         self.save_data_to_json(json_file=json_path, data=merged_data)
 
 
-
-
     def create_root_folder_structure(self, config_path: Union[str, Path],
                                      folder_path: Union[str, Path, None] = None) -> FolderCreationResult:
         """Создает иерархическую структуру папок на основе JSON-конфигурации и возвращает абсолютный путь к корневой папке.
