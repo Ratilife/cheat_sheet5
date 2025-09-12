@@ -10,16 +10,19 @@ class TreeSelectionController(QObject):
     """
 
     # Основные сигналы
-    content_requested = Signal(str, str)  # content_type, content           запрашиваемый данные
-    selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}  выбранный параметр изменен
-    error_occurred = Signal(str)  # error_message                                  произошла ошибка
+    content_for_sidepanel = Signal(str, str, str)  # content_type, content, path_file      запрашиваемый данные
+    content_for_editor = Signal(str, str, str)
+    selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}                 выбранный параметр изменен
+    error_occurred = Signal(str)  # error_message                                                 произошла ошибка
 
     def __init__(self, content_cache, parent=None):
         super().__init__(parent)
         self.content_cache = content_cache
+        self.current_source = ''  # Добавляем отслеживание источника
 
-    def connect_tree_view(self, tree_view):
+    def connect_tree_view(self, tree_view, source_name):
         """Подключает контроллер к дереву"""
+        self.current_source = source_name  # Запоминаем источник
         if hasattr(tree_view, 'clicked'):
             tree_view.clicked.connect(self._handle_selection)
         else:
@@ -39,8 +42,7 @@ class TreeSelectionController(QObject):
             metadata = {
                 'type': model.data(index, Qt.UserRole + 2),  # 'markdown', 'template' и т.д.
                 'name': model.data(index, Qt.DisplayRole),   # Имя файла/папки
-                'path': model.data(index, Qt.UserRole + 3)   # Путь к файлу
-                if hasattr(model, 'get_item_path') else None,
+                'path': self._get_file_path_for_item(item),  # Ищем путь через объект item
                 'has_selection': True
             }
 
@@ -53,11 +55,32 @@ class TreeSelectionController(QObject):
         except Exception as e:
             self.error_occurred.emit(f"Selection error: {str(e)}")
 
+    def _get_file_path_for_item(self, item):
+        """Рекурсивно ищет путь к файлу через цепочку родителей"""
+        current_item = item
+
+        # Поднимаемся по иерархии пока не найдем файл или markdown
+        while current_item:
+            # Проверяем, является ли текущий элемент файлом или markdown
+            if (hasattr(current_item, 'item_data') and
+                    len(current_item.item_data) > 1 and
+                    current_item.item_data[1] in ['file', 'markdown'] and
+                    len(current_item.item_data) > 2):
+                return current_item.item_data[2]  # Возвращаем путь
+
+            # Переходим к родителю
+            current_item = getattr(current_item, 'parent_item', None)
+
+        return None
     def _process_content(self, metadata, item):
         """Получает и отправляет контент"""
         content = self._extract_content(metadata, item)
         if content is not None:
-            self.content_requested.emit(metadata['type'], content)
+            # Отправляем в соответствующий сигнал based on source
+            if self.current_source == "sidepanel":
+                self.content_for_sidepanel.emit(metadata['type'], content, metadata['path'])
+            elif self.current_source == "editor":
+                self.content_for_editor.emit(metadata['type'], content, metadata['path'])
         else:
             self.error_occurred.emit(f"Контент, недоступный для {metadata['name']}")
 
