@@ -28,7 +28,7 @@ class FileEditorWindow(QMainWindow):
 
         self.template_name = "Тут будет текст"
         self.setWindowTitle("Редактор файлов")
-        self.setMinimumSize(800,500)
+        self.setMinimumSize(800, 500)
 
         if self.parent.tree_model_manager and self.parent.toolbar_manager:
             self._setup_managers(self.parent.tree_model_manager, self.parent.toolbar_manager)
@@ -113,6 +113,9 @@ class FileEditorWindow(QMainWindow):
 
         #main_layout.addWidget(self.text_editor)
 
+        # Сохраняем ссылку на layout редактора
+        self.editor_layout = editor_layout  # или тот layout, куда добавляется редактор
+
         # Подключаем сигналы
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         # Подключаемся к сигналу обновления моделей
@@ -144,7 +147,10 @@ class FileEditorWindow(QMainWindow):
             self.tree_views[tab_name] = tree_view  # Сохраняем ссылку
 
         # ПОДКЛЮЧАЕМ КОНТРОЛЛЕР К ДЕРЕВЬЯМ - ВАЖНО!
-        self.tree_model_manager.connect_tree_views(self.tree_views)
+        #self.tree_model_manager.connect_tree_views(self.tree_views)
+
+        for tab_name, tree_view in self.tree_views.items():
+            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, tab_name)
 
         # ПОДКЛЮЧАЕМ СИГНАЛЫ КОНТРОЛЛЕРА
         self._connect_selection_signals()
@@ -173,10 +179,12 @@ class FileEditorWindow(QMainWindow):
     def _connect_selection_signals(self):
         """Подключает сигналы контроллера выделения"""
         controller = self.tree_model_manager.selection_controller
-        controller.content_requested.connect(self.on_display_content) #тут получаем данные
+        controller.content_for_editor.connect(self.on_display_content) #тут получаем данные
         #controller.error_occurred.connect(self.on_show_selection_error)
         controller.selection_changed.connect(self.on_selection_changed) # тут обработка выбранного элемента
 
+        # Устанавливаем источник для контроллера
+        controller.current_source = "editor"
         print("Сигналы контроллера выделения подключены")
 
     def _refresh_view_for_file(self, model, file_path):
@@ -283,13 +291,13 @@ class FileEditorWindow(QMainWindow):
         # 5. Логирование для отладки
         print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
 
-    def on_display_content(self, content_type, content):
+    def on_display_content(self, content_type, content,path_file):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
         try:
             print("👍 Работает метод on_display_content()")
             # 1. Создаем appropriate редактор через фабрику
-            editor = EditorFactory.create_editor_for_type(content_type, self)  # TODO 05.09.2025 написать метод create_editor_for_type
+            editor = EditorFactory.create_editor_for_type(content_type, self)
 
             # 2. Устанавливаем контент в редактор
             editor.set_content(content)

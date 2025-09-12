@@ -278,19 +278,22 @@ class SidePanel(QWidget):
         """Подключает сигналы контроллера выделения"""
         controller = self.tree_model_manager.selection_controller
 
-        controller.content_requested.connect(self.on_display_content)
+        controller.content_for_sidepanel.connect(self.on_display_content)
         controller.selection_changed.connect(self.on_update_selection_status)
         controller.error_occurred.connect(self.on_show_selection_error)
 
+        # Устанавливаем источник для контроллера
+        controller.current_source = "sidepanel"
         print("Сигналы контроллера выделения подключены")
 
     def _create_tabs_with_trees(self, tab_name: dict):
         """Создает вкладки с отложенной загрузкой деревьев"""
         self.tab_manager.create_tabs(tab_name)
         # Подключаем контейнер к деревьям
-        self.tree_model_manager.connect_tree_views(self.tab_manager.trees)
+        #self.tree_model_manager.connect_tree_views(self.tab_manager.trees)
 
-
+        for tab_name, tree_view in self.tab_manager.trees.items():
+            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, tab_name)
 
         # Вместо немедленной загрузки всех деревьев,
         # загружаем только первую активную вкладку
@@ -323,21 +326,25 @@ class SidePanel(QWidget):
         # TODO 🚧 В разработке: 10.08.2025
         pass
 
-    def on_display_content(self, content_type, content):
+    def on_display_content(self, content_type, content, source):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
 
-        # Очищаем предыдущее содержимое
-        self.content_viewer.set_content("") # используем метод MarkdownViewer
+        if source != "tree_selection":
+            return
+        try:
+            # Очищаем предыдущее содержимое
+            self.content_viewer.set_content("") # используем метод MarkdownViewer
 
-        # Обработка разных типов элементов
-        if content_type == 'template':
-            self.content_viewer.set_content(content)
-            self.content_viewer.set_view_mode("text")  # <-- Устанавливаем текстовый режим для ST файлов
-        elif content_type == 'markdown':
-            self.content_viewer.set_content(content)
-            self.content_viewer.set_view_mode("markdown")  # <-- Устанавливаем markdown режим для MD файлов
-
+            # Обработка разных типов элементов
+            if content_type == 'template':
+                self.content_viewer.set_content(content)
+                self.content_viewer.set_view_mode("text")  # <-- Устанавливаем текстовый режим для ST файлов
+            elif content_type == 'markdown':
+                self.content_viewer.set_content(content)
+                self.content_viewer.set_view_mode("markdown")  # <-- Устанавливаем markdown режим для MD файлов
+        except Exception as e:
+            print(f"Ошибка предпросмотра в SidePanel: {e}")
 
     def on_update_selection_status(self, metadata):
         """Обновляет статус выделения"""
@@ -441,6 +448,20 @@ class SidePanel(QWidget):
         print(f"DEBUG✅: _on_model_updated вызывается для вкладки {tab_name}, файла {file_path}")
         if tab_name in self.tab_manager.trees:
             tree_view = self.tab_manager.trees[tab_name]
+
+            # Проверяем, не удален ли C++ объект (для PySide6)
+            try:
+                # Простая проверка - пытаемся получить свойство объекта
+                if not tree_view.objectName():
+                    pass  # Просто проверяем доступность объекта
+            except RuntimeError as e:
+                if "already deleted" in str(e):
+                    print(f"Дерево для вкладки {tab_name} было удалено")
+                    # Удаляем ссылку из словаря
+                    del self.tab_manager.trees[tab_name]
+                    return
+                else:
+                    raise e
             # Обновляем всю модель для этой вкладки
             tree_view.viewport().update()
 
