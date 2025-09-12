@@ -29,6 +29,8 @@ class EditorFactory:
         # Можно добавлять другие расширения по мере реализации редакторов
     }
 
+
+
     @staticmethod
     def create_editor(extension: str, parent: Optional[QWidget] = None) -> BaseFileEditor:
         """
@@ -123,5 +125,11 @@ class EditorFactory:
             return True
         return False
 
-    def create_editor_for_type(self):
-        pass
+    @staticmethod
+    def create_editor_for_type(self, content_type, parent=None):
+        if content_type == 'template':
+            self.create_editor('.st', parent)
+        elif content_type == 'markdown':
+            self.create_editor('.md', parent)
+        else:
+            return self.create_editor('.txt', parent)  # редактор по умолчанию
