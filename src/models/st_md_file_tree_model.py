@@ -741,7 +741,7 @@ class STMDFileTreeModel(QAbstractItemModel):
 
             # Проверяем, что это файл и путь совпадает
             if (len(item.item_data) > 2 and
-                    item.item_data[1] in ['file', 'markdown'] and
+                    item.item_data[1] in ['file', 'markdown', 'template'] and
                     item.item_data[2] == file_path):
 
                 # Сохраняем старые данные для сравнения
