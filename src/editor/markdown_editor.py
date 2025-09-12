@@ -16,10 +16,10 @@ class MarkdownEditor(BaseFileEditor):
     """
 
     # Новые сигналы для работы с FileWatcher
-    external_update_detected = Signal(str)          # Обнаружено внешнее изменение
-    file_conflict_detected = Signal(str, str)       # Конфликт изменений (наш, внешний)
-    file_became_readonly = Signal(str)              # Файл стал доступен только для чтения
-    watching_status_changed = Signal(bool)          # Изменение статуса отслеживания
+    external_update_detected = Signal(str)                  # Обнаружено внешнее изменение
+    file_conflict_detected = Signal(str, str)        # Конфликт изменений (наш, внешний)
+    file_became_readonly = Signal(str)                      # Файл стал доступен только для чтения
+    watching_status_changed = Signal(bool)                  # Изменение статуса отслеживания
     def __init__(self, parent: Optional[QWidget] = None, file_watcher: Optional[FileWatcher] = None):
         """
             Инициализация редактора Markdown.
@@ -35,17 +35,9 @@ class MarkdownEditor(BaseFileEditor):
         # Создаем viewer для отображения Markdown (композиция!)
         self._viewer = MarkdownViewer(parent=self)
 
-        # Флаг для временного отключения отслеживания
-        self._watching_paused = False
+
         self._watching_enabled = False  # Добавляем флаг включенного отслеживания
 
-        # Таймер для дебаунсинга множественных изменений
-        self._debounce_timer = QTimer()
-        self._debounce_timer.setSingleShot(True)
-        self._debounce_timer.setInterval(300)  # 300ms задержка
-
-        # Путь к файлу, который временно изменяется
-        self._pending_external_update: Optional[str] = None
 
         # Инициализируем UI и соединения
         self._init_ui()
@@ -71,13 +63,10 @@ class MarkdownEditor(BaseFileEditor):
 
     def _setup_connections(self) -> None:
         """Настройка сигналов и соединений"""
-        # Подключаем таймер дебаунсинга
-        self._debounce_timer.timeout.connect(self._handle_debounced_update)
-
-        # Подключаем сигналы FileWatcher
-        self._file_watcher.file_updated.connect(self._on_external_file_update)
+        self._file_watcher.debounced_file_updated.connect(self._process_external_update)
         self._file_watcher.file_deleted.connect(self._on_external_file_deleted)
         self._file_watcher.dir_changed.connect(self._on_directory_changed)
+        self._file_watcher.watching_paused.connect(self._on_watching_paused)
 
         # Подключаем сигналы viewer к нашим обработчикам
         self._viewer.text_changed.connect(self._on_viewer_text_changed)
@@ -123,17 +112,19 @@ class MarkdownEditor(BaseFileEditor):
     def _connect_file_watcher(self) -> None:
         """Подключает сигналы FileWatcher к обработчикам"""
         if self._file_watcher:
-            self._file_watcher.file_updated.connect(self._on_external_file_update)
+            self._file_watcher.debounced_file_updated.connect(self._process_external_update)
             self._file_watcher.file_deleted.connect(self._on_external_file_deleted)
             self._file_watcher.dir_changed.connect(self._on_directory_changed)
+            self._file_watcher.watching_paused.connect(self._on_watching_paused)
 
     def _disconnect_file_watcher(self) -> None:
         """Отключает сигналы FileWatcher"""
         if self._file_watcher:
             try:
-                self._file_watcher.file_updated.disconnect(self._on_external_file_update)
+                self._file_watcher.debounced_file_updated.disconnect(self._process_external_update)
                 self._file_watcher.file_deleted.disconnect(self._on_external_file_deleted)
                 self._file_watcher.dir_changed.disconnect(self._on_directory_changed)
+                self._file_watcher.watching_paused.disconnect(self._on_watching_paused)
             except RuntimeError:
                 # Игнорируем ошибки если сигналы не были подключены
                 pass
@@ -154,35 +145,6 @@ class MarkdownEditor(BaseFileEditor):
             self._file_watcher.remove_path(file_path_str)
             print(f"DEBUG: Прекращено отслеживание файла {file_path_str}")
 
-    def _pause_watching(self, duration: int = 2000) -> None:
-        """
-        Временно приостанавливает отслеживание на указанное время.
-        Полезно при сохранении файла чтобы избежать циклических обновлений.
-
-        Args:
-            duration: Длительность паузы в миллисекундах
-        """
-        self._watching_paused = True
-        self._update_watching_state(False)
-
-        # Таймер для автоматического возобновления
-        QTimer.singleShot(duration, self._resume_watching)
-
-    def _resume_watching(self) -> None:
-        """Возобновляет отслеживание после паузы"""
-        self._watching_paused = False
-        self._update_watching_state(True)
-        if self.file_path:
-            self._start_watching_file()
-
-    def _handle_debounced_update(self) -> None:
-        """
-        Обрабатывает обновление после дебаунсинга.
-        Вызывается по таймауту таймера дебаунсинга.
-        """
-        if self._pending_external_update:
-            self._process_external_update(self._pending_external_update)
-            self._pending_external_update = None
 
     def _process_external_update(self, file_path: str) -> None:
         """Обрабатывает внешнее изменение файла после дебаунсинга"""
@@ -217,21 +179,6 @@ class MarkdownEditor(BaseFileEditor):
             self.error_occurred.emit(f"Ошибка обработки внешнего изменения: {e}", "warning")
 
 
-    def _on_external_file_update(self, file_path: str) -> None:
-        """
-        Обработчик сигнала обновления файла из FileWatcher.
-        Использует дебаунсинг для избежания множественных срабатываний.
-
-        Args:
-            file_path: Путь к измененному файлу
-        """
-        if self._watching_paused:
-            return  # Игнорируем если отслеживание приостановлено
-
-        # Дебаунсим: откладываем обработку и перезапускаем таймер
-        self._pending_external_update = file_path
-        self._debounce_timer.start()
-
     def _on_external_file_deleted(self, file_path: str) -> None:
         """
         Обработчик сигнала удаления файла из FileWatcher.
@@ -241,8 +188,7 @@ class MarkdownEditor(BaseFileEditor):
         """
         if Path(file_path) == self.file_path:
             self.file_became_readonly.emit(file_path)
-            self._viewer.set_readonly(True)                                             #TODO 10.09.2025 тут будет ошибка
-            self.statusBar().showMessage("Файл удален внешней программой", 3000)        #TODO 10.09.2025 тут будет ошибка
+
 
     def _on_directory_changed(self, dir_path: str) -> None:
         """
@@ -261,3 +207,99 @@ class MarkdownEditor(BaseFileEditor):
         """
         self.is_modified = True
 
+    def save(self) -> bool:
+        """
+        Сохраняет содержимое редактора в текущий файл.
+
+        Returns:
+            bool: True если сохранение прошло успешно, False в противном случае
+        """
+        if not self.file_path:
+            # Если файла нет, ведем себя как save_as()
+            return self.save_as()
+
+        try:
+            # Временно приостанавливаем отслеживание
+            self._file_watcher.pause(3000)  # Пауза на 3 секунды  # Пауза на 3 секунды
+
+            # Получаем содержимое из viewer
+            content = self.get_content()
+
+            # Сохраняем в файл
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            # Сбрасываем флаг модификации
+            self.is_modified = False
+
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
+            return False
+        finally:
+            # Автоматически возобновит отслеживание через таймер
+            pass
+
+    def _on_watching_paused(self, paused: bool) -> None:
+        """Обработчик изменения статуса паузы отслеживания"""
+        # Можно использовать для обновления UI
+        pass
+
+    def save_as(self, new_file_path: Path) -> bool:
+        """
+        Сохраняет содержимое редактора в новый файл.
+
+        Args:
+            new_file_path: Новый путь для сохранения
+
+        Returns:
+            bool: True если сохранение прошло успешно, False в противном случае
+        """
+        try:
+            # Прекращаем отслеживание старого файла
+            if self.file_path:
+                self._stop_watching_file()
+
+            # Получаем содержимое из viewer
+            content = self.get_content()
+
+            # Сохраняем в новый файл
+            with open(new_file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            # Обновляем путь и начинаем отслеживание нового файла
+            self._file_path = new_file_path
+            self._start_watching_file()
+
+            # Сбрасываем флаг модификации
+            self.is_modified = False
+
+            # Испускаем сигнал о сохранении под новым именем
+            self.file_saved_as.emit(new_file_path)
+
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
+            return False
+
+    def get_content(self) -> str:
+        """
+        Возвращает текущее содержимое редактора.
+
+        Returns:
+            str: Текстовое содержимое редактора
+        """
+        return self._viewer.get_content()
+
+    def set_content(self, content: str) -> None:
+        """
+        Устанавливает содержимое редактора из строки.
+
+        Args:
+            content: Содержимое для отображения
+        """
+        self._viewer.set_content(content)
+        # Сбрасываем флаг модификации при установке нового содержимого
+        self.is_modified = False

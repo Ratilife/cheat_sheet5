@@ -1,5 +1,8 @@
 import os
-from PySide6.QtCore import QFileSystemWatcher, Signal, QObject
+from typing import Optional
+
+from PySide6.QtCore import QFileSystemWatcher, Signal, QObject, QTimer
+
 
 class FileWatcher(QObject):
     # TODO 🚧 В разработке: 08.08.2025
@@ -8,9 +11,12 @@ class FileWatcher(QObject):
         # 🏆task: Работа с деревом:
         # 🏆task: Создание слушателя за файлами, за их изменениями со стороны ОС
     """Отслеживает изменения файлов и уведомляет подписчиков."""
-    file_updated = Signal(str)  # Файл изменён (путь)
-    file_deleted = Signal(str)  # Файл удалён (путь)
-    dir_changed = Signal(str)  # Изменение в папке (новые файлы/подпапки)
+    file_updated = Signal(str)              # Файл изменён (путь)
+    file_deleted = Signal(str)              # Файл удалён (путь)
+    dir_changed = Signal(str)               # Изменение в папке (новые файлы/подпапки)
+
+    debounced_file_updated = Signal(str)    # Файл изменён (после дебаунсинга)
+    watching_paused = Signal(bool)          # Статус паузы отслеживания
 
     def __init__(self):
         # ✅ Реализовано: 10.08.2025
@@ -22,14 +28,63 @@ class FileWatcher(QObject):
         # это значит, что когда отслеживаемый файл изменится, будет автоматически вызван _handle_file_change с путём к файлу
         self.watcher.fileChanged.connect(self._handle_file_change)
         self.watcher.directoryChanged.connect(self._handle_dir_change)  # Добавили обработчик папок
+        self._watching_paused = False  # Флаг для временного отключения отслеживания
+        self._debounce_timer = QTimer()
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.setInterval(300)  # 300ms задержка
+        self._debounce_timer.timeout.connect(self._handle_debounced_update)
+        self._pending_external_update: Optional[str] = None
 
+    def pause(self, duration: int = 2000) -> None:
+        """
+        Временно приостанавливает отслеживание на указанное время.
+        Полезно при сохранении файла чтобы избежать циклических обновлений.
+
+        Args:
+            duration: Длительность паузы в миллисекундах
+        """
+        self._watching_paused = True
+        self.watching_paused.emit(True)
+        QTimer.singleShot(duration, self.resume)
+
+    def resume(self) -> None:
+        """Возобновляет отслеживание после паузы"""
+        self._watching_paused = False
+        self.watching_paused.emit(False)
+
+    def is_watching_paused(self) -> bool:
+        """Возвращает статус паузы отслеживания"""
+        return self._watching_paused
+
+    def _handle_debounced_update(self) -> None:
+        """
+        Обрабатывает обновление после дебаунсинга.
+        Вызывается по таймауту таймера дебаунсинга.
+        """
+        if self._pending_external_update:
+            self.debounced_file_updated.emit(self._pending_external_update)
+            self._pending_external_update = None
+
+    def _on_external_file_update(self, file_path: str) -> None:
+        """
+        Обработчик сигнала обновления файла с дебаунсингом.
+        Использует дебаунсинг для избежания множественных срабатываний.
+
+        Args:
+            file_path: Путь к измененному файлу
+        """
+        if self._watching_paused:
+            return  # Игнорируем если отслеживание приостановлено
+
+        # Дебаунсим: откладываем обработку и перезапускаем таймер
+        self._pending_external_update = file_path
+        self._debounce_timer.start()
     def _handle_file_change(self, path: str) -> None:
         """Обрабатывает изменение файла."""
         # ✅ Реализовано: 10.08.2025
         # Проверяет, существует ли указанный путь (файл или директория) в файловой системе
         if os.path.exists(path):
-            # Если путь существует, генерирует (вызывает) сигнал/событие о том, что файл был обновлён
-            self.file_updated.emit(path)
+            self._on_external_file_update(path)
         else:
             # Если путь не существует (файл был удалён), генерирует (вызывает) сигнал/событие о том, что файл был удалён
             self.file_deleted.emit(path)
