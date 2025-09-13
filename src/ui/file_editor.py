@@ -150,7 +150,7 @@ class FileEditorWindow(QMainWindow):
         #self.tree_model_manager.connect_tree_views(self.tree_views)
 
         for tab_name, tree_view in self.tree_views.items():
-            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, tab_name)
+            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, "editor")
 
         # ПОДКЛЮЧАЕМ СИГНАЛЫ КОНТРОЛЛЕРА
         self._connect_selection_signals()
@@ -294,6 +294,11 @@ class FileEditorWindow(QMainWindow):
     def on_display_content(self, content_type, content,path_file):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
+
+        # Проверяем, активно ли это окно
+        if not self.isVisible():
+            return
+
         try:
             print("👍 Работает метод on_display_content()")
             # 1. Создаем appropriate редактор через фабрику
@@ -330,7 +335,7 @@ class FileEditorWindow(QMainWindow):
         # Получаем контент из кэша или другим способом
         content = self._get_content_for_file(file_path, item_type)
         if content:
-            self.on_display_content(item_type, content)
+            self.on_display_content(content_type=item_type, content=content, path_file=file_path)
 
     def _get_content_for_file(self, file_path, content_type):
         """Получает контент файла для отображения"""
@@ -439,3 +444,18 @@ class FileEditorWindow(QMainWindow):
         # Добавляем специфичные actions редактора
         for action in actions:
             self.editor_toolbar.addAction(action)
+
+    def closeEvent(self, event):
+        """Обработчик события закрытия окна"""
+        # Отключаем сигналы
+        if hasattr(self, 'editor_controller'):
+            try:
+                self.editor_controller.content_for_editor.disconnect(self.on_display_content)
+            except:
+                pass  # Игнорируем ошибки если сигнал не был подключен
+
+        # Вызываем родительский обработчик
+        super().closeEvent(event)
+
+        # Дополнительные действия при закрытии
+        print("FileEditorWindow закрывается")
