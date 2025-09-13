@@ -57,6 +57,59 @@ class TreeSelectionController(QObject):
 
     def _get_file_path_for_item(self, item):
         """Рекурсивно ищет путь к файлу через цепочку родителей"""
+        # Для markdown всегда берем путь из родительского элемента
+        if (hasattr(item, 'item_data') and
+                len(item.item_data) > 1 and
+                item.item_data[1] == 'markdown'):
+
+            parent_item = getattr(item, 'parent_item', None)
+            if (parent_item and
+                    hasattr(parent_item, 'item_data') and
+                    len(parent_item.item_data) > 2):
+                return parent_item.item_data[2]
+
+        # Для file и других типов используем стандартную логику
+        current_item = item
+        while current_item:
+            if (hasattr(current_item, 'item_data') and
+                    len(current_item.item_data) > 1 and
+                    current_item.item_data[1] in ['file'] and
+                    len(current_item.item_data) > 1):
+                return current_item.item_data[2]
+
+            current_item = getattr(current_item, 'parent_item', None)
+
+        return None
+    def _get_file_path_for_item_ex(self, item):
+        """Рекурсивно ищет путь к файлу через цепочку родителей"""
+        current_item = item
+
+        # Сначала проверяем сам элемент
+        if (hasattr(current_item, 'item_data') and
+                len(current_item.item_data) > 2 and
+                current_item.item_data[2] and  # Проверяем, что путь не пустой
+                isinstance(current_item.item_data[2], str) and
+                len(current_item.item_data[2].strip()) > 0):
+            return current_item.item_data[2]  # Возвращаем путь
+
+        # Если у текущего элемента нет пути, поднимаемся по иерархии
+        current_item = getattr(current_item, 'parent_item', None)
+        while current_item:
+            # Проверяем, есть ли у родительского элемента путь
+            if (hasattr(current_item, 'item_data') and
+                    len(current_item.item_data) > 2 and
+                    current_item.item_data[2] and  # Проверяем, что путь не пустой
+                    isinstance(current_item.item_data[2], str) and
+                    len(current_item.item_data[2].strip()) > 0):
+                return current_item.item_data[2]  # Возвращаем путь
+
+            # Переходим к следующему родителю
+            current_item = getattr(current_item, 'parent_item', None)
+
+        return None
+
+    def _get_file_path_for_item_old(self, item):
+        """Рекурсивно ищет путь к файлу через цепочку родителей"""
         current_item = item
 
         # Поднимаемся по иерархии пока не найдем файл или markdown
