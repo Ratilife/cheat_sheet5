@@ -293,7 +293,7 @@ class SidePanel(QWidget):
         #self.tree_model_manager.connect_tree_views(self.tab_manager.trees)
 
         for tab_name, tree_view in self.tab_manager.trees.items():
-            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, tab_name)
+            self.tree_model_manager.selection_controller.connect_tree_view(tree_view, "sidepanel")
 
         # Вместо немедленной загрузки всех деревьев,
         # загружаем только первую активную вкладку
@@ -329,9 +329,10 @@ class SidePanel(QWidget):
     def on_display_content(self, content_type, content, source):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
-
-        if source != "tree_selection":
+        # Проверяем, активно ли это окно
+        if not self.isVisible():
             return
+
         try:
             # Очищаем предыдущее содержимое
             self.content_viewer.set_content("") # используем метод MarkdownViewer
