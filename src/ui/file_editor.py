@@ -33,6 +33,9 @@ class FileEditorWindow(QMainWindow):
         if self.parent.tree_model_manager and self.parent.toolbar_manager:
             self._setup_managers(self.parent.tree_model_manager, self.parent.toolbar_manager)
 
+        self.setAttribute(Qt.WA_DeleteOnClose)  # Важно: уничтожать объект при закрытии
+
+
     def _init_ui(self):
         """Инициализация пользовательского интерфейса"""
         main_widget = QWidget()                          # Создаем центральный виджет окна
@@ -178,13 +181,13 @@ class FileEditorWindow(QMainWindow):
 
     def _connect_selection_signals(self):
         """Подключает сигналы контроллера выделения"""
-        controller = self.tree_model_manager.selection_controller
-        controller.content_for_editor.connect(self.on_display_content) #тут получаем данные
+        self.controller = self.tree_model_manager.selection_controller
+        self.controller.content_for_editor.connect(self.on_display_content) #тут получаем данные
         #controller.error_occurred.connect(self.on_show_selection_error)
-        controller.selection_changed.connect(self.on_selection_changed) # тут обработка выбранного элемента
+        self.controller.selection_changed.connect(self.on_selection_changed) # тут обработка выбранного элемента
 
         # Устанавливаем источник для контроллера
-        controller.current_source = "editor"
+        self.controller.current_source = "editor"
         print("Сигналы контроллера выделения подключены")
 
     def _refresh_view_for_file(self, model, file_path):
@@ -450,7 +453,9 @@ class FileEditorWindow(QMainWindow):
         # Отключаем сигналы
         if hasattr(self, 'editor_controller'):
             try:
-                self.editor_controller.content_for_editor.disconnect(self.on_display_content)
+                self.tree_model_manager.selection_controller.disconnect_tree_view("editor")
+
+                print("Закрываем окно")
             except:
                 pass  # Игнорируем ошибки если сигнал не был подключен
 
