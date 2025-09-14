@@ -451,7 +451,7 @@ class FileEditorWindow(QMainWindow):
     def closeEvent(self, event):
         """Обработчик события закрытия окна"""
         # Отключаем сигналы
-        if hasattr(self, 'editor_controller'):
+        if hasattr(self, 'tree_model_manager'):
             try:
                 self.tree_model_manager.selection_controller.disconnect_tree_view("editor")
 
@@ -461,6 +461,9 @@ class FileEditorWindow(QMainWindow):
 
         # Вызываем родительский обработчик
         super().closeEvent(event)
+
+        # Важно: подтверждаем закрытие
+        event.accept()
 
         # Дополнительные действия при закрытии
         print("FileEditorWindow закрывается")
