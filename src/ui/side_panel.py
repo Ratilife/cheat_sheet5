@@ -725,3 +725,9 @@ class SidePanel(QWidget):
     def template_name(self):
         """Возвращает имя шаблона (только для чтения)"""
         return self._template_name
+
+    class SidePanel(QWidget):
+        def closeEvent(self, event):
+            if hasattr(self, 'tree_model_manager'):
+                self.tree_model_manager.selection_controller.disconnect_tree_view("sidepanel")
+            event.accept()
