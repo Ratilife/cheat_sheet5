@@ -19,6 +19,7 @@ class TreeSelectionController(QObject):
         super().__init__(parent)
         self.content_cache = content_cache
         self.current_source = ''  # Добавляем отслеживание источника
+        self._connections = {}  # Словарь для хранения соединений
 
     def connect_tree_view(self, tree_view, source_name):
         """Подключает контроллер к дереву"""
@@ -50,7 +51,7 @@ class TreeSelectionController(QObject):
 
             # Обрабатываем контент для поддерживаемых типов
             if metadata['type'] in ['markdown', 'template']:
-                self._process_content(metadata, item)  # ✅ Запуск обработки контента
+                self._process_content(metadata, item, self.current_source )  # ✅ Запуск обработки контента
 
         except Exception as e:
             self.error_occurred.emit(f"Selection error: {str(e)}")
@@ -74,7 +75,7 @@ class TreeSelectionController(QObject):
             if (hasattr(current_item, 'item_data') and
                     len(current_item.item_data) > 1 and
                     current_item.item_data[1] in ['file'] and
-                    len(current_item.item_data) > 1):
+                    len(current_item.item_data) > 2):
                 return current_item.item_data[2]
 
             current_item = getattr(current_item, 'parent_item', None)
@@ -125,17 +126,44 @@ class TreeSelectionController(QObject):
             current_item = getattr(current_item, 'parent_item', None)
 
         return None
-    def _process_content(self, metadata, item):
-        """Получает и отправляет контент"""
-        content = self._extract_content(metadata, item)
-        if content is not None:
-            # Отправляем в соответствующий сигнал based on source
-            if self.current_source == "sidepanel":
-                self.content_for_sidepanel.emit(metadata['type'], content, metadata['path'])
-            elif self.current_source == "editor":
-                self.content_for_editor.emit(metadata['type'], content, metadata['path'])
-        else:
-            self.error_occurred.emit(f"Контент, недоступный для {metadata['name']}")
+    def _process_content(self, metadata, item, source_name):
+        """
+        Получает и отправляет контент с явным указанием источника
+
+        Args:
+            metadata: Метаданные элемента {type, name, path, has_selection}
+            item: Объект элемента дерева
+            source_name: Идентификатор источника ('sidepanel', 'editor')
+        """
+        # Валидация входных параметров
+        if not metadata or not isinstance(metadata, dict):
+            self.error_occurred.emit("Неверные метаданные элемента")
+            return
+
+        if source_name is None:
+            self.error_occurred.emit("Не указан источник для обработки контента")
+            return
+
+        try:
+            # 1. Извлекаем контент
+            content = self._extract_content(metadata, item)
+            if content is None:
+                self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
+                return
+
+            # 2. Валидация источника
+            if source_name not in ['sidepanel', 'editor']:
+                self.error_occurred.emit(f"Неизвестный источник: {source_name}")
+                return
+
+            # 3. Отправка в соответствующий сигнал
+            if source_name == "sidepanel":
+                self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
+            elif source_name == "editor":
+                self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
+
+        except Exception as e:
+            self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
 
     def _extract_content(self, metadata, item):
         """Извлекает контент из различных источников"""
