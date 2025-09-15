@@ -148,9 +148,8 @@ class SidePanel(QWidget):
 
     def _init_ui(self):
         """Инициализация пользовательского интерфейса (заменяет placeholder)"""
-        # Очистить предыдущий layout (placeholder)
-        if self.layout():
-            QWidget().setLayout(self.layout())
+        # Полностью очищаем предыдущий UI
+        self._cleanup_ui()
 
         # Создать основной layout
         main_layout = QVBoxLayout(self)
@@ -200,7 +199,16 @@ class SidePanel(QWidget):
 
         self.setLayout(main_layout)
 
+    def _cleanup_ui(self):
+        """Очистка всех UI компонентов"""
+        # Удаляем все дочерние виджеты
+        for child in self.findChildren(QWidget):
+            if child != self:  # Не удаляем себя
+                child.deleteLater()
 
+        # Удаляем layout
+        if self.layout():
+            QWidget().setLayout(self.layout())
 
 
     def _init_managers(self)->None:
@@ -498,11 +506,10 @@ class SidePanel(QWidget):
     def _open_editor(self):
         """Открыть окно редактора файла"""
         # ✅ Реализовано: 02.09.2025
-        if not hasattr(self,'editor_window'):
-            self.editor_window = FileEditorWindow(self)
-            # Центрируем окно на экране
-            self._center_window(self.editor_window)
-        self.editor_window.show()
+        editor_window = FileEditorWindow(self)
+        # Центрируем окно на экране
+        self._center_window(editor_window)
+        editor_window.show()
 
     def _center_window(self, window):
         """Центрирует окно на активном мониторе"""
@@ -728,6 +735,27 @@ class SidePanel(QWidget):
 
 
     def closeEvent(self, event):
-        if hasattr(self, 'tree_model_manager'):
-            self.tree_model_manager.selection_controller.disconnect_tree_view("sidepanel")
-            event.accept()
+        # Безопасное отключение сигналов
+        try:
+            if hasattr(self, 'background_parser'):
+                self.background_parser.task_finished.disconnect(self._on_parsing_done)
+        except:
+            pass
+
+        try:
+            if hasattr(self, 'tree_model_manager'):
+                self.tree_model_manager.model_updated.disconnect(self._on_model_updated)
+        except:
+            pass
+
+        # Очищаем layout и виджеты
+        if self.layout():
+            QWidget().setLayout(self.layout())
+
+        # Закрываем файловый вотчер
+        if hasattr(self, 'file_watcher'):
+            self.file_watcher.stop()
+
+        # Принимаем событие закрытия
+        event.accept()
+        print("SidePanel закрывается")
