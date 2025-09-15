@@ -19,7 +19,7 @@ class FileEditorWindow(QMainWindow):
         Главное окно редактора файлов с поддержкой форматов .st и .md.
         Обеспечивает создание, редактирование и сохранение файлов.
     """
-    def __init__(self,parent = None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.parent = parent
         self.tree_view = QTreeView()
@@ -30,7 +30,12 @@ class FileEditorWindow(QMainWindow):
         self.setWindowTitle("Редактор файлов")
         self.setMinimumSize(800, 500)
 
-        if self.parent.tree_model_manager and self.parent.toolbar_manager:
+        self.tree_model_manager = None
+        self.toolbar_manager = None
+        self.toolbar_to_tree_layout = None
+
+        if (self.parent and hasattr(self.parent, 'tree_model_manager') and
+                hasattr(self.parent, 'toolbar_manager')):
             self._setup_managers(self.parent.tree_model_manager, self.parent.toolbar_manager)
 
         self.setAttribute(Qt.WA_DeleteOnClose)  # Важно: уничтожать объект при закрытии
@@ -61,9 +66,10 @@ class FileEditorWindow(QMainWindow):
         self.main_splitter.addWidget(tree_container)
 
 
+
         # Создаем панель инструментов над деревом
-        toolbar_to_tree_layout = self.toolbar_manager.get_above_tree_toolbar_editor()
-        main_layout.addWidget(toolbar_to_tree_layout)
+        if self.toolbar_to_tree_layout:
+            main_layout.addWidget(self.toolbar_to_tree_layout)
 
 
 
@@ -122,7 +128,8 @@ class FileEditorWindow(QMainWindow):
         # Подключаем сигналы
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         # Подключаемся к сигналу обновления моделей
-        self.tree_model_manager.model_updated.connect(self._on_model_updated)
+        if self.tree_model_manager:
+            self.tree_model_manager.model_updated.connect(self._on_model_updated)
 
     def _setup_managers(self, tree_model_manager, toolbar_manager):
         """Устанавливает менеджеры и инициализирует интерфейс"""
@@ -131,6 +138,8 @@ class FileEditorWindow(QMainWindow):
             raise ValueError("tree_model_manager и toolbar_manager обязательны")
         self.tree_model_manager = tree_model_manager
         self.toolbar_manager = toolbar_manager
+
+        self.toolbar_to_tree_layout = self.toolbar_manager.get_above_tree_toolbar_editor()
 
         # Получаем ВСЕ модели из менеджера
         self.all_models = tree_model_manager.get_model()  # Это словарь {tab_name: model}
@@ -161,23 +170,12 @@ class FileEditorWindow(QMainWindow):
         # Устанавливаем активную вкладку как в SidePanel
         active_info = tree_model_manager.get_active_tab_info()
         if active_info:
-            self.tab_widget.setCurrentIndex(
-            list(self.all_models.keys()).index(active_info['tab_name'])
-            )
+            tab_names = list(self.all_models.keys())
+            if active_info['tab_name'] in tab_names:
+                self.tab_widget.setCurrentIndex(tab_names.index(active_info['tab_name']))
 
         self._init_ui()
 
-        '''# Подключаем сигнал выделения от активного дерева
-        current_tab_index = self.tab_widget.currentIndex()
-        if current_tab_index >= 0:
-            current_tab_name = self.tab_widget.tabText(current_tab_index)
-            tree_view = self.tab_widget.widget(current_tab_index)
-            if hasattr(tree_view, 'selectionModel'):
-                tree_view.selectionModel().selectionChanged.connect(self.on_selection_changed)
-
-        # Также подключаем изменение вкладок
-        self.tab_widget.currentChanged.connect(self._connect_tree_selection)
-        '''
 
     def _connect_selection_signals(self):
         """Подключает сигналы контроллера выделения"""
@@ -450,11 +448,18 @@ class FileEditorWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Обработчик события закрытия окна"""
+        # Отключаем сигналы контроллера
+        try:
+            self.controller.content_for_editor.disconnect()
+            self.controller.selection_changed.disconnect()
+            # Отключаем другие сигналы, если они были подключены
+        except:
+            pass  # Игнорируем ошибки если сигналы не были подключены
+
         # Отключаем сигналы
         if hasattr(self, 'tree_model_manager'):
             try:
-                self.tree_model_manager.selection_controller.disconnect_tree_view("editor")
-
+                self.controller.current_source = "sidepanel"
                 print("Закрываем окно")
             except:
                 pass  # Игнорируем ошибки если сигнал не был подключен
