@@ -65,6 +65,8 @@ class SidePanel(QWidget):
     def _delayed_full_init(self):
         """Полная инициализация после показа окна"""
         try:
+            # Очищаем предыдущие состояния
+            self._cleanup_previous_state()
             # 1. Получите данные для вкладок
             self.tab_names = self.file_operation.fetch_file_heararchy()
             if not isinstance(self.tab_names, dict):
@@ -104,6 +106,10 @@ class SidePanel(QWidget):
             self.show()
 
             # 12. Регистрируем с высоким приоритетом
+            # Сначала удаляем старую регистрацию, если есть
+            if 'side_panel' in self.tree_model_manager.tab_widgets:
+                del self.tree_model_manager.tab_widgets['side_panel']
+
             self.tree_model_manager.register_tab_widget(
                 "side_panel",
                 self.tab_widget,
@@ -118,6 +124,24 @@ class SidePanel(QWidget):
 
             # В случае ошибки покажите сообщение
             self._show_error_ui(str(e))
+
+    def _cleanup_previous_state(self):
+        """Очищает состояние от предыдущего экземпляра"""
+        if hasattr(self, 'tree_model_manager'):
+            # Удаляем модели этого окна
+            for tab_name in list(self.tree_model_manager.tab_models.keys()):
+                if tab_name in getattr(self, 'tab_names', {}):
+                    del self.tree_model_manager.tab_models[tab_name]
+
+            # Очищаем связи файлов с вкладками
+            for file_path in list(self.tree_model_manager.file_to_tabs.keys()):
+                if file_path in self.tree_model_manager.file_to_tabs:
+                    self.tree_model_manager.file_to_tabs[file_path] = [
+                        tab for tab in self.tree_model_manager.file_to_tabs[file_path]
+                        if tab not in getattr(self, 'tab_names', {})
+                    ]
+                    if not self.tree_model_manager.file_to_tabs[file_path]:
+                        del self.tree_model_manager.file_to_tabs[file_path]
 
     def _show_error_ui(self, error_message):
         """Показать UI с ошибкой"""
@@ -735,6 +759,10 @@ class SidePanel(QWidget):
 
 
     def closeEvent(self, event):
+
+        # Сохраняем ссылку на tab_names для очистки
+        tab_names_to_clean = getattr(self, 'tab_names', {})
+
         # Безопасное отключение сигналов
         try:
             if hasattr(self, 'background_parser'):
@@ -745,8 +773,45 @@ class SidePanel(QWidget):
         try:
             if hasattr(self, 'tree_model_manager'):
                 self.tree_model_manager.model_updated.disconnect(self._on_model_updated)
-        except:
-            pass
+
+                # Очищаем ссылки на вкладки и модели этого окна из менеджера
+                if hasattr(self, 'tab_widget'):
+                    # Удаляем регистрацию tab_widget из менеджера
+                    if 'side_panel' in self.tree_model_manager.tab_widgets:
+                        del self.tree_model_manager.tab_widgets['side_panel']
+
+                    # Обновляем приоритеты
+                    self.tree_model_manager.widget_priorities = [
+                        name for name in self.tree_model_manager.widget_priorities
+                        if name != 'side_panel'
+                    ]
+
+                # Удаляем модели, связанные с этим окном
+                tabs_to_remove = []
+                for tab_name in list(self.tree_model_manager.tab_models.keys()):
+                    if tab_name in self.tab_names:  # Удаляем только вкладки этого окна
+                        tabs_to_remove.append(tab_name)
+
+                    #if tab_name in tab_names_to_clean:
+                    #    del self.tree_model_manager.tab_models[tab_name]
+
+                for tab_name in tabs_to_remove:
+                    del self.tree_model_manager.tab_models[tab_name]
+
+                # Очищаем связи файлов с вкладками этого окна
+                for file_path in list(self.tree_model_manager.file_to_tabs.keys()):
+                    if file_path in self.tree_model_manager.file_to_tabs:
+                        # Удаляем только ссылки на вкладки этого окна
+                        self.tree_model_manager.file_to_tabs[file_path] = [
+                            tab for tab in self.tree_model_manager.file_to_tabs[file_path]
+                            if tab not in self.tab_names
+                        ]
+                        # Если список стал пустым, удаляем файл полностью
+                        if not self.tree_model_manager.file_to_tabs[file_path]:
+                            del self.tree_model_manager.file_to_tabs[file_path]
+
+        except Exception as e:
+            print(f"Ошибка при очистке TreeModelManager: {e}")
 
         # Очищаем layout и виджеты
         if self.layout():
