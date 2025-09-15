@@ -407,15 +407,15 @@ class MainWindow(QMainWindow):
 
     # Обработчик нажатия на кнопку Открыть боковую панель
     def open_side_panel(self):
-        #TODO 🚧 В разработке: 04.08.2025
-        if not hasattr(self, '_side_manel'):
-            # 1. Создаем сервисы
-            parser_service = FileParserService()
-            #tree_model_manager = TreeModelManager(parser_service)
-            # 2. Создаем SidePanel и передаем зависимости
-            self.side_panel = SidePanel()
+        # ✅ Реализовано: 15.09.2025
+        if hasattr(self, '_side_panel'):
+            # Удаляем старый экземпляр
+            self._side_panel.deleteLater()
+            del self._side_panel
 
-            self.side_panel.show()
+            # Создаем новый экземпляр
+        self._side_panel = SidePanel()
+        self._side_panel.show()
 
     def toggle_panel(self):
         """Переключает состояние панели (свернуто/развернуто)"""
