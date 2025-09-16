@@ -265,3 +265,8 @@ class ContentCache:
         }
 
         return stats
+
+    def remove(self, file_path: str) -> None:
+        """Удаляет файл из кэша"""
+        if file_path in self._cache:
+            del self._cache[file_path]
