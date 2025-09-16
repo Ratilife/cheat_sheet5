@@ -195,6 +195,7 @@ class TreeModelManager(QObject):
             reverse=True
         )
         print(f"DEBUG: Зарегистрирован '{widget_name}' с приоритетом {priority}")
+        print("🚨🚨🚨 //////🚨🚨🚨 ")
 
     def get_active_tab_name_from_any(self) -> tuple[str, str] | None:
         """
