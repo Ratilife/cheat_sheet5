@@ -36,11 +36,45 @@ class SidePanel(QWidget):
         self.setMinimumWidth(300)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
 
-        # Создайте placeholder для быстрого показа
+        # Явный флаг инициализации
+        self.initialized = False
+
+        # placeholder для быстрого показа
         self._setup_loading_ui()
+
 
         # Отложите тяжелую инициализацию
         QTimer.singleShot(0, self._delayed_full_init)
+
+        self._saved_tab_widget = None
+
+    def showEvent(self, event):
+        """Переопределяем showEvent для повторной инициализации при каждом открытии"""
+        super().showEvent(event)
+
+        # 🔧 ПРОВЕРЯЕМ, что менеджеры уже инициализированы
+        managers_exist = hasattr(self, 'tab_manager') and hasattr(self, 'tree_model_manager')
+
+        if not managers_exist:
+            # Если менеджеры еще не созданы, выходим - они создадутся в _delayed_full_init
+            return
+
+        # 🔧 ВОССТАНОВИТЕ вкладку
+        if hasattr(self, '_saved_current_tab'):
+            self.tab_manager.tab_widget.setCurrentIndex(self._saved_current_tab)
+
+        # 🔧 ИЗМЕНЕНО: Восстанавливаем данные если менеджеры существуют
+        if self.tab_manager.tab_widget.count() > 0:
+            current_index = self.tab_manager.tab_widget.currentIndex()
+            current_tab_name = self.tab_manager.tab_widget.tabText(current_index)
+            self._load_tab_data(current_tab_name)
+
+        # 🔧 ДОБАВЛЕНО: Принудительное обновление ВИДИМОСТИ деревьев
+        for tab_name, tree_view in self.tab_manager.trees.items():
+            if tree_view and tree_view.model():
+                tree_view.setModel(tree_view.model())  # Переустановка модели
+                tree_view.expandAll()  # Раскрыть все узлы
+                tree_view.viewport().update()  # Принудительное обновление
 
     def _setup_loading_ui(self):
         """Быстрый UI placeholder с индикатором загрузки"""
@@ -65,8 +99,16 @@ class SidePanel(QWidget):
     def _delayed_full_init(self):
         """Полная инициализация после показа окна"""
         try:
-            # Очищаем предыдущие состояния
-            self._cleanup_previous_state()
+            # Проверяем, были ли менеджеры уже созданы
+            managers_exist = hasattr(self, 'tree_model_manager') and hasattr(self, 'tab_manager')
+            # Если уже инициализирован ИЛИ менеджеры существуют, просто обновляем данные
+            if self.initialized or managers_exist:
+                self._refresh_data()
+                # 🔧 ДОБАВЛЕНО: Восстанавливаем регистрацию если нужно
+                if managers_exist and not self.initialized:
+                    self._restore_registration()
+                return
+
             # 1. Получите данные для вкладок
             self.tab_names = self.file_operation.fetch_file_heararchy()
             if not isinstance(self.tab_names, dict):
@@ -103,19 +145,17 @@ class SidePanel(QWidget):
             self.tree_model_manager.debug_file_to_tabs()
 
             # 11. ПОКАЗАТЬ панель после инициализации
-            self.show()
+            #self.show()
 
             # 12. Регистрируем с высоким приоритетом
-            # Сначала удаляем старую регистрацию, если есть
-            if 'side_panel' in self.tree_model_manager.tab_widgets:
-                del self.tree_model_manager.tab_widgets['side_panel']
-
             self.tree_model_manager.register_tab_widget(
                 "side_panel",
                 self.tab_widget,
-                priority=100  # Высокий приоритет
+                priority=100
             )
 
+            # Устанавливаем флаг инициализации
+            self.initialized = True
 
         except Exception as e:
             print(f"Ошибка при инициализации SidePanel: {e}")
@@ -125,23 +165,80 @@ class SidePanel(QWidget):
             # В случае ошибки покажите сообщение
             self._show_error_ui(str(e))
 
-    def _cleanup_previous_state(self):
-        """Очищает состояние от предыдущего экземпляра"""
-        if hasattr(self, 'tree_model_manager'):
-            # Удаляем модели этого окна
-            for tab_name in list(self.tree_model_manager.tab_models.keys()):
-                if tab_name in getattr(self, 'tab_names', {}):
-                    del self.tree_model_manager.tab_models[tab_name]
+    def _refresh_data(self):
+        """Обновление данных без полной переинициализации"""
+        try:
+            # Обновляем данные вкладок
+            new_tab_names = self.file_operation.fetch_file_heararchy()
+            if not isinstance(new_tab_names, dict):
+                new_tab_names = {"Documents": []}
 
-            # Очищаем связи файлов с вкладками
-            for file_path in list(self.tree_model_manager.file_to_tabs.keys()):
-                if file_path in self.tree_model_manager.file_to_tabs:
-                    self.tree_model_manager.file_to_tabs[file_path] = [
-                        tab for tab in self.tree_model_manager.file_to_tabs[file_path]
-                        if tab not in getattr(self, 'tab_names', {})
-                    ]
-                    if not self.tree_model_manager.file_to_tabs[file_path]:
-                        del self.tree_model_manager.file_to_tabs[file_path]
+            new_tab_names = self.file_operation.extend_dict_with_file('saved_files.json', new_tab_names)
+
+            # Обновляем существующие вкладки
+            for tab_name in list(self.tab_manager.trees.keys()):
+                if tab_name in new_tab_names:
+                    # Обновляем файлы для существующей вкладки
+                    self.tab_names[tab_name] = new_tab_names[tab_name]
+                    self._load_tab_data(tab_name)
+                else:
+                    # Удаляем несуществующую вкладку
+                    self.tab_manager.remove_tab(tab_name)
+
+            # Добавляем новые вкладки
+            for tab_name, file_paths in new_tab_names.items():
+                if tab_name not in self.tab_manager.trees:
+                    self.tab_manager.add_tab(tab_name, file_paths)
+                    self._load_tab_data(tab_name)
+
+        except Exception as e:
+            print(f"Ошибка при обновлении данных: {e}")
+
+    def _restore_registration(self):
+        """Восстанавливает регистрацию и связи после повторного открытия"""
+        try:
+            # Восстанавливаем регистрацию tab_widget
+            if (hasattr(self, 'tree_model_manager') and
+                    hasattr(self, 'tab_widget') and
+                    'side_panel' not in self.tree_model_manager.tab_widgets):
+
+                # Если есть сохраненный виджет, используем его
+                if hasattr(self, '_saved_tab_widget'):
+                    self.tree_model_manager.tab_widgets['side_panel'] = self._saved_tab_widget
+                    delattr(self, '_saved_tab_widget')
+                else:
+                    # Иначе регистрируем заново
+                    self.tree_model_manager.register_tab_widget(
+                        "side_panel",
+                        self.tab_widget,
+                        priority=100
+                    )
+
+            # Восстанавливаем подключение сигналов к деревьям
+            if hasattr(self, 'tab_manager') and hasattr(self, 'tree_model_manager'):
+                for tab_name, tree_view in self.tab_manager.trees.items():
+                    if tree_view:
+                        self.tree_model_manager.selection_controller.connect_tree_view(tree_view, "sidepanel")
+
+            # Устанавливаем флаг инициализации
+            self.initialized = True
+
+        except Exception as e:
+            print(f"Ошибка при восстановлении регистрации: {e}")
+
+    def _refresh_tree_views(self):
+        """Обновляет отображение деревьев после восстановления"""
+        try:
+            if hasattr(self, 'tab_manager'):
+                for tab_name, tree_view in self.tab_manager.trees.items():
+                    if tree_view and tree_view.model():
+                        # Обновляем отображение модели
+                        tree_view.viewport().update()
+                        # Принудительно обновляем layout
+                        tree_view.doItemsLayout()
+        except Exception as e:
+            print(f"Ошибка при обновлении tree views: {e}")
+
 
     def _show_error_ui(self, error_message):
         """Показать UI с ошибкой"""
@@ -246,11 +343,12 @@ class SidePanel(QWidget):
         self.parser_service = FileParserService()
 
         # 3. Создаем менеджер моделей с зависимостями
-        self.tree_model_manager = TreeModelManager(
-            parser_service=self.parser_service,
-            metadata_cache=self.metadata_cache,
-            content_cache=self.content_cache
-        )
+        if not hasattr(self, 'tree_model_manager'):
+            self.tree_model_manager = TreeModelManager(
+                parser_service=self.parser_service,
+                metadata_cache=self.metadata_cache,
+                content_cache=self.content_cache
+            )
         print("SidePanel: Инициализация BackgroundParser")
         # 4. Создаем фоновый парсер
         self.background_parser = BackgroundParser.instance(
@@ -757,70 +855,43 @@ class SidePanel(QWidget):
         """Возвращает имя шаблона (только для чтения)"""
         return self._template_name
 
-
     def closeEvent(self, event):
-
-        # Сохраняем ссылку на tab_names для очистки
-        tab_names_to_clean = getattr(self, 'tab_names', {})
-
-        # Безопасное отключение сигналов
+        """Обработчик закрытия окна"""
         try:
+            # 🔧 СОХРАНИТЕ текущее состояние (только если менеджеры существуют)
+            if hasattr(self, 'tab_manager'):
+                self._saved_current_tab = self.tab_manager.tab_widget.currentIndex()
+            else:
+                self._saved_current_tab = 0
+            # Отключаем сигналы
             if hasattr(self, 'background_parser'):
-                self.background_parser.task_finished.disconnect(self._on_parsing_done)
-        except:
-            pass
+                try:
+                    self.background_parser.task_finished.disconnect(self._on_parsing_done)
+                except:
+                    pass
 
-        try:
             if hasattr(self, 'tree_model_manager'):
-                self.tree_model_manager.model_updated.disconnect(self._on_model_updated)
+                try:
+                    self.tree_model_manager.model_updated.disconnect(self._on_model_updated)
+                except:
+                    pass
 
-                # Очищаем ссылки на вкладки и модели этого окна из менеджера
-                if hasattr(self, 'tab_widget'):
-                    # Удаляем регистрацию tab_widget из менеджера
-                    if 'side_panel' in self.tree_model_manager.tab_widgets:
-                        del self.tree_model_manager.tab_widgets['side_panel']
+                # 🔧 ИСПРАВЛЕНО: Правильное временное отключение регистрации
+                if (hasattr(self, 'tab_widget') and
+                        hasattr(self.tree_model_manager, 'tab_widgets') and
+                        'side_panel' in self.tree_model_manager.tab_widgets):
+                    # Временно сохраняем ссылку и удаляем из активных
+                    self._saved_tab_widget = self.tree_model_manager.tab_widgets['side_panel']
+                    del self.tree_model_manager.tab_widgets['side_panel']
 
-                    # Обновляем приоритеты
-                    self.tree_model_manager.widget_priorities = [
-                        name for name in self.tree_model_manager.widget_priorities
-                        if name != 'side_panel'
-                    ]
-
-                # Удаляем модели, связанные с этим окном
-                tabs_to_remove = []
-                for tab_name in list(self.tree_model_manager.tab_models.keys()):
-                    if tab_name in self.tab_names:  # Удаляем только вкладки этого окна
-                        tabs_to_remove.append(tab_name)
-
-                    #if tab_name in tab_names_to_clean:
-                    #    del self.tree_model_manager.tab_models[tab_name]
-
-                for tab_name in tabs_to_remove:
-                    del self.tree_model_manager.tab_models[tab_name]
-
-                # Очищаем связи файлов с вкладками этого окна
-                for file_path in list(self.tree_model_manager.file_to_tabs.keys()):
-                    if file_path in self.tree_model_manager.file_to_tabs:
-                        # Удаляем только ссылки на вкладки этого окна
-                        self.tree_model_manager.file_to_tabs[file_path] = [
-                            tab for tab in self.tree_model_manager.file_to_tabs[file_path]
-                            if tab not in self.tab_names
-                        ]
-                        # Если список стал пустым, удаляем файл полностью
-                        if not self.tree_model_manager.file_to_tabs[file_path]:
-                            del self.tree_model_manager.file_to_tabs[file_path]
+            # Останавливаем файловый вотчер
+            if hasattr(self, 'file_watcher'):
+                self.file_watcher.stop()
 
         except Exception as e:
-            print(f"Ошибка при очистке TreeModelManager: {e}")
+            print(f"Ошибка при очистке: {e}")
 
-        # Очищаем layout и виджеты
-        if self.layout():
-            QWidget().setLayout(self.layout())
-
-        # Закрываем файловый вотчер
-        if hasattr(self, 'file_watcher'):
-            self.file_watcher.stop()
-
-        # Принимаем событие закрытия
+        super().closeEvent(event)
         event.accept()
         print("SidePanel закрывается")
+        print("🚨🚨🚨-----------🚨🚨🚨")
