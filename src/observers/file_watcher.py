@@ -170,3 +170,8 @@ class FileWatcher(QObject):
         #  ⌛ Реализовано: 10.08.2025 - мертвый код оставить для будущих задач
         if self.watcher.files():
             self.watcher.removePaths(self.watcher.files())
+
+    def stop_watching(self):
+        """Останавливает наблюдение за файлами"""
+        if hasattr(self, '_observer') and self._observer.isRunning():
+            self._observer.stop()
