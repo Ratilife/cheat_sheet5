@@ -1,6 +1,8 @@
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout, QTreeView
 
+from operation.file_operations import FileOperations
+
 
 class DynamicTabManager(QObject):
     # TODO 🚧 В разработке: 08.08.2025
@@ -14,7 +16,10 @@ class DynamicTabManager(QObject):
         self.tab_widget = QTabWidget()
         self.trees = {}  # Словарь для хранения деревьев по именам вкладок
 
-
+        # 🔽Добавляем методы 17.09.2025🔽
+        self.tab_widgets = {}  # {"side_panel": tab_widget1, "editor": tab_widget2}
+        self.widget_priorities = []
+        # 🔽Конец добавления методов 17.09.2025🔽
     def create_tabs(self, tab_data: dict) -> QTabWidget:
         """Создает вкладки и деревья на основе переданного словаря.
         Ключи словаря используются как имена вкладок.
@@ -58,3 +63,39 @@ class DynamicTabManager(QObject):
         # TODO 🚧 В разработке: 08.08.2025
         # Логика обновления дерева...
         pass
+
+    # 🔽Добавляем методы 17.09.2025🔽
+    def register_tab_widget(self, widget_name: str, tab_widget: QTabWidget, priority: int = 0):
+        """Регистрирует tab_widget с приоритетом"""
+        self.tab_widgets[widget_name] = tab_widget
+        self.widget_priorities = sorted(
+            self.tab_widgets.keys(),
+            key=lambda x: priority,
+            reverse=True
+        )
+
+    def get_active_tab_info(self) -> dict | None:
+        """Возвращает информацию об активной вкладке из любого окна"""
+        for widget_name in self.widget_priorities:
+            tab_widget = self.tab_widgets[widget_name]
+            if tab_widget and tab_widget.count() > 0:
+                current_index = tab_widget.currentIndex()
+                if current_index >= 0:
+                    return {
+                        'widget_name': widget_name,
+                        'tab_name': tab_widget.tabText(current_index),
+                        'tab_widget': tab_widget
+                    }
+        return None
+
+    def launch_download_for_active_tab(self, file_operations: FileOperations):
+        """Загружает файлы для активной вкладки"""
+        tab_info = self.get_active_tab_info()
+        if not tab_info:
+            print("Нет активных вкладок")
+            return None
+
+        files = file_operations.load_st_md_files(tab_info['tab_name'])
+        return tab_info['tab_name'], files
+
+    # 🔽Конец добавления методов 17.09.2025🔽
