@@ -100,7 +100,7 @@ class SidePanel(QWidget):
             self._setup_screen_edge_docking()
 
             # 10. Отладочная информация
-            self.tree_model_manager.debug_file_to_tabs()
+            self.tree_model_manager.debug_file_to_tabs()   #TODO 17/09/2025 изменить переписуем TreeModelManager
 
             # 11. ПОКАЗАТЬ панель после инициализации
             self.show()
