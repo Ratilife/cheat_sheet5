@@ -114,7 +114,7 @@ class SidePanel(QWidget):
                 "side_panel",
                 self.tab_widget,
                 priority=100  # Высокий приоритет
-            )
+            )  #TODO 17/09/2025 изменить переписуем TreeModelManager
 
 
         except Exception as e:
