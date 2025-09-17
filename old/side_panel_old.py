@@ -314,7 +314,7 @@ class SidePanel(QWidget):
                 return
 
             # 2. Запрашиваем модель с метаданными
-            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)
+            model = self.tree_model_manager.build_model_for_tab(tab_name, file_paths)  #TODO 17/09/2025 изменить переписуем TreeModelManager
 
             # 3. Привязываем модель к дереву
             if model:
