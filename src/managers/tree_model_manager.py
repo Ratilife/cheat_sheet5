@@ -283,7 +283,7 @@ class TreeModelManager(QObject):
 
         updated = False
         for tab_name in self._file_to_tabs[file_path]:
-            if self.update_model(tab_name, file_path):
+            if self.update_model(tab_name, file_path):           #TODO 17/09/2025 изменить переписуем TreeModelManager
                 updated = True
                 self.model_updated.emit(tab_name, file_path)
 
@@ -379,7 +379,7 @@ class TreeModelManager(QObject):
             dict: {widget_name: str, tab_name: str, tab_widget: QTabWidget}
         """
         # ✅ Реализовано: 01.09.2025
-        result = self.get_active_tab_name_from_any()
+        result = self.get_active_tab_name_from_any()   #TODO 17/09/2025 изменить переписуем TreeModelManager
         if result:
             widget_name, tab_name = result
             return {
@@ -415,7 +415,7 @@ class TreeModelManager(QObject):
         # Получаем информацию о вкладке
         tab_name = result['tab_name']
         files = self.file_operations.load_st_md_files(tab_name)
-        self.add_files_to_tab(tab_name=tab_name,file_paths=files)
+        self.add_files_to_tab(tab_name=tab_name,file_paths=files)      #TODO 17/09/2025 изменить переписуем TreeModelManager
         # Если нужно обновлять конкретные элементы(Нужно определится)
 
 
