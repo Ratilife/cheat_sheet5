@@ -20,6 +20,7 @@ class DynamicTabManager(QObject):
         self.tab_widgets = {}  # {"side_panel": tab_widget1, "editor": tab_widget2}
         self.widget_priorities = []
         # 🔽Конец добавления методов 17.09.2025🔽
+        self.file_operations = FileOperations()
     def create_tabs(self, tab_data: dict) -> QTabWidget:
         """Создает вкладки и деревья на основе переданного словаря.
         Ключи словаря используются как имена вкладок.
@@ -88,14 +89,14 @@ class DynamicTabManager(QObject):
                     }
         return None
 
-    def launch_download_for_active_tab(self, file_operations: FileOperations):
+    def launch_download_for_active_tab(self):
         """Загружает файлы для активной вкладки"""
         tab_info = self.get_active_tab_info()
         if not tab_info:
             print("Нет активных вкладок")
             return None
 
-        files = file_operations.load_st_md_files(tab_info['tab_name'])
+        files = self.file_operations.load_st_md_files(tab_info['tab_name'])
         return tab_info['tab_name'], files
 
     # 🔽Конец добавления методов 17.09.2025🔽
