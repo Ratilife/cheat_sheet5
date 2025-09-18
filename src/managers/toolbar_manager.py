@@ -1,5 +1,5 @@
 from src.managers.ui_manager import UIManager
-from src.managers.tree_model_manager import TreeModelManager
+from src.managers.dynamic_tabs import DynamicTabManager
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QIcon
 class ToolbarManager(QObject):
@@ -109,7 +109,8 @@ class ToolbarManager(QObject):
             fixed_width=20,
             fixed_height=20
         )
-        self.ui.buttons["load_btn"].clicked.connect(self.tree_manager.launching_download)
+        self.tab_manager = DynamicTabManager()
+        self.ui.buttons["load_btn"].clicked.connect(self.tab_manager.launch_download_for_active_tab)   #TODO 17/09/2025 изменить переписуем TreeModelManager
 
         # Кнопка Создать st-файл
         self.ui.create_button(
