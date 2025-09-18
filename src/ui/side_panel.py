@@ -107,8 +107,7 @@ class SidePanel(QWidget):
 
             # 12. Регистрируем с высоким приоритетом
             # Сначала удаляем старую регистрацию, если есть
-            if 'side_panel' in self.tree_model_manager.tab_widgets:
-                del self.tree_model_manager.tab_widgets['side_panel']
+
 
             self.tab_manager.register_tab_widget(
                 "side_panel",
@@ -471,7 +470,7 @@ class SidePanel(QWidget):
         print(f"🌤️Парсинг завершен для: {file_path}")
 
         #  Обновляем ВО ВСЕХ вкладках через менеджер моделей
-        updated = self.tree_model_manager.update_file_in_all_tabs(file_path)
+        updated = self.tree_model_manager.update_file_in_tabs(file_path)   # TODO 18/09/2025 тут начинается ошибка _on_parsing_done -> self.tree_model_manager.update_file_in_all_tabs(file_path)
 
         if not updated:
             print(f"Предупреждение: файл {file_path} не найден в активных моделях")
