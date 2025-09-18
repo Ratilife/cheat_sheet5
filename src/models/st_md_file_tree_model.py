@@ -1,4 +1,4 @@
-from PySide6.QtCore import QAbstractItemModel
+
 import json
 from PySide6.QtWidgets import QFileIconProvider
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex, QSize
