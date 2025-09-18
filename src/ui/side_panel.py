@@ -100,7 +100,7 @@ class SidePanel(QWidget):
             self._setup_screen_edge_docking()
 
             # 10. Отладочная информация
-            self.tree_model_manager.debug_file_to_tabs()   #TODO 17/09/2025 изменить переписуем TreeModelManager
+            self.tree_model_manager.debug_info()
 
             # 11. ПОКАЗАТЬ панель после инициализации
             self.show()
@@ -110,7 +110,7 @@ class SidePanel(QWidget):
             if 'side_panel' in self.tree_model_manager.tab_widgets:
                 del self.tree_model_manager.tab_widgets['side_panel']
 
-            self.tree_model_manager.register_tab_widget(
+            self.tab_manager.register_tab_widget(
                 "side_panel",
                 self.tab_widget,
                 priority=100  # Высокий приоритет

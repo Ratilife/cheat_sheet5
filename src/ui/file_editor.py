@@ -168,7 +168,7 @@ class FileEditorWindow(QMainWindow):
         self._connect_selection_signals()
 
         # Устанавливаем активную вкладку как в SidePanel
-        active_info = tree_model_manager.get_active_tab_info()   #TODO 17/09/2025 изменить TreeModelManager
+        active_info = self.parent.tab_manager.get_active_tab_info()   #TODO 17/09/2025 изменить TreeModelManager
         if active_info:
             tab_names = list(self.all_models.keys())
             if active_info['tab_name'] in tab_names:
@@ -270,9 +270,7 @@ class FileEditorWindow(QMainWindow):
         # 1. Синхронизация с TreeModelManager
         #active_info = self.tree_model_manager.get_active_tab_info()
 
-        #if active_info and active_info['tab_name'] != tab_name:
-            # Устанавливаем активную вкладку в менеджере
-            #self.tree_model_manager.set_active_tab(tab_name)
+
 
 
         # 2. Обновление UI
