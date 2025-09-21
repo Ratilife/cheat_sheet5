@@ -887,14 +887,16 @@ class SidePanel(QWidget):
                 self.file_watcher = None
 
             # 11. Очищаем кэш контента для этого экземпляра (только файлы этого окна)
-            '''if hasattr(self, 'content_cache') and hasattr(self, 'tab_names'):
+            #TODO - 21/09/2025 проблема тут. Данные из кэш мешают повторно открыться окну
+            if hasattr(self, 'content_cache') and hasattr(self, 'tab_names'):
                 try:
                     for tab_name, file_paths in self.tab_names.items():
                         for file_path in file_paths:
                             if self.content_cache.get(file_path):
                                 self.content_cache.remove(file_path)
                 except Exception as e:
-                    print(f"Ошибка при очистке кэша контента: {e}") '''
+                    print(f"Ошибка при очистке кэша контента: {e}")
+            #---Конец пророблеме тут
 
             print("🚨🚨🚨SidePanel закрыт, ресурсы очищены🚨🚨🚨")
 
