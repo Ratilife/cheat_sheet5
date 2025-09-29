@@ -128,8 +128,8 @@ class EditorFactory:
     @staticmethod
     def create_editor_for_type( content_type, parent=None):
         if content_type == 'template':
-            EditorFactory.create_editor('.st', parent)
+            return EditorFactory.create_editor('.st', parent)
         elif content_type == 'markdown':
-            EditorFactory.create_editor('.md', parent)
+            return EditorFactory.create_editor('.md', parent)
         else:
             return EditorFactory.create_editor('.txt', parent)  # редактор по умолчанию
