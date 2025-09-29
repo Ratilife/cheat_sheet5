@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import (QWidget,  QVBoxLayout,QRadioButton,QHBoxLayout, QButtonGroup, QTextEdit)
 from src.widgets.markdown_highlighter import MarkdownHighlighter
 from src.widgets.markdown_converter import MarkdownConverter
+from PySide6.QtCore import Signal
 class MarkdownViewer(QWidget):
     """Класс для отображения MD файлов в двух режимах: текст и markdown"""
+    text_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -59,6 +61,12 @@ class MarkdownViewer(QWidget):
         self.layout.addWidget(self.mode_panel)
         self.layout.addWidget(self.text_editor)
         self.layout.addWidget(self.markdown_editor)
+
+        self.text_editor.textChanged.connect(self._on_text_changed)
+
+    def _on_text_changed(self):
+        """Эмитит сигнал при изменении текста"""
+        self.text_changed.emit()
 
     def _change_mode(self):
         """Переключение между режимами просмотра"""
