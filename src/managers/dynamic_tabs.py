@@ -91,6 +91,7 @@ class DynamicTabManager(QObject):
 
     def launch_download_for_active_tab(self):
         """Загружает файлы для активной вкладки"""
+        # TODO 29.09.2025 тут начинается проблема.
         tab_info = self.get_active_tab_info()
         if not tab_info:
             print("Нет активных вкладок")
