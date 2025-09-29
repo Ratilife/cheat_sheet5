@@ -120,3 +120,13 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         """
         return self
 
+    def get_available_actions(self) -> list:
+        """
+        Возвращает список доступных действий для редактора.
+        Может быть переопределен в подклассах для предоставления специфичных действий.
+
+        Returns:
+            list: Список QAction или пустой список
+        """
+        return []
+
