@@ -1,11 +1,14 @@
 from pathlib import Path
 import os
+
+from PySide6.QtGui import QAction
+
 from editor.base_editor import BaseFileEditor
 from editor.editor_factory import EditorFactory
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
-                               QHBoxLayout, QLabel, QLineEdit)
+                               QHBoxLayout, QLabel, QLineEdit, QToolBar)
 from src.widgets.markdown_viewer_widget import MarkdownViewer
 class FileEditorWindowObserver(MyBaseObserver):
     # ✅ Реализовано: 30.06.2025
@@ -33,6 +36,8 @@ class FileEditorWindow(QMainWindow):
         self.tree_model_manager = None
         self.toolbar_manager = None
         self.toolbar_to_tree_layout = None
+
+        self._create_editor_actions()
 
         if (self.parent and hasattr(self.parent, 'tree_model_manager') and
                 hasattr(self.parent, 'toolbar_manager')):
@@ -86,8 +91,8 @@ class FileEditorWindow(QMainWindow):
         toolbar_template_layout.setSpacing(5)
 
         # Создаем панель инструментов над редактаром
-        editor_toolbar = self.toolbar_manager.get_editor_toolbar()
-        toolbar_template_layout.addWidget(editor_toolbar)
+        self.editor_toolbar = self.toolbar_manager.get_editor_toolbar()
+        toolbar_template_layout.addWidget(self.editor_toolbar)
 
         #  Поле для отображения и редактирования template_name в той же строке
         template_label = QLabel()
@@ -271,8 +276,6 @@ class FileEditorWindow(QMainWindow):
         #active_info = self.tree_model_manager.get_active_tab_info()
 
 
-
-
         # 2. Обновление UI
         self.setWindowTitle(f"Редактор файлов - {tab_name}")
 
@@ -290,6 +293,45 @@ class FileEditorWindow(QMainWindow):
         # 5. Логирование для отладки
         print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
 
+    def _create_editor_actions(self):
+        """Создает базовые действия для редактора"""
+        # Действие "Сохранить"
+        self.save_action = QAction("Сохранить", self)
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.triggered.connect(self._on_save_action)
+        self.save_action.setEnabled(False)  # Изначально отключено
+
+        # Действие "Отменить"
+        self.undo_action = QAction("Отменить", self)
+        self.undo_action.setShortcut("Ctrl+Z")
+        self.undo_action.triggered.connect(self._on_undo_action)
+
+        # Действие "Повторить"
+        self.redo_action = QAction("Повторить", self)
+        self.redo_action.setShortcut("Ctrl+Y")
+        self.redo_action.triggered.connect(self._on_redo_action)
+
+    def _on_save_action(self):
+        """Обработчик действия Сохранить"""
+        if hasattr(self, 'current_editor') and self.current_editor:
+            success = self.current_editor.save()
+            if success:
+                print("DEBUG: Файл успешно сохранен")
+            else:
+                print("DEBUG: Ошибка при сохранении файла")
+
+    def _on_undo_action(self):
+        """Обработчик действия Отменить"""
+        if hasattr(self, 'current_editor') and self.current_editor:
+            # TODO: 29.09.2025 Реализуйте отмену в конкретных редакторах
+            print("DEBUG: Действие 'Отменить'")
+
+    def _on_redo_action(self):
+        """Обработчик действия Повторить"""
+        if hasattr(self, 'current_editor') and self.current_editor:
+            # TODO: 29.09.2025 Реализуйте повтор в конкретных редакторах
+            print("DEBUG: Действие 'Повторить'")
+
     def on_display_content(self, content_type, content,path_file):
         """Отображает контент в редакторе"""
         # TODO 🚧 В разработке: 30.08.2025
@@ -302,6 +344,9 @@ class FileEditorWindow(QMainWindow):
             print("👍 Работает метод on_display_content()")
             # 1. Создаем appropriate редактор через фабрику
             editor = EditorFactory.create_editor_for_type(content_type, self)
+
+            if editor is None:
+                raise ValueError(f"Не удалось создать редактор для типа: {content_type}")
 
             # 2. Устанавливаем контент в редактор
             editor.set_content(content)
@@ -412,24 +457,62 @@ class FileEditorWindow(QMainWindow):
 
         # 5. Обновляем UI в соответствии с состоянием нового редактора
         self._update_window_title(editor.is_modified)
-        self._update_toolbar_actions(editor.get_available_actions())
+        if hasattr(editor, 'get_available_actions'):
+            self._update_toolbar_actions(editor.get_available_actions())
+        else:
+            self._update_toolbar_actions([])  # Пустой список по умолчанию
+
+    def _update_window_title(self, is_modified: bool):
+        """
+        Обновляет заголовок окна в зависимости от состояния редактора
+
+        Args:
+            is_modified: Флаг модификации документа
+        """
+        base_title = "Редактор файлов"
+        if hasattr(self, 'current_editor') and self.current_editor and self.current_editor.file_path:
+            file_name = self.current_editor.file_path.name
+            title = f"{base_title} - {file_name}"
+        else:
+            title = base_title
+
+        if is_modified:
+            title += " *"
+
+        self.setWindowTitle(title)
 
     def _on_editor_modified(self, is_modified: bool):
         """Обновляет UI при изменении состояния редактора"""
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _on_editor_modified
-        # Обновляем заголовок окна (добавляем/убираем *)
-        title = self.windowTitle().replace(' *', '')
-        if is_modified:
-            title += ' *'
-        self.setWindowTitle(title)
+        """
+            Обработчик изменения состояния редактора (модифицирован/не модифицирован)
+
+            Args:
+                is_modified: Флаг модификации
+            """
+        self._update_window_title(is_modified)
 
         # Активируем/деактивируем кнопку Сохранить
         if hasattr(self, 'save_action'):
             self.save_action.setEnabled(is_modified)
 
+        # Можно добавить другие UI обновления здесь
+        print(f"DEBUG: Состояние редактора изменено - модифицирован: {is_modified}")
+
     def _update_toolbar_actions(self, actions: list):
         """Обновляет панель инструментов actions редактора"""
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
+
+        # Проверяем существование панели инструментов
+        if not hasattr(self, 'editor_toolbar') or not self.editor_toolbar:
+            print("DEBUG: Панель инструментов редактора не инициализирована")
+            return
+
+        # Проверяем существование действий
+        if not hasattr(self, 'save_action'):
+            print("DEBUG: Действия редактора не созданы")
+            return
+
         # Очищаем текущую панель
         self.editor_toolbar.clear()
 
@@ -470,3 +553,4 @@ class FileEditorWindow(QMainWindow):
 
         # Дополнительные действия при закрытии
         print("FileEditorWindow закрывается")
+
