@@ -351,6 +351,8 @@ class FileEditorWindow(QMainWindow):
             # 2. Устанавливаем контент в редактор
             editor.set_content(content)
 
+            self.text_editor.setPlainText(content)
+
             # 3. Заменяем текущий редактор в UI
             self._set_current_editor(editor)
 
