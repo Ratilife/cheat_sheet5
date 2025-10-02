@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 
+
 from PySide6.QtGui import QAction
 
 from editor.base_editor import BaseFileEditor
@@ -8,7 +9,7 @@ from editor.editor_factory import EditorFactory
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
-                               QHBoxLayout, QLabel, QLineEdit, QToolBar)
+                               QHBoxLayout, QLabel, QLineEdit, QToolBar, QSizePolicy)
 from src.widgets.markdown_viewer_widget import MarkdownViewer
 class FileEditorWindowObserver(MyBaseObserver):
     # ✅ Реализовано: 30.06.2025
@@ -70,13 +71,9 @@ class FileEditorWindow(QMainWindow):
         # Контейнер с деревом добавлен в разделитель
         self.main_splitter.addWidget(tree_container)
 
-
-
         # Создаем панель инструментов над деревом
         if self.toolbar_to_tree_layout:
             main_layout.addWidget(self.toolbar_to_tree_layout)
-
-
 
         # Контейнер для редактора и кнопок
         editor_container = QWidget()  # Контейнерный виджет
@@ -218,6 +215,57 @@ class FileEditorWindow(QMainWindow):
 
         print(f"DEBUG: Файл {file_path} не найден для обновления view")
 
+    def _setup_markdown_layout(self, editor, content):
+        """Настраивает layout для markdown-редактора с HTML-представлением"""
+        # 1. Удаляем старый редактор если есть
+        if hasattr(self, 'current_editor') and self.current_editor:
+            try:
+                self.current_editor.modification_changed.disconnect()
+            except:
+                pass
+
+            old_editor_widget = self.current_editor.get_editor_widget()
+            self.editor_layout.removeWidget(old_editor_widget)
+            old_editor_widget.deleteLater()
+
+        # 2. Сохраняем ссылку на редактор
+        self.current_editor = editor
+
+        # 3. Создаем вертикальный разделитель
+        editor_splitter = QSplitter(Qt.Vertical)
+
+        # 4. Верхняя часть - текстовый редактор
+        self.text_editor.setPlainText(content)  # Устанавливаем контент
+
+        # 5. Нижняя часть - HTML-представление из редактора
+        html_viewer = editor.get_editor_widget()  # Получаем HTML-виджет
+
+        # 6. Добавляем в разделитель
+        editor_splitter.addWidget(self.text_editor)
+        editor_splitter.addWidget(html_viewer)
+
+        # 7. Настраиваем пропорции (текстовый редактор - 60%, HTML - 40%)
+        editor_splitter.setSizes([600, 400])
+        editor_splitter.setChildrenCollapsible(False)
+
+        # 8. Добавляем разделитель в layout редактора
+        # Сначала очищаем editor_layout
+        for i in reversed(range(self.editor_layout.count())):
+            widget = self.editor_layout.itemAt(i).widget()
+            if widget:
+                self.editor_layout.removeWidget(widget)
+                if widget != self.text_editor:  # Не удаляем text_editor
+                    widget.deleteLater()
+
+        # Добавляем разделитель
+        self.editor_layout.addWidget(editor_splitter)
+
+        # 9. Подключаем сигналы
+        editor.modification_changed.connect(self._on_editor_modified)
+
+        # 10. Настраиваем политики размеров для правильного растягивания
+        self.text_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        html_viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
     def _on_model_updated(self, tab_name, file_path):
         """Обработчик обновления модели - автоматическая синхронизация!"""
         # TODO 🚧 В разработке: 02.09.2025 не понял этот метод
@@ -351,10 +399,14 @@ class FileEditorWindow(QMainWindow):
             # 2. Устанавливаем контент в редактор
             editor.set_content(content)
 
-            self.text_editor.setPlainText(content)
 
-            # 3. Заменяем текущий редактор в UI
-            self._set_current_editor(editor)
+
+            if content_type == 'markdown':
+                self._setup_markdown_layout(editor, content)
+            else:
+                # 3. Заменяем текущий редактор в UI
+                self.text_editor.setPlainText(content)
+                self._set_current_editor(editor)
 
             # 4. Обновляем статус
             self.statusBar().showMessage(f"Загружен контент типа: {content_type}")
@@ -427,6 +479,39 @@ class FileEditorWindow(QMainWindow):
         if hasattr(tree_view, 'selectionModel'):
             tree_view.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
+    def _set_current_editor_old(self, editor: BaseFileEditor):
+        """Правильная замена редактора"""
+        # 1. Удаляем старый редактор
+        if hasattr(self, 'current_editor') and self.current_editor:
+            try:
+                self.current_editor.modification_changed.disconnect()
+            except:
+                pass
+
+            old_editor_widget = self.current_editor.get_editor_widget()
+            self.editor_layout.removeWidget(old_editor_widget)
+            old_editor_widget.deleteLater()
+
+        # 2. Удаляем старый text_editor если он существует
+        if hasattr(self, 'text_editor'):
+            self.editor_layout.removeWidget(self.text_editor)
+            self.text_editor.deleteLater()
+            del self.text_editor
+
+        # 3. Сохраняем новый редактор
+        self.current_editor = editor
+
+        # 4. Добавляем ТОЛЬКО новый редактор
+        editor_widget = editor.get_editor_widget()
+        editor_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.editor_layout.addWidget(editor_widget)
+
+        # 5. Подключаем сигналы
+        editor.modification_changed.connect(self._on_editor_modified)
+
+        # 6. Обновляем UI
+        self._update_window_title(editor.is_modified)
+
     def _set_current_editor(self, editor: BaseFileEditor):
         """
         Заменяет текущий редактор в пользовательском интерфейсе.
@@ -446,6 +531,8 @@ class FileEditorWindow(QMainWindow):
             self.editor_layout.removeWidget(old_editor_widget)
             old_editor_widget.deleteLater()
 
+
+
         # 2. Сохраняем ссылку на новый редактор
         self.current_editor = editor
 
@@ -460,7 +547,7 @@ class FileEditorWindow(QMainWindow):
         # 5. Обновляем UI в соответствии с состоянием нового редактора
         self._update_window_title(editor.is_modified)
         if hasattr(editor, 'get_available_actions'):
-            self._update_toolbar_actions(editor.get_available_actions())
+            self._update_toolbar_actions(editor.get_available_actions()) # TODO - ошибка тут: Ошибка возникает в методе _update_toolbar_actions при попытке очистить панель инструментов, которая уже была удалена. Проблема в том, что при смене редакторов вы пытаетесь обновить панель инструментов, но к этому моменту виджеты могут быть уже уничтожены.
         else:
             self._update_toolbar_actions([])  # Пустой список по умолчанию
 
@@ -506,9 +593,17 @@ class FileEditorWindow(QMainWindow):
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
 
         # Проверяем существование панели инструментов
-        if not hasattr(self, 'editor_toolbar') or not self.editor_toolbar:
+        if not hasattr(self, 'editor_toolbar') or not self.editor_toolbar is None:
             print("DEBUG: Панель инструментов редактора не инициализирована")
             return
+
+            # ✅ Дополнительная проверка "на живца"
+            try:
+                # Пробуем вызвать простой метод - если вылетает ошибка, объект мертв
+                _ = self.editor_toolbar.isVisible()
+            except RuntimeError:
+                self.editor_toolbar = None  # Помечаем как мертвый
+                return
 
         # Проверяем существование действий
         if not hasattr(self, 'save_action'):
