@@ -29,8 +29,6 @@ class EditorFactory:
         # Можно добавлять другие расширения по мере реализации редакторов
     }
 
-
-
     @staticmethod
     def create_editor(extension: str, parent: Optional[QWidget] = None) -> BaseFileEditor:
         """
