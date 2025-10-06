@@ -6,6 +6,7 @@ from PySide6.QtGui import QAction
 
 from editor.base_editor import BaseFileEditor
 from editor.editor_factory import EditorFactory
+from editor.st_editor import STEditor
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
@@ -106,9 +107,9 @@ class FileEditorWindow(QMainWindow):
         editor_layout.addWidget(toolbar_template_container)
 
         # Текстовый редактор и другие элементы...
-        self.text_editor = QTextEdit()
-        self.text_editor.setAcceptRichText(False)  # Режим plain text  Отключаем форматированный текст
-        editor_layout.addWidget(self.text_editor)
+        #self.text_editor = QTextEdit()
+        #self.text_editor.setAcceptRichText(False)  # Режим plain text  Отключаем форматированный текст
+        #editor_layout.addWidget(self.text_editor)
 
         #Добавляем разделитель
         self.main_splitter.addWidget(editor_container)
@@ -132,6 +133,10 @@ class FileEditorWindow(QMainWindow):
         # Подключаемся к сигналу обновления моделей
         if self.tree_model_manager:
             self.tree_model_manager.model_updated.connect(self._on_model_updated)
+
+        # Создаем редактор по умолчанию при открытии окна
+        default_editor = STEditor(self)
+        self._set_current_editor(default_editor)
 
     def _setup_managers(self, tree_model_manager, toolbar_manager):
         """Устанавливает менеджеры и инициализирует интерфейс"""
@@ -401,12 +406,14 @@ class FileEditorWindow(QMainWindow):
 
 
 
-            if content_type == 'markdown':
-                self._setup_markdown_layout(editor, content)
-            else:
+            #if content_type == 'markdown':
+                #self._setup_markdown_layout(editor, content)
+
+            #else:
                 # 3. Заменяем текущий редактор в UI
-                self.text_editor.setPlainText(content)
-                self._set_current_editor(editor)
+                #self.text_editor.setPlainText(content)
+            self._set_current_editor(editor)
+
 
             # 4. Обновляем статус
             self.statusBar().showMessage(f"Загружен контент типа: {content_type}")
@@ -414,7 +421,7 @@ class FileEditorWindow(QMainWindow):
             print(f"Ошибка при отображении контента: {e}")
             self.statusBar().showMessage(f"Ошибка загрузки: {str(e)}")
             # Можно показать ошибку в редакторе
-            self.text_editor.setPlainText(f"Ошибка загрузки контента:\n{str(e)}")
+            #self.text_editor.setPlainText(f"Ошибка загрузки контента:\n{str(e)}")
 
     '''    # Обработка разных типов элементов
         if content_type == 'template':
