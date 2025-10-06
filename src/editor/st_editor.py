@@ -204,6 +204,39 @@ class STEditor(BaseFileEditor):
         status = "приостановлено" if paused else "возобновлено"
         print(f"DEBUG: Отслеживание {status}")
 
+    def _identify_language(self, content: str) -> None:
+        """
+         Определяет язык программирования по первой строке содержимого.
+         Ищет маркер @@ и извлекает текст после него до первого пробела.
+
+         Args:
+             content: Содержимое файла для анализа
+
+         Returns:
+             str: Название языка в нижнем регистре или пустая строка если не найден
+         """
+        # TODO 🚧 В разработке: 06.10.2025
+
+        language = ""
+
+        # Получаем первую строку
+        first_line = content.split('\n')[0].strip()
+
+        # Ищем маркер @@
+        if '@@' in first_line:
+            # Берем часть строки после @@
+            after_marker = first_line.split('@@', 1)[1].strip()
+
+            if after_marker:
+                # Берем первое слово после маркера (до первого пробела)
+                language = after_marker.split()[0]
+
+        # Приводим к нижнему регистру
+        self.language = language.lower()
+
+        print(f"DEBUG: Определен язык: '{self.language}'")
+
+
     def save(self) -> bool:
         """
         Сохраняет содержимое редактора в текущий файл.
@@ -301,6 +334,8 @@ class STEditor(BaseFileEditor):
         self._text_edit.setPlainText(content)
         # Сбрасываем флаг модификации при установке нового содержимого
         self.is_modified = False
+        # Определяем язык для подсветки по первой строке
+        self._identify_language(content)
 
     # Дополнительные методы для работы с файлами
     def load(self, file_path: Path) -> bool:
@@ -330,3 +365,4 @@ class STEditor(BaseFileEditor):
         except Exception as e:
             self.error_occurred.emit(f"Ошибка загрузки файла: {e}", "error")
             return False
+
