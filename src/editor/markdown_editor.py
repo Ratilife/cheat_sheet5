@@ -1,6 +1,7 @@
 # Редактор для .md файлов
 from PySide6.QtCore import Signal, QTimer
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtGui import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QTextEdit
 from typing import Optional
 from editor.base_editor import BaseFileEditor
 from observers.file_watcher import FileWatcher
@@ -50,26 +51,47 @@ class MarkdownEditor(BaseFileEditor):
 
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
+
+        self.splitter = QSplitter(Qt.Vertical)
+
+        self.text_edit = QTextEdit()  # ✅ Свой собственный редактор
+        self.text_edit.setAcceptRichText(False)
+        self.splitter.addWidget(self.text_edit)
+        self.splitter.addWidget(self._viewer.get_editor_widget())
+
         # Основной layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         # Добавляем viewer в layout
-        layout.addWidget(self._viewer.get_editor_widget())
+        layout.addWidget(self.splitter)
 
         # Устанавливаем layout
         self.setLayout(layout)
 
+        self._is_setting_content = False  # Флаг для предотвращения рекурсии
+
     def _setup_connections(self) -> None:
         """Настройка сигналов и соединений"""
+
         self._file_watcher.debounced_file_updated.connect(self._process_external_update)
         self._file_watcher.file_deleted.connect(self._on_external_file_deleted)
         self._file_watcher.dir_changed.connect(self._on_directory_changed)
         self._file_watcher.watching_paused.connect(self._on_watching_paused)
 
         # Подключаем сигналы viewer к нашим обработчикам
+        self.text_edit.textChanged.connect(self._on_viewer_text_changed)
         self._viewer.text_changed.connect(self._on_viewer_text_changed)
+
+        # Синхронизация прокрутки
+        self.text_edit.verticalScrollBar().valueChanged.connect(
+            lambda: self._sync_editor_and_preview("editor")
+        )
+
+        self._viewer.markdown_editor.verticalScrollBar().valueChanged.connect(
+            lambda: self._sync_editor_and_preview("preview")
+        )
 
     def _update_watching_state(self, enabled: bool) -> None:
         """
@@ -205,7 +227,68 @@ class MarkdownEditor(BaseFileEditor):
         Обработчик изменения текста в viewer'е.
         Устанавливает флаг модификации и обновляет состояние.
         """
-        self.is_modified = True
+        if self._is_setting_content:
+            return  # Игнорируем изменения при установке контента
+        try:
+            # 1. ОСНОВНОЕ: отмечаем что документ изменен
+            self.is_modified = True
+
+            # 2. Markdown-СПЕЦИФИЧНОЕ: обновляем HTML-просмотр
+            current_markdown = self.text_edit.toPlainText()
+            # Обновляем просмотрщик (БЕЗ установки флага модификации)
+            self._viewer.set_content(current_markdown)
+
+            # 3. ОПЦИОНАЛЬНО: синхронизация прокрутки
+            self._sync_editor_and_preview()
+
+        except Exception as e:
+        # В случае ошибки показываем сообщение
+            print(f"Ошибка обновления Markdown: {e}")
+
+    def _sync_editor_and_preview(self, source="editor"):
+        """Умная синхронизация с дебаунсингом"""
+        # Защита от рекурсивных вызовов
+        if hasattr(self, '_is_syncing') and self._is_syncing:
+            return
+
+        self._is_syncing = True
+
+        try:
+            # Дебаунсинг
+            if hasattr(self, '_sync_timer'):
+                self._sync_timer.stop()
+
+            self._sync_timer = QTimer()
+            self._sync_timer.setSingleShot(True)
+            self._sync_timer.timeout.connect(
+                lambda: self._perform_actual_sync(source)
+            )
+            self._sync_timer.start(50)  # 50ms
+
+        finally:
+            self._is_syncing = False
+
+    def _perform_actual_sync(self, source):
+        """Выполняет фактическую синхронизацию"""
+        try:
+            if source == "editor":
+                # Из редактора в просмотрщик
+                editor = self.text_edit.verticalScrollBar()
+                preview = self._viewer.markdown_editor.verticalScrollBar()
+            else:
+                # Из просмотрщика в редактор
+                editor = self._viewer.markdown_editor.verticalScrollBar()
+                preview = self.text_edit.verticalScrollBar()
+
+            # Вычисляем процент и синхронизируем
+            editor_pos = editor.value()
+            editor_max = max(editor.maximum(), 1)  # Защита от деления на 0
+            percent = editor_pos / editor_max
+
+            preview.setValue(int(percent * preview.maximum()))
+
+        except Exception as e:
+            print(f"Ошибка синхронизации: {e}")
 
     def save(self) -> bool:
         """
@@ -294,6 +377,20 @@ class MarkdownEditor(BaseFileEditor):
         return self._viewer.get_content()
 
     def set_content(self, content: str) -> None:
+        """Устанавливает содержимое редактора из строки."""
+        if self._is_setting_content:
+            return  # Предотвращаем рекурсию
+
+        self._is_setting_content = True
+        try:
+            self.text_edit.setPlainText(content)
+            self._viewer.set_content(content)
+            # Сбрасываем флаг модификации при установке нового содержимого
+            self.is_modified = False
+        finally:
+            self._is_setting_content = False
+
+    def set_content_old(self, content: str) -> None:
         """
         Устанавливает содержимое редактора из строки.
 
