@@ -1,6 +1,6 @@
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import QSyntaxHighlighter
-from src.widgets.markdown_styles import MarkdownStyles
+from widgets.md.markdown_styles import MarkdownStyles
 class MarkdownHighlighter(QSyntaxHighlighter):
     """Класс для подсветки синтаксиса Markdown в QTextDocument"""
     # TODO 🚧 В разработке: 10.08.2025

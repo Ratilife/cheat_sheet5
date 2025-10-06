@@ -6,8 +6,8 @@ from typing import Optional
 from editor.base_editor import BaseFileEditor
 from observers.file_watcher import FileWatcher
 from parsers.md_file_parser import MarkdownListener
-from widgets.markdown_converter import MarkdownConverter
-from widgets.markdown_viewer_widget import MarkdownViewer
+from widgets.md.markdown_converter import MarkdownConverter
+from widgets.md.markdown_viewer_widget import MarkdownViewer
 from pathlib import Path
 
 class MarkdownEditor(BaseFileEditor):

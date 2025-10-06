@@ -1,4 +1,3 @@
-from pathlib import Path
 import os
 
 
@@ -9,9 +8,10 @@ from editor.editor_factory import EditorFactory
 from editor.st_editor import STEditor
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QTextEdit, QVBoxLayout, QWidget, QSplitter,
-                               QHBoxLayout, QLabel, QLineEdit, QToolBar, QSizePolicy)
-from src.widgets.markdown_viewer_widget import MarkdownViewer
+from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
+                               QHBoxLayout, QLabel, QLineEdit, QSizePolicy)
+
+
 class FileEditorWindowObserver(MyBaseObserver):
     # ✅ Реализовано: 30.06.2025
     def __init__(self):

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget,  QVBoxLayout,QRadioButton,QHBoxLayout, QButtonGroup, QTextEdit)
-from src.widgets.markdown_highlighter import MarkdownHighlighter
-from src.widgets.markdown_converter import MarkdownConverter
+from widgets.md.markdown_highlighter import MarkdownHighlighter
+from widgets.md.markdown_converter import MarkdownConverter
 from PySide6.QtCore import Signal
 class MarkdownViewer(QWidget):
     """Класс для отображения MD файлов в двух режимах: текст и markdown"""

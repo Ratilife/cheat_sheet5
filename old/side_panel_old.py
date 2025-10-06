@@ -7,8 +7,8 @@ from parsers.content_cache import ContentCache
 from src.managers.dynamic_tabs import DynamicTabManager
 from src.observers.file_watcher import FileWatcher
 from src.observers.my_base_observer import MyBaseObserver
-from src.widgets.markdown_viewer_widget import MarkdownViewer
-from PySide6.QtCore import Qt, QRect, QSize, QTimer
+from widgets.md.markdown_viewer_widget import MarkdownViewer
+from PySide6.QtCore import Qt, QRect, QSize
 from src.managers.ui_manager import UIManager
 from src.managers.toolbar_manager import ToolbarManager
 from src.operation.file_operations import FileOperations
