@@ -157,3 +157,5 @@ class FileOperations:
                     tab_names[tab_name] = [path_item]
 
         return tab_names
+
+    #---Создание новых файлов------
