@@ -182,4 +182,4 @@ class FileOperations:
     def _get_st_base(self,name_file: str) -> str:
         # Возвращает содержимое для нового ST-файла
         """Возвращает шаблон для нового ST-файла"""
-        return '{1,{0,{%s},1,0,"",""}}'% name_file
+        return '{1,{0,{"%s"},1,0,"",""}}'% name_file
