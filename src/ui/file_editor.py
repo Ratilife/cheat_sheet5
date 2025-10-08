@@ -9,7 +9,7 @@ from editor.st_editor import STEditor
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
-                               QHBoxLayout, QLabel, QLineEdit, QSizePolicy)
+                               QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QInputDialog)
 from operation.file_operations import FileOperations
 
 
@@ -671,8 +671,11 @@ class FileEditorWindow(QMainWindow):
 
     def _handle_new_st_file(self)->None:
         # TODO 🚧 В разработке: 08.10.2025
-        file_path = self.file_operations.create_new_st_file()
+        name, ok = QInputDialog.getText(self, "Имя файла", "Введите имя файла:")
+        if not ok:
+            return None
         active_info = self.parent.tab_manager.get_active_tab_info()
+        file_path = self.file_operations.create_new_st_file(name)
         self.tree_model_manager.add_files_to_tab(active_info['tab_name'], [file_path]) #TODO 08.10.2025 - указать правельную переменную вместо self.current_tab
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)  #TODO 08.10.2025 - метод не описан
@@ -683,6 +686,7 @@ class FileEditorWindow(QMainWindow):
         # TODO 🚧 В разработке: 08.10.2025
 
         try:
+
             # 1. Определяем тип редактора по расширению
             extension = Path(file_path).suffix  # '.st' или '.md'
 
