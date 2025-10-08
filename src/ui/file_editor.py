@@ -668,17 +668,35 @@ class FileEditorWindow(QMainWindow):
     def _setup_connections(self)->None:
         # Обработчики создания файлов в КОНТЕКСТЕ РЕДАКТОРА
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
+        self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
 
-    def _handle_new_st_file(self)->None:
+    def _handle_new_file(self, file_path) -> None:
+        "Общие действия для методов по созданию новых файлов"
+        active_info = self.parent.tab_manager.get_active_tab_info()
+
+        self.tree_model_manager.add_files_to_tab(active_info['tab_name'], [file_path])
+        # Автоматически открываем новый файл в редакторе
+        self.open_file_in_editor(file_path)
+    def _handle_new_st_file(self)->str:
         # TODO 🚧 В разработке: 08.10.2025
         name, ok = QInputDialog.getText(self, "Имя файла", "Введите имя файла:")
         if not ok:
             return None
-        active_info = self.parent.tab_manager.get_active_tab_info()
         file_path = self.file_operations.create_new_st_file(name)
-        self.tree_model_manager.add_files_to_tab(active_info['tab_name'], [file_path]) #TODO 08.10.2025 - указать правельную переменную вместо self.current_tab
-        # Автоматически открываем новый файл в редакторе
-        self.open_file_in_editor(file_path)  #TODO 08.10.2025 - метод не описан
+
+        return file_path
+
+
+    def _handle_new_md_file(self)->None:
+        # TODO 🚧 В разработке: 08.10.2025
+        name, ok = QInputDialog.getText(self, "Имя файла", "Введите имя файла:")
+        if not ok:
+            return None
+
+        file_path = self.file_operations.create_new_md_file(name)
+
+        return file_path
+
 
 
     def open_file_in_editor(self, file_path:str)-> None:

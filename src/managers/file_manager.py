@@ -313,6 +313,7 @@ class FileManager:
     def dialog_save_st_md_files(self):
         """Диалог создания ST-файлов и MD-файлов"""
         # ✅ Реализовано: 08.10.2025
+        # TODO 08.10.2025 -  мертвый код dialog_save_st_md_files
         file_path, _ = QFileDialog.getSaveFileName(
             None,
             "Создать файл",
@@ -321,7 +322,7 @@ class FileManager:
         )
         return file_path
 
-    def write_file(self, path: str, content: str) -> bool:
+    def write_file(self, path: str, content: str=None) -> bool:
         if path:
             try:
                 with open(path, 'w', encoding='utf-8') as f:

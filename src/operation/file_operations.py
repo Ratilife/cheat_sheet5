@@ -183,15 +183,31 @@ class FileOperations:
         else:
             raise Exception("Не удалось создать файл")
 
+    def create_new_md_file(self, name_file)-> str:
+        """Создает новый MD-файл и возвращает путь к нему"""
+        file_path = self._create_file_path("md", name_file)
+        if not file_path:  # Если пользователь отменил диалог
+            return ""
+        file_created = self.file_manager.write_file(file_path)
+
+        if file_created:
+            return file_path
+        else:
+            raise Exception("Не удалось создать файл")
+
+
     def _get_st_base(self,name_file: str) -> str:
         # Возвращает содержимое для нового ST-файла
         """Возвращает шаблон для нового ST-файла"""
         return '{1,{0,{"%s"},1,0,"",""}}'% name_file
 
+    def _get_md_base(self, name_file: str) -> str:
+        return f"{name_file}\n"
+
     def _create_file_path(self, expansion: str, name: str):
 
         bookmarks = get_bookmarks()
-        file_path = '%s\%s.%s' % (bookmarks, name, expansion)
+        file_path = '%s\%s.%s' % (bookmarks, name, expansion)  #TODO тут возможно причина, того что файл не сохраняется _create_file_path
         return file_path
 
 
