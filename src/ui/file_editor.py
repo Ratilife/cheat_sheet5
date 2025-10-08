@@ -677,6 +677,7 @@ class FileEditorWindow(QMainWindow):
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)  #TODO 08.10.2025 - метод не описан
 
+
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает файл в соответствующем редакторе"""
         # TODO 🚧 В разработке: 08.10.2025
