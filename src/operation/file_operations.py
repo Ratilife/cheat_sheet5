@@ -1,5 +1,8 @@
 from datetime import datetime
 from pathlib import Path
+
+from PySide6.QtWidgets import QInputDialog
+
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
@@ -161,15 +164,16 @@ class FileOperations:
 
     #---Создание новых файлов------
 
-    def create_new_st_file(self) -> str:
+    def create_new_st_file(self,name_file) -> str:
         """Создает новый ST-файл и возвращает путь к нему"""
         # 1. Генерация имени
-        file_path = self.file_manager.dialog_save_st_md_files()
+        file_path = self._create_file_path("st", name_file)
+        #file_path = self.file_manager.dialog_save_st_md_files() #TODO 08.10.2025 изменить функционал
         if not file_path:  # Если пользователь отменил диалог
             return ""
 
         # 2. Создание шаблона
-        name_file = Path(file_path).stem
+        #name_file = Path(file_path).stem
         base_template = self._get_st_base(name_file)
         # 3. Запись на диск
         file_created = self.file_manager.write_file(file_path,base_template)
@@ -183,3 +187,12 @@ class FileOperations:
         # Возвращает содержимое для нового ST-файла
         """Возвращает шаблон для нового ST-файла"""
         return '{1,{0,{"%s"},1,0,"",""}}'% name_file
+
+    def _create_file_path(self, expansion: str, name: str):
+
+        bookmarks = get_bookmarks()
+        file_path = '%s\%s.%s' % (bookmarks, name, expansion)
+        return file_path
+
+
+
