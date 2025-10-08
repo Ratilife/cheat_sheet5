@@ -309,3 +309,24 @@ class FileManager:
         files, _ = QFileDialog.getOpenFileNames(None,
                 "Открыть файлы", "", "ST Files (*.st);;Markdown Files (*.md)")
         return files
+
+    def dialog_save_st_md_files(self):
+        """Диалог создания ST-файлов и MD-файлов"""
+        # ✅ Реализовано: 08.10.2025
+        file_path, _ = QFileDialog.getSaveFileName(
+            None,
+            "Создать файл",
+            "",  # Начальная директория (пустая = текущая)
+            "ST Files (*.st);;Markdown Files (*.md)"
+        )
+        return file_path
+
+    def write_file(self, path: str, content: str) -> bool:
+        if path:
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(content)  # Пустой файл c базовым содержимым
+                return True
+            except Exception as e:
+                print(f"Ошибка записи файла {path}: {e}")
+        return False

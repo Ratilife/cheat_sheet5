@@ -1,5 +1,5 @@
 import os
-
+from pathlib import Path
 
 from PySide6.QtGui import QAction
 
@@ -10,6 +10,7 @@ from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
                                QHBoxLayout, QLabel, QLineEdit, QSizePolicy)
+from operation.file_operations import FileOperations
 
 
 class FileEditorWindowObserver(MyBaseObserver):
@@ -31,6 +32,8 @@ class FileEditorWindow(QMainWindow):
         # Создаем экземпляр класса для сигналов
         self.observer = FileEditorWindowObserver()
 
+        self.file_operations = FileOperations()
+
         self.template_name = "Тут будет текст"
         self.setWindowTitle("Редактор файлов")
         self.setMinimumSize(800, 500)
@@ -47,6 +50,8 @@ class FileEditorWindow(QMainWindow):
 
         self.setAttribute(Qt.WA_DeleteOnClose)  # Важно: уничтожать объект при закрытии
 
+        # Перехватываем сигналы тут
+        self._setup_connections()
 
     def _init_ui(self):
         """Инициализация пользовательского интерфейса"""
@@ -658,3 +663,41 @@ class FileEditorWindow(QMainWindow):
         # Дополнительные действия при закрытии
         print("FileEditorWindow закрывается")
 
+    #----Создание файлов----
+
+    def _setup_connections(self)->None:
+        # Обработчики создания файлов в КОНТЕКСТЕ РЕДАКТОРА
+        self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
+
+    def _handle_new_st_file(self)->None:
+        # TODO 🚧 В разработке: 08.10.2025
+        file_path = self.file_operations.create_new_st_file()
+        active_info = self.parent.tab_manager.get_active_tab_info()
+        self.tree_model_manager.add_files_to_tab(active_info['tab_name'], [file_path]) #TODO 08.10.2025 - указать правельную переменную вместо self.current_tab
+        # Автоматически открываем новый файл в редакторе
+        self.open_file_in_editor(file_path)  #TODO 08.10.2025 - метод не описан
+
+    def open_file_in_editor(self, file_path:str)-> None:
+        """Открывает файл в соответствующем редакторе"""
+        # TODO 🚧 В разработке: 08.10.2025
+
+        try:
+            # 1. Определяем тип редактора по расширению
+            extension = Path(file_path).suffix  # '.st' или '.md'
+
+            # 2. Создаем редактор через фабрику
+            editor = EditorFactory.create_editor(extension, parent=self)
+
+            # 3. Загружаем файл в редактор
+            success = editor.load(Path(file_path))
+            if not success:
+                print(f"Ошибка загрузки файла: {file_path}")
+
+            # 4. Заменяем текущий редактор в UI
+            self._set_current_editor(editor)
+
+            # 5. Обновляем статус
+            self.statusBar().showMessage(f"Загружен: {Path(file_path).name}")
+        except Exception as e:
+            print(f"Ошибка открытия файла {file_path}: {e}")
+            self.statusBar().showMessage(f"Ошибка: {str(e)}")

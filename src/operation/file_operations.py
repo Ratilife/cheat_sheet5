@@ -4,6 +4,7 @@ from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
 from src.managers.tree_model_manager import TreeModelManager
+from pathlib import Path
 
 
 class FileOperations:
@@ -159,3 +160,26 @@ class FileOperations:
         return tab_names
 
     #---Создание новых файлов------
+
+    def create_new_st_file(self) -> str:
+        """Создает новый ST-файл и возвращает путь к нему"""
+        # 1. Генерация имени
+        file_path = self.file_manager.dialog_save_st_md_files()
+        if not file_path:  # Если пользователь отменил диалог
+            return ""
+
+        # 2. Создание шаблона
+        name_file = Path(file_path).stem
+        base_template = self._get_st_base(name_file)
+        # 3. Запись на диск
+        file_created = self.file_manager.write_file(file_path,base_template)
+        # 4. Возврат пути
+        if file_created:
+            return file_path
+        else:
+            raise Exception("Не удалось создать файл")
+
+    def _get_st_base(self,name_file: str) -> str:
+        # Возвращает содержимое для нового ST-файла
+        """Возвращает шаблон для нового ST-файла"""
+        return '{1,{0,{%s},1,0,"",""}}'% name_file
