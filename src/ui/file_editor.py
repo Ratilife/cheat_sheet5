@@ -670,11 +670,15 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
 
+    def _set_active_tab(self):
+        active_info = self.parent.tab_manager.get_active_tab_info()
+        return active_info['tab_name']
+
     def _handle_new_file(self, file_path) -> None:
         "Общие действия для методов по созданию новых файлов"
-        active_info = self.parent.tab_manager.get_active_tab_info()
 
-        self.tree_model_manager.add_files_to_tab(active_info['tab_name'], [file_path])
+
+
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)
     def _handle_new_st_file(self)->str:
@@ -682,7 +686,10 @@ class FileEditorWindow(QMainWindow):
         name, ok = QInputDialog.getText(self, "Имя файла", "Введите имя файла:")
         if not ok:
             return None
-        file_path = self.file_operations.create_new_st_file(name)
+        active_tab_name = self._set_active_tab()
+        file_path = self.file_operations.create_new_st_file(name, active_tab_name)
+        self.tree_model_manager.add_files_to_tab(active_tab_name, [file_path])
+
 
         return file_path
 
