@@ -322,12 +322,38 @@ class FileManager:
         )
         return file_path
 
-    def write_file(self, path: str, content: str=None) -> bool:
-        if path:
-            try:
-                with open(path, 'w', encoding='utf-8') as f:
-                    f.write(content)  # Пустой файл c базовым содержимым
-                return True
-            except Exception as e:
-                print(f"Ошибка записи файла {path}: {e}")
-        return False
+
+
+    def write_file(self, path: str, content: str = "") -> bool:
+        print(f"🔍 DEBUG write_file: path='{path}', content='{content}'")
+
+        if not path:
+            print("❌ DEBUG write_file: path пустой!")
+            return False
+
+        try:
+            file_path = Path(path)
+            print(f"🔍 DEBUG write_file: file_path='{file_path}'")
+            print(f"🔍 DEBUG write_file: parent='{file_path.parent}'")
+            print(f"🔍 DEBUG write_file: parent exists={file_path.parent.exists()}")
+
+            # Создаем папки
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"✅ DEBUG write_file: папки созданы/проверены")
+
+            # Записываем файл
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content if content else "")
+            print(f"✅ DEBUG write_file: файл записан успешно")
+
+            # Проверяем что файл действительно создан
+            result = file_path.exists()
+            print(f"🔍 DEBUG write_file: файл существует после записи={result}")
+
+            return result
+
+        except Exception as e:
+            print(f"❌ DEBUG write_file: ошибка: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
