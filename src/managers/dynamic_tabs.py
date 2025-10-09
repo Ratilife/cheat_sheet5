@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout, QTreeView
+from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout, QTreeView, QApplication
 
 from operation.file_operations import FileOperations
 
@@ -75,7 +75,7 @@ class DynamicTabManager(QObject):
             reverse=True
         )
 
-    def get_active_tab_info(self) -> dict | None:
+    def get_active_tab_info_old(self) -> dict | None:
         """Возвращает информацию об активной вкладке из любого окна"""
         for widget_name in self.widget_priorities:
             tab_widget = self.tab_widgets[widget_name]
@@ -86,6 +86,51 @@ class DynamicTabManager(QObject):
                         'widget_name': widget_name,
                         'tab_name': tab_widget.tabText(current_index),
                         'tab_widget': tab_widget
+                    }
+        return None
+
+    def get_active_tab_info(self) -> dict | None:
+        """Возвращает информацию об активной вкладке окна, с которым работает пользователь"""
+
+        # 1. Получаем активное окно приложения
+        active_window = QApplication.activeWindow()
+
+        # 2. Если есть активное окно, ищем в нем tab_widget
+        if active_window:
+            # Ищем tab_widget, который принадлежит активному окну
+            for widget_name, tab_widget in self.tab_widgets.items():
+                if not tab_widget or not tab_widget.isVisible():
+                    continue
+
+                # Проверяем, находится ли tab_widget в активном окне
+                tab_widget_window = tab_widget.window()
+                if (tab_widget_window == active_window and
+                        tab_widget.count() > 0):
+
+                    current_index = tab_widget.currentIndex()
+                    if current_index >= 0:
+                        return {
+                            'widget_name': widget_name,
+                            'tab_name': tab_widget.tabText(current_index),
+                            'tab_widget': tab_widget,
+                            'window': tab_widget_window
+                        }
+
+        # 3. Если активного окна нет или в нем не нашли tab_widget,
+        # используем окно, которое было зарегистрировано последним
+        for widget_name in reversed(self.widget_priorities):
+            tab_widget = self.tab_widgets.get(widget_name)
+            if (tab_widget and
+                    tab_widget.isVisible() and
+                    tab_widget.count() > 0):
+
+                current_index = tab_widget.currentIndex()
+                if current_index >= 0:
+                    return {
+                        'widget_name': widget_name,
+                        'tab_name': tab_widget.tabText(current_index),
+                        'tab_widget': tab_widget,
+                        'window': tab_widget.window()
                     }
         return None
 
