@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -164,10 +165,10 @@ class FileOperations:
 
     #---Создание новых файлов------
 
-    def create_new_st_file(self,name_file) -> str:
+    def create_new_st_file(self,name_file, tab_name: str) -> str:
         """Создает новый ST-файл и возвращает путь к нему"""
         # 1. Генерация имени
-        file_path = self._create_file_path("st", name_file)
+        file_path = self._create_file_path("st", name_file, tab_name)
         #file_path = self.file_manager.dialog_save_st_md_files() #TODO 08.10.2025 изменить функционал
         if not file_path:  # Если пользователь отменил диалог
             return ""
@@ -204,10 +205,10 @@ class FileOperations:
     def _get_md_base(self, name_file: str) -> str:
         return f"{name_file}\n"
 
-    def _create_file_path(self, expansion: str, name: str):
-
+    def _create_file_path(self, expansion: str, name: str, tab_name: str):
         bookmarks = get_bookmarks()
-        file_path = '%s\%s.%s' % (bookmarks, name, expansion)  #TODO тут возможно причина, того что файл не сохраняется _create_file_path
+        filename = f"{name}.{expansion}"
+        file_path = os.path.join(bookmarks, tab_name, filename)
         return file_path
 
 
