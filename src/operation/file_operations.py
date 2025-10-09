@@ -167,6 +167,7 @@ class FileOperations:
 
     def create_new_st_file(self,name_file, tab_name: str) -> str:
         """Создает новый ST-файл и возвращает путь к нему"""
+        # TODO 🚧 В разработке: 08.10.2025
         # 1. Генерация имени
         file_path = self._create_file_path("st", name_file, tab_name)
         #file_path = self.file_manager.dialog_save_st_md_files() #TODO 08.10.2025 изменить функционал
@@ -184,9 +185,9 @@ class FileOperations:
         else:
             raise Exception("Не удалось создать файл")
 
-    def create_new_md_file(self, name_file)-> str:
+    def create_new_md_file_old(self, name_file, tab_name: str)-> str:
         """Создает новый MD-файл и возвращает путь к нему"""
-        file_path = self._create_file_path("md", name_file)
+        file_path = self._create_file_path("md", name_file, tab_name)
         if not file_path:  # Если пользователь отменил диалог
             return ""
         file_created = self.file_manager.write_file(file_path)
@@ -196,19 +197,108 @@ class FileOperations:
         else:
             raise Exception("Не удалось создать файл")
 
+    def create_new_md_file(self, name_file, tab_name: str) -> str:
+        """Создает новый MD-файл и возвращает путь к нему"""
+        # TODO 🚧 В разработке: 08.10.2025
+        print(f"🔍 DEBUG create_new_md_file: старт - name_file='{name_file}', tab_name='{tab_name}'")
+
+        try:
+            # 1. Получаем путь
+            file_path = self._create_file_path("md", name_file, tab_name)
+            print(f"🔍 DEBUG: получен file_path='{file_path}'")
+
+            if not file_path:
+                print("❌ DEBUG: file_path пустой!")
+                return ""
+
+            # 2. Проверяем папку закладок
+            bookmarks = get_bookmarks()
+            print(f"🔍 DEBUG: bookmarks='{bookmarks}'")
+            print(f"🔍 DEBUG: bookmarks exists={Path(bookmarks).exists() if bookmarks else 'None'}")
+
+            # 3. Создаем папку вкладки если нужно
+            file_dir = Path(file_path).parent
+            print(f"🔍 DEBUG: file_dir='{file_dir}'")
+            print(f"🔍 DEBUG: file_dir exists={file_dir.exists()}")
+
+            if not file_dir.exists():
+                print("🔍 DEBUG: создаем папку...")
+                try:
+                    file_dir.mkdir(parents=True, exist_ok=True)
+                    print(f"✅ DEBUG: папка создана '{file_dir}'")
+                except Exception as e:
+                    print(f"❌ DEBUG: ошибка создания папки: {e}")
+                    raise
+
+            # 4. Создаем содержимое
+            base_template = self._get_md_base(name_file)
+            print(f"🔍 DEBUG: base_template='{base_template}'")
+
+            # 5. Пробуем записать файл РАЗНЫМИ способами
+            print("🔍 DEBUG: пробуем записать файл...")
+
+            # Способ 1: через file_manager
+            file_created = self.file_manager.write_file(file_path, base_template)
+            print(f"🔍 DEBUG: file_manager.write_file вернул={file_created}")
+
+            # Способ 2: напрямую (на случай если file_manager не работает)
+            if not file_created:
+                print("🔍 DEBUG: пробуем записать напрямую...")
+                try:
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        f.write(base_template)
+                    file_created = True
+                    print("✅ DEBUG: прямой запись успешна")
+                except Exception as e:
+                    print(f"❌ DEBUG: ошибка прямой записи: {e}")
+
+            # 6. Проверяем результат
+            file_exists = Path(file_path).exists()
+            print(f"🔍 DEBUG: файл существует после создания={file_exists}")
+
+            if file_exists:
+                print(f"✅ DEBUG: УСПЕХ! Файл создан: {file_path}")
+                return file_path
+            else:
+                print(f"❌ DEBUG: Файл не создан! Путь: {file_path}")
+                raise Exception("Не удалось создать файл")
+
+        except Exception as e:
+            print(f"❌ DEBUG: Исключение в create_new_md_file: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+
 
     def _get_st_base(self,name_file: str) -> str:
         # Возвращает содержимое для нового ST-файла
         """Возвращает шаблон для нового ST-файла"""
+        # TODO 🚧 В разработке: 08.10.2025
         return '{1,{0,{"%s"},1,0,"",""}}'% name_file
 
     def _get_md_base(self, name_file: str) -> str:
         return f"{name_file}\n"
 
+
+
     def _create_file_path(self, expansion: str, name: str, tab_name: str):
+        # TODO 🚧 В разработке: 08.10.2025
         bookmarks = get_bookmarks()
+        print(f"🔍 DEBUG _create_file_path: bookmarks='{bookmarks}'")
+
+        if not bookmarks:
+            print("❌ DEBUG: bookmarks is None или пустой!")
+            return ""
+
+        bookmarks_path = Path(bookmarks)
+        if not bookmarks_path.exists():
+            print(f"❌ DEBUG: папка bookmarks не существует: {bookmarks_path}")
+            return ""
+
         filename = f"{name}.{expansion}"
         file_path = os.path.join(bookmarks, tab_name, filename)
+        print(f"🔍 DEBUG: итоговый file_path='{file_path}'")
+
         return file_path
 
 
