@@ -15,6 +15,10 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         Наследуется от QWidget, так как каждый редактор будет виджетом для размещения в UI.
     """
 
+    # Сигнал для отмены/повтора
+    undo_available = Signal(bool)
+    redo_available = Signal(bool)
+
     #Сигналы
     # Сигнал об изменении модифицированного состояния (is_modified)
     modification_changed = Signal(bool)
@@ -28,6 +32,40 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         super().__init__(parent=parent)
         self._file_path = None
         self._is_modified = False
+        self._undo_stack = []  # Стек для отмены
+        self._redo_stack = []  # Стек для повтора
+        self._current_state = ""  # Текущее состояние
+
+    @abstractmethod
+    def can_undo(self) -> bool:
+        """Можно ли отменить действие"""
+        return len(self._undo_stack) > 0
+    @abstractmethod
+    def can_redo(self) -> bool:
+        """Можно ли повторить действие"""
+        return len(self._redo_stack) > 0
+
+    @abstractmethod
+    def undo(self) -> bool:
+        """Отменить последнее действие"""
+        pass
+
+    @abstractmethod
+    def redo(self) -> bool:
+        """Повторить отмененное действие"""
+        pass
+
+    def save_state(self):
+        """Сохраняет текущее состояние для отмены"""
+        current_content = self.get_content()
+        if current_content != self._current_state:
+            self._undo_stack.append(self._current_state)
+            self._redo_stack.clear()  # Очищаем стек повтора при новом действии
+            self._current_state = current_content
+
+            # Обновляем доступность кнопок
+            self.undo_available.emit(self.can_undo())
+            self.redo_available.emit(self.can_redo())
 
     @property
     def file_path(self) -> Path | None:
