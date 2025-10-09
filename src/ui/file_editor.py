@@ -7,7 +7,7 @@ from editor.base_editor import BaseFileEditor
 from editor.editor_factory import EditorFactory
 from editor.st_editor import STEditor
 from src.observers.my_base_observer import MyBaseObserver
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
                                QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QInputDialog)
 from operation.file_operations import FileOperations
@@ -25,6 +25,8 @@ class FileEditorWindow(QMainWindow):
         Главное окно редактора файлов с поддержкой форматов .st и .md.
         Обеспечивает создание, редактирование и сохранение файлов.
     """
+    tab_changed = Signal(str, int)  # имя_вкладки, индекс
+
     def __init__(self, parent = None):
         super().__init__(parent)
         self.parent = parent
@@ -200,6 +202,8 @@ class FileEditorWindow(QMainWindow):
         self.controller.current_source = "editor"
         print("Сигналы контроллера выделения подключены")
 
+        self.tab_changed.connect(self.handle_tab_change)
+
     def _refresh_view_for_file(self, model, file_path):
         """Принудительно обновляет view для конкретного файла"""
         # TODO 🚧 В разработке: 02.09.2025 не понял этот метод
@@ -327,29 +331,31 @@ class FileEditorWindow(QMainWindow):
             return
 
         # Получаем имя вкладки
-        tab_name = self.tab_widget.tabText(index)
-        print(f"DEBUG: Переключена вкладка: {tab_name}")
+        self.tab_name = self.tab_widget.tabText(index)
+        print(f"DEBUG: Переключена вкладка: {self.tab_name}")
 
         # 1. Синхронизация с TreeModelManager
         #active_info = self.tree_model_manager.get_active_tab_info()
 
 
         # 2. Обновление UI
-        self.setWindowTitle(f"Редактор файлов - {tab_name}")
+        self.setWindowTitle(f"Редактор файлов - {self.tab_name}")
 
         # 3. Получаем модель для текущей вкладки
-        current_model = self.all_models.get(tab_name)
+        current_model = self.all_models.get(self.tab_name)
 
+        # Получаем модель для текущей вкладки
+        #self.current_model = self.all_models.get(tab_name)
 
         # 4. Обновление статусбара
         # TODO 05.09.2025 технически правильно, но логически неверно
         file_count = current_model.rowCount() if current_model else 0
         self.statusBar().showMessage(
-            f"Вкладка: {tab_name} | Файлов: {file_count} | Готово"
+            f"Вкладка: {self.tab_name} | Файлов: {file_count} | Готово"
         )
 
         # 5. Логирование для отладки
-        print(f"DEBUG: Активна вкладка '{tab_name}', модель: {current_model is not None}")
+        print(f"DEBUG: Активна вкладка '{self.tab_name}', модель: {current_model is not None}")
 
     def _create_editor_actions(self):
         """Создает базовые действия для редактора"""
@@ -600,12 +606,12 @@ class FileEditorWindow(QMainWindow):
         # Можно добавить другие UI обновления здесь
         print(f"DEBUG: Состояние редактора изменено - модифицирован: {is_modified}")
 
-    def _update_toolbar_actions(self, actions: list):
+    def _update_toolbar_actions_old(self, actions: list):
         """Обновляет панель инструментов actions редактора"""
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
 
         # Проверяем существование панели инструментов
-        if not hasattr(self, 'editor_toolbar') or not self.editor_toolbar is None:
+        if not hasattr(self, 'editor_toolbar') or  self.editor_toolbar is None:
             print("DEBUG: Панель инструментов редактора не инициализирована")
             return
 
@@ -624,6 +630,52 @@ class FileEditorWindow(QMainWindow):
 
         # Очищаем текущую панель
         self.editor_toolbar.clear()
+
+        # Добавляем общие действия (Сохранить, Отменить)
+        self.editor_toolbar.addAction(self.save_action)
+        self.editor_toolbar.addAction(self.undo_action)
+
+        # Добавляем разделитель
+        self.editor_toolbar.addSeparator()
+
+        # Добавляем специфичные actions редактора
+        for action in actions:
+            self.editor_toolbar.addAction(action)
+
+    def _update_toolbar_actions(self, actions: list):
+        """Обновляет панель инструментов actions редактора"""
+
+        # Проверяем существование панели инструментов
+        if not hasattr(self, 'editor_toolbar') or self.editor_toolbar is None:
+            print("DEBUG: Панель инструментов редактора не инициализирована")
+            return
+
+        # Проверяем, не удален ли объект Qt
+        try:
+            # Простая проверка доступности объекта
+            if not self.editor_toolbar.objectName():
+                pass
+        except RuntimeError as e:
+            if "already deleted" in str(e):
+                print("DEBUG: Панель инструментов уже удалена")
+                self.editor_toolbar = None
+                return
+            else:
+                print(f"DEBUG: Ошибка доступа к панели инструментов: {e}")
+                return
+
+        # Проверяем существование действий
+        if not hasattr(self, 'save_action'):
+            print("DEBUG: Действия редактора не созданы")
+            return
+
+        # Очищаем текущую панель
+        try:
+            self.editor_toolbar.clear()
+        except RuntimeError as e:
+            print(f"DEBUG: Ошибка при очистке панели инструментов: {e}")
+            self.editor_toolbar = None
+            return
 
         # Добавляем общие действия (Сохранить, Отменить)
         self.editor_toolbar.addAction(self.save_action)
@@ -670,14 +722,15 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
 
+    def handle_tab_change(self, tab_name, index):
+        print(f"Вкладка изменилась: {tab_name}, индекс: {index}")
+        self.tab_name = tab_name
     def _set_active_tab(self):
         active_info = self.parent.tab_manager.get_active_tab_info()
+        if hasattr(self, 'tab_name') and isinstance(self.tab_name, str) and self.tab_name:
+            return self.tab_name
+
         return active_info['tab_name']
-
-
-
-
-
 
     def _handle_new_st_file(self)->str:
         # TODO 🚧 В разработке: 08.10.2025
