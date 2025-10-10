@@ -5,7 +5,9 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit
 
 from observers.file_watcher import FileWatcher
 from src.editor.base_editor import BaseFileEditor
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QTimer
+
+
 class STEditor(BaseFileEditor):
     # Новые сигналы для работы с FileWatcher
     external_update_detected = Signal(str)  # Обнаружено внешнее изменение
@@ -30,6 +32,10 @@ class STEditor(BaseFileEditor):
 
         # Устанавливаем начальное состояние
         self._update_watching_state(False)  # По умолчанию отслеживание выключено
+
+        self._state_save_timer = QTimer()
+        self._state_save_timer.setSingleShot(True)
+        self._state_save_timer.timeout.connect(self.save_state)
 
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
@@ -192,6 +198,7 @@ class STEditor(BaseFileEditor):
         Устанавливает флаг модификации и обновляет состояние.
         """
         self.is_modified = True
+        self._state_save_timer.start(500)  # Сохраняем состояние через 500ms
 
     def _on_watching_paused(self, paused: bool) -> None:
         """
@@ -237,7 +244,52 @@ class STEditor(BaseFileEditor):
         print(f"DEBUG: Определен язык: '{self.language}'")
 
 
-    def save(self) -> bool:
+    # Реализация undo/redo аналогично MarkdownEditor
+    def can_undo(self) -> bool:
+        return len(self._undo_stack) > 0
+
+    def can_redo(self) -> bool:
+        return len(self._redo_stack) > 0
+
+    def undo(self) -> bool:
+        if not self.can_undo():
+            return False
+
+        try:
+            self._redo_stack.append(self._current_state)
+            previous_state = self._undo_stack.pop()
+            self._current_state = previous_state
+
+            self._text_edit.setPlainText(previous_state)
+
+            self.undo_available.emit(self.can_undo())
+            self.redo_available.emit(self.can_redo())
+            return True
+
+        except Exception as e:
+            print(f"Ошибка отмены: {e}")
+            return False
+
+    def redo(self) -> bool:
+        if not self.can_redo():
+            return False
+
+        try:
+            self._undo_stack.append(self._current_state)
+            next_state = self._redo_stack.pop()
+            self._current_state = next_state
+
+            self._text_edit.setPlainText(next_state)
+
+            self.undo_available.emit(self.can_undo())
+            self.redo_available.emit(self.can_redo())
+            return True
+
+        except Exception as e:
+            print(f"Ошибка повтора: {e}")
+            return False
+
+    def save_old(self) -> bool:
         """
         Сохраняет содержимое редактора в текущий файл.
 
@@ -261,6 +313,32 @@ class STEditor(BaseFileEditor):
 
             # Сбрасываем флаг модификации
             self.is_modified = False
+
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
+            return False
+
+    def save(self) -> bool:
+        """
+        Сохраняет содержимое редактора в текущий файл.
+        """
+        if not self.file_path:
+            return self.save_as()
+
+        try:
+            self._file_watcher.pause(3000)
+
+            content = self.get_content()
+
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            self.is_modified = False
+
+            # ⭐ ВЫЗЫВАЕМ ОЧИСТКУ СОСТОЯНИЯ ОТМЕНЫ
+            self._after_save_cleanup()
 
             return True
 
@@ -315,6 +393,22 @@ class STEditor(BaseFileEditor):
             self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
             return False
 
+    def set_content(self, content: str) -> None:
+        """Устанавливает содержимое редактора из строки."""
+        self._text_edit.setPlainText(content)
+
+        # ⭐ ОБНОВЛЯЕМ СОСТОЯНИЕ ОТМЕНЫ
+        self._undo_stack.clear()
+        self._redo_stack.clear()
+        self._current_state = content
+        self.undo_available.emit(False)
+        self.redo_available.emit(False)
+
+        # Сбрасываем флаг модификации при установке нового содержимого
+        self.is_modified = False
+        # Определяем язык для подсветки по первой строке
+        self._identify_language(content)
+
     def get_content(self) -> str:
         """
         Возвращает текущее содержимое редактора.
@@ -324,7 +418,7 @@ class STEditor(BaseFileEditor):
         """
         return self._text_edit.toPlainText()
 
-    def set_content(self, content: str) -> None:
+    def set_content_old(self, content: str) -> None:
         """
         Устанавливает содержимое редактора из строки.
 

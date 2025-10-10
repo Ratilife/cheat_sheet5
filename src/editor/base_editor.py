@@ -58,10 +58,10 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
     def save_state(self):
         """Сохраняет текущее состояние для отмены"""
         current_content = self.get_content()
-        if current_content != self._current_state:
-            self._undo_stack.append(self._current_state)
+        if current_content != self._current_state:              # 1. Проверка изменений
+            self._undo_stack.append(self._current_state)        # 2. Сохранение в историю
             self._redo_stack.clear()  # Очищаем стек повтора при новом действии
-            self._current_state = current_content
+            self._current_state = current_content               # 4. Обновление текущего состояния
 
             # Обновляем доступность кнопок
             self.undo_available.emit(self.can_undo())
@@ -167,4 +167,10 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
             list: Список QAction или пустой список
         """
         return []
+
+    def set_file_path(self, file_path: Path) -> None:
+        """Устанавливает путь к файлу для операций сохранения"""
+        self.file_path = Path(file_path) if file_path else None
+        # Можно добавить логирование для отладки
+        print(f"DEBUG: Установлен путь файла: {self.file_path}")
 

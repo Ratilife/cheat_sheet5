@@ -49,6 +49,11 @@ class MarkdownEditor(BaseFileEditor):
 
         self.converter = MarkdownConverter()
 
+        # Таймер для группировки быстрых изменений
+        self._state_save_timer = QTimer()
+        self._state_save_timer.setSingleShot(True)
+        self._state_save_timer.timeout.connect(self.save_state)
+
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
 
@@ -233,12 +238,15 @@ class MarkdownEditor(BaseFileEditor):
             # 1. ОСНОВНОЕ: отмечаем что документ изменен
             self.is_modified = True
 
-            # 2. Markdown-СПЕЦИФИЧНОЕ: обновляем HTML-просмотр
+            # 2. Запускаем таймер для сохранения состояния (дебаунсинг 500ms)
+            self._state_save_timer.start(500)
+
+            # 3. Markdown-СПЕЦИФИЧНОЕ: обновляем HTML-просмотр
             current_markdown = self.text_edit.toPlainText()
             # Обновляем просмотрщик (БЕЗ установки флага модификации)
             self._viewer.set_content(current_markdown)
 
-            # 3. ОПЦИОНАЛЬНО: синхронизация прокрутки
+            # 4. ОПЦИОНАЛЬНО: синхронизация прокрутки
             self._sync_editor_and_preview()
 
         except Exception as e:
@@ -290,7 +298,71 @@ class MarkdownEditor(BaseFileEditor):
         except Exception as e:
             print(f"Ошибка синхронизации: {e}")
 
-    def save(self) -> bool:
+    def can_undo(self) -> bool:
+        return len(self._undo_stack) > 0
+
+    def can_redo(self) -> bool:
+        return len(self._redo_stack) > 0
+
+    def undo(self) -> bool:
+        """Отменить последнее действие"""
+        if not self.can_undo():
+            return False
+
+        try:
+            # Сохраняем текущее состояние в стек повтора
+            self._redo_stack.append(self._current_state)
+
+            # Восстанавливаем предыдущее состояние
+            previous_state = self._undo_stack.pop()
+            self._current_state = previous_state
+
+            # Устанавливаем контент без триггирования модификации
+            self._is_setting_content = True
+            self.text_edit.setPlainText(previous_state)
+            self._viewer.set_content(previous_state)
+            self._is_setting_content = False
+
+            # Обновляем флаги
+            self.undo_available.emit(self.can_undo())
+            self.redo_available.emit(self.can_redo())
+
+            return True
+
+        except Exception as e:
+            print(f"Ошибка отмены: {e}")
+            return False
+
+    def redo(self) -> bool:
+        """Повторить отмененное действие"""
+        if not self.can_redo():
+            return False
+
+        try:
+            # Сохраняем текущее состояние в стек отмены
+            self._undo_stack.append(self._current_state)
+
+            # Восстанавливаем состояние из стека повтора
+            next_state = self._redo_stack.pop()
+            self._current_state = next_state
+
+            # Устанавливаем контент
+            self._is_setting_content = True
+            self.text_edit.setPlainText(next_state)
+            self._viewer.set_content(next_state)
+            self._is_setting_content = False
+
+            # Обновляем флаги
+            self.undo_available.emit(self.can_undo())
+            self.redo_available.emit(self.can_redo())
+
+            return True
+
+        except Exception as e:
+            print(f"Ошибка повтора: {e}")
+            return False
+
+    def save_old(self) -> bool:
         """
         Сохраняет содержимое редактора в текущий файл.
 
@@ -323,6 +395,65 @@ class MarkdownEditor(BaseFileEditor):
         finally:
             # Автоматически возобновит отслеживание через таймер
             pass
+
+    def save(self) -> bool:
+        """
+        Сохраняет содержимое редактора в текущий файл.
+
+        Returns:
+            bool: True если сохранение прошло успешно, False в противном случае
+        """
+        #if not self.file_path:
+            # Если файла нет, ведем себя как save_as()
+            #return self.save_as()
+
+        try:
+            # Временно приостанавливаем отслеживание
+            self._file_watcher.pause(3000)  # Пауза на 3 секунды
+
+            # Получаем содержимое из viewer
+            content = self.get_content()
+
+            # Сохраняем в файл
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            # Сбрасываем флаг модификации
+            self.is_modified = False
+
+            # ⭐ ВЫЗЫВАЕМ ОЧИСТКУ СОСТОЯНИЯ ОТМЕНЫ ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
+            self._after_save_cleanup()
+
+            return True
+
+        except Exception as e:
+            self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
+            return False
+        finally:
+            # Автоматически возобновит отслеживание через таймер
+            pass
+
+    def set_content(self, content: str) -> None:
+        """Устанавливает содержимое редактора из строки."""
+        if self._is_setting_content:
+            return
+
+        self._is_setting_content = True
+        try:
+            self.text_edit.setPlainText(content)
+            self._viewer.set_content(content)
+
+            # ⭐ ОБНОВЛЯЕМ СОСТОЯНИЕ ОТМЕНЫ ПРИ УСТАНОВКЕ НОВОГО СОДЕРЖИМОГО
+            self._undo_stack.clear()
+            self._redo_stack.clear()
+            self._current_state = content
+            self.undo_available.emit(False)
+            self.redo_available.emit(False)
+
+            # Сбрасываем флаг модификации при установке нового содержимого
+            self.is_modified = False
+        finally:
+            self._is_setting_content = False
 
     def _on_watching_paused(self, paused: bool) -> None:
         """Обработчик изменения статуса паузы отслеживания"""

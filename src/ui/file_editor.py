@@ -145,6 +145,8 @@ class FileEditorWindow(QMainWindow):
         default_editor = STEditor(self)
         self._set_current_editor(default_editor)
 
+
+
     def _setup_managers(self, tree_model_manager, toolbar_manager):
         """Устанавливает менеджеры и инициализирует интерфейс"""
         # TODO 🚧 В разработке: 02.09.2025
@@ -412,9 +414,9 @@ class FileEditorWindow(QMainWindow):
             if editor is None:
                 raise ValueError(f"Не удалось создать редактор для типа: {content_type}")
 
-            # 2. Устанавливаем контент в редактор
+            # 2. Устанавливаем контент в редактор и путь к файлу
             editor.set_content(content)
-
+            editor.set_file_path(Path(path_file))
 
 
             #if content_type == 'markdown':
@@ -536,11 +538,15 @@ class FileEditorWindow(QMainWindow):
         Args:
             editor: Новый экземпляр редактора (наследник BaseFileEditor)
         """
+
+
         # 1. Удаляем старый редактор (если был)
         if hasattr(self, 'current_editor') and self.current_editor:
             # Отключаем все сигналы от старого редактора
             try:
                 self.current_editor.modification_changed.disconnect()
+                self.current_editor.undo_available.disconnect()
+                self.current_editor.redo_available.disconnect()
             except:
                 pass
 
@@ -560,7 +566,14 @@ class FileEditorWindow(QMainWindow):
 
         # 4. Подключаем сигналы нового редактора
         editor.modification_changed.connect(self._on_editor_modified)
+        editor.undo_available.connect(self._on_undo_available)
+        editor.redo_available.connect(self._on_redo_available)
         # Можно подключить другие сигналы: error_occurred, validation_finished
+
+        # 4. Обновляем состояние кнопок
+        self._on_editor_modified(editor.is_modified)
+        self._on_undo_available(editor.can_undo())
+        self._on_redo_available(editor.can_redo())
 
         # 5. Обновляем UI в соответствии с состоянием нового редактора
         self._update_window_title(editor.is_modified)
@@ -587,6 +600,18 @@ class FileEditorWindow(QMainWindow):
             title += " *"
 
         self.setWindowTitle(title)
+
+    def _on_undo_available(self, available: bool):
+        """Обновляет состояние кнопки Отменить"""
+        if hasattr(self, 'undo_action'):
+            self.undo_action.setEnabled(available)
+        print(f"DEBUG: Отменить доступно: {available}")
+
+    def _on_redo_available(self, available: bool):
+        """Обновляет состояние кнопки Повторить"""
+        if hasattr(self, 'redo_action'):
+            self.redo_action.setEnabled(available)
+        print(f"DEBUG: Повторить доступно: {available}")
 
     def _on_editor_modified(self, is_modified: bool):
         """Обновляет UI при изменении состояния редактора"""
@@ -721,6 +746,10 @@ class FileEditorWindow(QMainWindow):
         # Обработчики создания файлов в КОНТЕКСТЕ РЕДАКТОРА
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
+
+        # Подключаем сигналы сохранения из toolbar
+        self.toolbar_manager.save_file.connect(self._on_save_action)
+
 
     def handle_tab_change(self, tab_name, index):
         print(f"Вкладка изменилась: {tab_name}, индекс: {index}")
