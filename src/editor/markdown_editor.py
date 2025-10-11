@@ -298,6 +298,8 @@ class MarkdownEditor(BaseFileEditor):
         except Exception as e:
             print(f"Ошибка синхронизации: {e}")
 
+
+
     def can_undo(self) -> bool:
         return len(self._undo_stack) > 0
 
@@ -403,9 +405,9 @@ class MarkdownEditor(BaseFileEditor):
         Returns:
             bool: True если сохранение прошло успешно, False в противном случае
         """
-        #if not self.file_path:
+        if not self.file_path:
             # Если файла нет, ведем себя как save_as()
-            #return self.save_as()
+            return self.save_as()
 
         try:
             # Временно приостанавливаем отслеживание
@@ -422,7 +424,7 @@ class MarkdownEditor(BaseFileEditor):
             self.is_modified = False
 
             # ⭐ ВЫЗЫВАЕМ ОЧИСТКУ СОСТОЯНИЯ ОТМЕНЫ ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
-            self._after_save_cleanup()
+            self.after_save_cleanup()
 
             return True
 
@@ -507,7 +509,7 @@ class MarkdownEditor(BaseFileEditor):
         """
         return self._viewer.get_content()
 
-    def set_content(self, content: str) -> None:
+    def set_content_old2(self, content: str) -> None:
         """Устанавливает содержимое редактора из строки."""
         if self._is_setting_content:
             return  # Предотвращаем рекурсию
