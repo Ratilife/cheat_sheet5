@@ -72,6 +72,10 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         """Возвращает текущий путь к файлу. Может быть None для нового файла."""
         return self._file_path
 
+    @file_path.setter
+    def file_path(self, value: Path | None):
+        self._file_path = value
+
     @property
     def is_modified(self) -> bool:
         """Возвращает флаг, был ли документ изменен с момента последнего сохранения."""
@@ -168,9 +172,10 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         """
         return []
 
-    def set_file_path(self, file_path: Path) -> None:
-        """Устанавливает путь к файлу для операций сохранения"""
-        self.file_path = Path(file_path) if file_path else None
-        # Можно добавить логирование для отладки
-        print(f"DEBUG: Установлен путь файла: {self.file_path}")
-
+    def after_save_cleanup(self):
+        """Очищает состояние отмены после успешного сохранения"""
+        self._undo_stack.clear()
+        self._redo_stack.clear()
+        self._current_state = self.get_content()
+        self.undo_available.emit(False)
+        self.redo_available.emit(False)
