@@ -383,8 +383,10 @@ class FileEditorWindow(QMainWindow):
             success = self.current_editor.save()
             if success:
                 print("DEBUG: Файл успешно сохранен")
+                self.statusBar().showMessage("Файл сохранен", 3000)
             else:
                 print("DEBUG: Ошибка при сохранении файла")
+                self.statusBar().showMessage("Ошибка сохранения файла", 5000)
 
     def _on_undo_action(self):
         """Обработчик действия Отменить"""
@@ -416,7 +418,7 @@ class FileEditorWindow(QMainWindow):
 
             # 2. Устанавливаем контент в редактор и путь к файлу
             editor.set_content(content)
-            editor.set_file_path(Path(path_file))
+            editor.file_path = Path(path_file)
 
 
             #if content_type == 'markdown':
