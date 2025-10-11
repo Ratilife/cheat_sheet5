@@ -338,7 +338,7 @@ class STEditor(BaseFileEditor):
             self.is_modified = False
 
             # ⭐ ВЫЗЫВАЕМ ОЧИСТКУ СОСТОЯНИЯ ОТМЕНЫ
-            self._after_save_cleanup()
+            self.after_save_cleanup()  #TODO 11.10.2025 тут проблема
 
             return True
 
