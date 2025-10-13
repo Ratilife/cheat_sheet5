@@ -604,6 +604,39 @@ class STMDFileTreeModel(QAbstractItemModel):
         # 4. ОПОВЕЩАЕМ VIEW о завершении добавления!
         self.endInsertRows()  # <- ВЫЗОВ ЗДЕСЬ
 
+    def add_folder(self, folder_dict, parent_item, parent_index=QModelIndex()):
+        """Добавляет папку в модель с обновлением UI"""
+        # TODO 🚧 В разработке: 13.10.2025
+        try:
+            # Определяем позицию для вставки
+            new_row_position = len(parent_item.child_items)
+
+            # уведомляем view о начале изменений
+            self.beginInsertRows(parent_index, new_row_position, new_row_position)
+
+            # Создаем элемент папки
+            folder_data = [
+                folder_dict['name'],  # имя папки
+                folder_dict['type'],  # 'folder'
+                folder_dict.get('content', '')  # содержимое
+            ]
+            new_folder_item = STMDFileTreeItem(folder_data, parent_item)
+
+            # Добавляем в родителя
+            parent_item.child_items.append(new_folder_item)
+
+            #  уведомляем view о завершении изменений
+            self.endInsertRows()
+
+            print(f"✅ Папка '{folder_dict['name']}' добавлена в модель")
+            return True
+        except Exception as e:
+            # Если начали вставку - завершаем
+            if hasattr(self, '_inserting') and self._inserting:
+                self.endInsertRows()
+            print(f"❌ Ошибка добавления папки: {e}")
+            return False
+
     def get_item_level(self, index):
         """Возвращает уровень вложенности элемента в иерархии модели.
 
