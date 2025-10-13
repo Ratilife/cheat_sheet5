@@ -1,4 +1,4 @@
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal, Qt
 from PySide6.QtWidgets import QTabWidget
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.parsers.metadata_cache import MetadataCache
@@ -283,8 +283,100 @@ class TreeModelManager(QObject):
         print(f"DEBUG❌: Данные для файла '{file_path}' не найдены в кэше")
         return False
 
+    def get_selection_info(self):
+        """Получает информацию о выделении используя существующие методы модели"""
+        current_index = self.tab_widget.currentIndex()
+        if current_index < 0:
+            return None
+
+        tab_name = self.tab_widget.tabText(current_index)
+        tree_view = self.tree_views.get(tab_name)
+
+        if tree_view and tree_view.currentIndex().isValid():
+            index = tree_view.currentIndex()
+            parent_index = index.parent()
+            model = tree_view.model()
+
+            return {
+                'type': model.get_item_type(index),
+                'path': model.get_item_path(index),
+                'level': model.get_item_level(index),
+                'name': model.data(index, Qt.DisplayRole),
+                'model': model,
+                'index': index,
+                'parent_index': parent_index,  # ✅ Добавляем индекс родителя
+                'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',
+                'tab_name': tab_name,
+                'tree_view': tree_view
+            }
+        return None
+
+    def get_file_root_from_selection(self, index):
+        """Находит корневой элемент файла по выбранному индексу"""
+        current_index = index
+        model = index.model()
+
+        # Поднимаемся по иерархии пока не найдем элемент с путем к файлу
+        while current_index.isValid():
+            # ✅ Проверяем есть ли у текущего элемента путь к файлу
+            item_path = model.get_item_path(current_index)
+            if item_path:  # Нашли элемент с путем к файлу
+                return {
+                    'index': current_index,  # Индекс корневого элемента
+                    'element': current_index.internalPointer(),  # Сам элемент
+                    'type': model.get_item_type(current_index),  # 'file' или 'markdown'
+                    'name': model.data(current_index, Qt.DisplayRole),  # Имя файла
+                    'path': item_path  # Полный путь к файлу
+                }
+            current_index = current_index.parent()
+
+        return None
+
+    def new_folder(self,name_folder):
+        """Создает новую папку на основе выбранного элемента"""
+        # 1) получаем информацию о выбранном элементе
+        info_item_dict = self.get_selection_info()
+        if not info_item_dict:
+            print("❌ Не выбран элемент для создания папки")
+            return
 
 
 
+        # 2)Подготавливаем данные для папки
 
+        folder_dict = {
+            'name': name_folder,  # ⚠️ Используем ВВЕДЕННОЕ имя, а не имя выбранного элемента!
+            'type': 'folder',
+            'content': ''
+        }
+        # 3) Получаем модель и родительский элемент
+        index = info_item_dict['index']
+        model = info_item_dict['model']
 
+        # 4) Определяем КУДА добавлять папку:
+        selected_type = info_item_dict['type']
+
+        if selected_type == 'folder':
+            # ✅ Добавляем ВНУТРЬ выбранной папки
+            parent_index = index
+            item_parent = index.internalPointer()
+        else:
+            # ✅ Добавляем РЯДОМ с выбранным элементом (в том же родителе)
+            parent_index = index.parent()
+            item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+
+        # 5) Добавляем папку в модель
+        success = model.add_folder(folder_dict, item_parent, parent_index)
+
+        # 6) Записываем в файл новый элемент
+        if success:
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                file_path = folder_dict['path']
+                root_index = file_root_info['index']
+                file_st_structure = self.get_structure_to_st_file( model, root_index)
+
+    def get_structure_to_st_file(self, model, index):
+        # 1) Изменяем текущую структуру модели дерева в структуру st-файла
+        file_structure = self.parser_service.serialize_st_structure(model, index)
+        return file_structure
