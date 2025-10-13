@@ -633,6 +633,13 @@ class FileEditorWindow(QMainWindow):
         # Можно добавить другие UI обновления здесь
         print(f"DEBUG: Состояние редактора изменено - модифицирован: {is_modified}")
 
+    def on_new_folder(self):
+        #  Запросить имя папки
+        name_folder, ok = QInputDialog.getText(self, "Имя папки", "Введите имя папки:")
+        if not ok or not name_folder.strip():
+            return
+        self.tree_model_manager.new_folder(name_folder)
+
     def _update_toolbar_actions_old(self, actions: list):
         """Обновляет панель инструментов actions редактора"""
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
