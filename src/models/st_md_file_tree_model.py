@@ -516,7 +516,7 @@ class STMDFileTreeModel(QAbstractItemModel):
         """
         # TODO 16.08.2025 - метод _build_tree посмотреть оставить приватным или сделать публичным
         for node in nodes:
-            item = STMDFileTreeItem([node['name'], node['type'], node.get('content', '')], parent)
+            item = STMDFileTreeItem(data=[node['name'], node['type'], node.get('content', '')], parent=parent)
             parent.child_items.append(item)
             if 'children' in node:
                 self._build_tree(node['children'], item)
