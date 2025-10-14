@@ -634,8 +634,6 @@ class FileEditorWindow(QMainWindow):
         # Можно добавить другие UI обновления здесь
         print(f"DEBUG: Состояние редактора изменено - модифицирован: {is_modified}")
 
-
-
     def _update_toolbar_actions_old(self, actions: list):
         """Обновляет панель инструментов actions редактора"""
         # TODO 🚧 В разработке: 05.09.2025 - проверить атктуальность _update_toolbar_actions
@@ -752,6 +750,8 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
         self.toolbar_manager.new_folder.connect(self._handle_new_folder)
+        self.toolbar_manager.new_template.connect(self._handle_new_template)
+
 
         # Подключаем сигналы сохранения из toolbar
         self.toolbar_manager.save_file.connect(self._on_save_action)
@@ -778,8 +778,6 @@ class FileEditorWindow(QMainWindow):
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)
 
-
-
     def _handle_new_md_file(self)->None:
         # TODO 🚧 В разработке: 08.10.2025
         name, ok = QInputDialog.getText(self, "Имя файла", "Введите имя файла:")
@@ -793,12 +791,19 @@ class FileEditorWindow(QMainWindow):
 
     def _handle_new_folder(self):
         # TODO 🚧 В разработке: 13.10.2025
+
         #  Запросить имя папки
         name_folder, ok = QInputDialog.getText(self, "Имя папки", "Введите имя папки:")
         if not ok or not name_folder.strip():
             return
         self.tree_model_manager.new_folder(name_folder)
 
+    def _handle_new_template(self):
+        # TODO 🚧 В разработке: 14.10.2025
+        name_template, ok = QInputDialog.getText(self, "Имя шаблона", "Введите имя шаблона:")
+        if not ok or not name_template.strip():
+            return
+        self.tree_model_manager.new_template(name_template)
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает файл в соответствующем редакторе"""
         # TODO 🚧 В разработке: 08.10.2025
