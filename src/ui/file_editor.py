@@ -176,6 +176,7 @@ class FileEditorWindow(QMainWindow):
 
         # ПОДКЛЮЧАЕМ КОНТРОЛЛЕР К ДЕРЕВЬЯМ - ВАЖНО!
         #self.tree_model_manager.connect_tree_views(self.tree_views)
+        self.tree_model_manager.set_tab_widget(self.tab_widget)
 
         for tab_name, tree_view in self.tree_views.items():
             self.tree_model_manager.selection_controller.connect_tree_view(tree_view, "editor")
@@ -633,12 +634,7 @@ class FileEditorWindow(QMainWindow):
         # Можно добавить другие UI обновления здесь
         print(f"DEBUG: Состояние редактора изменено - модифицирован: {is_modified}")
 
-    def on_new_folder(self):
-        #  Запросить имя папки
-        name_folder, ok = QInputDialog.getText(self, "Имя папки", "Введите имя папки:")
-        if not ok or not name_folder.strip():
-            return
-        self.tree_model_manager.new_folder(name_folder)
+
 
     def _update_toolbar_actions_old(self, actions: list):
         """Обновляет панель инструментов actions редактора"""
@@ -755,6 +751,7 @@ class FileEditorWindow(QMainWindow):
         # Обработчики создания файлов в КОНТЕКСТЕ РЕДАКТОРА
         self.toolbar_manager.new_st_file.connect(self._handle_new_st_file)
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
+        self.toolbar_manager.new_folder.connect(self._handle_new_folder)
 
         # Подключаем сигналы сохранения из toolbar
         self.toolbar_manager.save_file.connect(self._on_save_action)
@@ -794,7 +791,13 @@ class FileEditorWindow(QMainWindow):
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)
 
-
+    def _handle_new_folder(self):
+        # TODO 🚧 В разработке: 13.10.2025
+        #  Запросить имя папки
+        name_folder, ok = QInputDialog.getText(self, "Имя папки", "Введите имя папки:")
+        if not ok or not name_folder.strip():
+            return
+        self.tree_model_manager.new_folder(name_folder)
 
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает файл в соответствующем редакторе"""
