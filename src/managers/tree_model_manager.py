@@ -46,7 +46,7 @@ class TreeModelManager(QObject):
     def connect_tree_view(self, tree_view):
         """Подключает дерево к контроллеру выделения этого менеджера"""
         # TODO 🚧 В разработке: 17.09.2025 мертвый код connect_tree_view
-        self.selection_controller.connect_tree_view(tree_view)
+        self.selection_controller.connect_tree_view(tree_view,"editor")
         print(f"DEBUG: Дерево подключено к локальному менеджеру (id: {id(self)})")
 
     def build_model_for_tab(self, tab_name: str, file_paths: list[str])-> STMDFileTreeModel:
@@ -183,7 +183,7 @@ class TreeModelManager(QObject):
     def connect_tree_views(self, trees_dict: dict):                 #TODO 17/09/2025 изменить переписуем TreeModelManager
         """Подключает контроллер выделения ко всем деревьям"""
         for tab_name, tree_view in trees_dict.items():
-            self.selection_controller.connect_tree_view(tree_view)
+            self.selection_controller.connect_tree_view(tree_view, "editor")
             print(f"DEBUG: Контроллер подключен к дереву вкладки '{tab_name}'")
 
     def add_files_to_tab_old(self, tab_name: str, file_paths: list[str]):
@@ -285,31 +285,47 @@ class TreeModelManager(QObject):
 
     def get_selection_info(self):
         """Получает информацию о выделении используя существующие методы модели"""
-        current_index = self.tab_widget.currentIndex()
+
+        # Проверяем наличие tab_widget
+        if not self._tab_widget:
+            print("DEBUG: Локальный виджет вкладок не установлен")
+            return None
+
+        current_index = self._tab_widget.currentIndex()
         if current_index < 0:
             return None
 
-        tab_name = self.tab_widget.tabText(current_index)
-        tree_view = self.tree_views.get(tab_name)
+        tab_name = self._tab_widget.tabText(current_index)
+        tree_view = self._tab_widget.widget(current_index)
 
-        if tree_view and tree_view.currentIndex().isValid():
-            index = tree_view.currentIndex()
-            parent_index = index.parent()
-            model = tree_view.model()
+        if not tree_view:
+            print(f"DEBUG: Не найден tree_view для вкладки '{tab_name}'")
+            return None
 
-            return {
-                'type': model.get_item_type(index),
-                'path': model.get_item_path(index),
-                'level': model.get_item_level(index),
-                'name': model.data(index, Qt.DisplayRole),
-                'model': model,
-                'index': index,
-                'parent_index': parent_index,  # ✅ Добавляем индекс родителя
-                'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',
-                'tab_name': tab_name,
-                'tree_view': tree_view
-            }
-        return None
+        if not tree_view.currentIndex().isValid():
+            print(f"DEBUG: В дереве вкладки '{tab_name}' нет выделенного элемента")
+            return None
+
+        index = tree_view.currentIndex()
+        parent_index = index.parent()
+        model = tree_view.model()
+
+        if not model:
+            print(f"DEBUG: Модель не установлена для tree_view вкладки '{tab_name}'")
+            return None
+
+        return {
+            'type': model.get_item_type(index),
+            'path': model.get_item_path(index),
+            'level': model.get_item_level(index),
+            'name': model.data(index, Qt.DisplayRole),
+            'model': model,
+            'index': index,
+            'parent_index': parent_index,
+            'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',
+            'tab_name': tab_name,
+            'tree_view': tree_view
+        }
 
     def get_file_root_from_selection(self, index):
         """Находит корневой элемент файла по выбранному индексу"""
@@ -332,18 +348,107 @@ class TreeModelManager(QObject):
 
         return None
 
-    def new_folder(self,name_folder):
-        """Создает новую папку на основе выбранного элемента"""
+    def creating_an_element(self, name, element) -> None:
+        # Проверяем наличие tab_widget
+        if not self._tab_widget:
+            print("❌ Tab widget не установлен в менеджере")
+            return
+
         # 1) получаем информацию о выбранном элементе
         info_item_dict = self.get_selection_info()
         if not info_item_dict:
             print("❌ Не выбран элемент для создания папки")
             return
 
+        # 2)Подготавливаем данные для папки
+        element_dict = {
+            'name': name,  # ⚠️ Используем ВВЕДЕННОЕ имя, а не имя выбранного элемента!
+            'type': element,
+            'content': ''
+        }
+        # 3) Получаем модель и родительский элемент
+        index = info_item_dict['index']
+        model = info_item_dict['model']
 
+        # 4) Определяем КУДА добавлять папку:
+        selected_type = info_item_dict['type']
+
+        if selected_type == 'folder':
+            # ✅ Добавляем ВНУТРЬ выбранной папки
+            parent_index = index
+            item_parent = index.internalPointer()
+        elif selected_type == 'file':
+            # ✅ Файл: создаем В КОРНЕ этого файла
+            # Находим корневой элемент файла
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                parent_index = file_root_info['index']
+                item_parent = parent_index.internalPointer()
+            else:
+                # ✅ Добавляем РЯДОМ с выбранным элементом (в том же родителе)
+                parent_index = index.parent()
+                item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        elif selected_type == 'template':
+            # ✅ Шаблон: создаем В ТОЙ ЖЕ ПАПКЕ что и шаблон
+            parent_index = index.parent()
+            item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        else:
+            # ❌ Неизвестный тип
+            print(f"❌ Неподдерживаемый тип элемента: {selected_type}")
+            return
+
+        # 5) Добавляем элемент в модель
+        success = model.add_folder(element_dict, item_parent, parent_index)
+
+        # 6) Записываем в файл новый элемент
+        if success:
+            # ✅ Раскрываем родительский элемент, чтобы пользователь увидел новую папку
+            tree_view = info_item_dict['tree_view']
+
+            # ✅ Исправленная строка: получаем модель правильно
+            model = tree_view.model()  # Вызываем метод model() чтобы получить модель
+
+            # ✅ Исправленный вызов: используем правильный синтаксис
+            model.layoutChanged.emit()
+
+            if parent_index.isValid():
+                tree_view.expand(parent_index)
+
+            print(f"✅ Папка '{name}' успешно создана")
+
+            # 7) Записываем в файл новый элемент
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                file_path = info_item_dict['path']
+                root_index = file_root_info['index']
+                # file_st_structure = self.get_structure_to_st_file( model, root_index)
+                print(f"✅ Папка '{name}' успешно создана")
+            else:
+                print(f"❌ Не удалось создать папку '{name}'")
+
+    def new_template(self, name_template) -> None:
+        """Создает новый шаблон на основе выбранного элемента"""
+        self.creating_an_element(name_template, 'template')
+
+    def new_folder(self, name_folder):
+        """Создает новую папку на основе выбранного элемента"""
+        self.creating_an_element(name_folder,'folder')
+
+    def new_folder_old(self,name_folder):
+        """Создает новую папку на основе выбранного элемента"""
+        #TODO - мертвый код удалить new_folder_old
+        # Проверяем наличие tab_widget
+        if not self._tab_widget:
+            print("❌ Tab widget не установлен в менеджере")
+            return
+
+        # 1) получаем информацию о выбранном элементе
+        info_item_dict = self.get_selection_info()
+        if not info_item_dict:
+            print("❌ Не выбран элемент для создания папки")
+            return
 
         # 2)Подготавливаем данные для папки
-
         folder_dict = {
             'name': name_folder,  # ⚠️ Используем ВВЕДЕННОЕ имя, а не имя выбранного элемента!
             'type': 'folder',
@@ -360,21 +465,55 @@ class TreeModelManager(QObject):
             # ✅ Добавляем ВНУТРЬ выбранной папки
             parent_index = index
             item_parent = index.internalPointer()
-        else:
-            # ✅ Добавляем РЯДОМ с выбранным элементом (в том же родителе)
+        elif selected_type == 'file':
+            # ✅ Файл: создаем В КОРНЕ этого файла
+            # Находим корневой элемент файла
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                parent_index = file_root_info['index']
+                item_parent = parent_index.internalPointer()
+            else:
+                # ✅ Добавляем РЯДОМ с выбранным элементом (в том же родителе)
+                parent_index = index.parent()
+                item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        elif selected_type =='template':
+            # ✅ Шаблон: создаем В ТОЙ ЖЕ ПАПКЕ что и шаблон
             parent_index = index.parent()
             item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        else:
+            # ❌ Неизвестный тип
+            print(f"❌ Неподдерживаемый тип элемента: {selected_type}")
+            return
 
         # 5) Добавляем папку в модель
         success = model.add_folder(folder_dict, item_parent, parent_index)
 
         # 6) Записываем в файл новый элемент
         if success:
+            # ✅ Раскрываем родительский элемент, чтобы пользователь увидел новую папку
+            tree_view = info_item_dict['tree_view']
+
+            # ✅ Исправленная строка: получаем модель правильно
+            model = tree_view.model()  # Вызываем метод model() чтобы получить модель
+
+            # ✅ Исправленный вызов: используем правильный синтаксис
+            model.layoutChanged.emit()
+
+            if parent_index.isValid():
+                tree_view.expand(parent_index)
+
+            print(f"✅ Папка '{name_folder}' успешно создана")
+
+
+            # 7) Записываем в файл новый элемент
             file_root_info = self.get_file_root_from_selection(index)
             if file_root_info:
-                file_path = folder_dict['path']
+                file_path = info_item_dict['path']
                 root_index = file_root_info['index']
-                file_st_structure = self.get_structure_to_st_file( model, root_index)
+                #file_st_structure = self.get_structure_to_st_file( model, root_index)
+                print(f"✅ Папка '{name_folder}' успешно создана")
+            else:
+                print(f"❌ Не удалось создать папку '{name_folder}'")
 
     def get_structure_to_st_file(self, model, index):
         # 1) Изменяем текущую структуру модели дерева в структуру st-файла
