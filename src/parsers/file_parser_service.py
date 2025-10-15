@@ -62,9 +62,10 @@ class FileParserService:
         for row in range(model.rowCount(parent_index)):
             child_index = model.index(row, 0, parent_index)
             item_type = model.get_item_type(child_index)
-            if item_type ['type'] == 'folder':
+            type_element = item_type ['type']
+            if type_element  == 'folder':
                 parts.append(self._serialize_folder(model, child_index))
-            elif item_type ['type'] == 'template':
+            elif type_element == 'template':
                 parts.append(self._serialize_template(model, child_index))
 
         return ', '.join(parts)
