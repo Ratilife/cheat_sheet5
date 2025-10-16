@@ -314,14 +314,26 @@ class TreeModelManager(QObject):
             print(f"DEBUG: Модель не установлена для tree_view вкладки '{tab_name}'")
             return None
 
+        # Получаем путь к файлу - для всех типов элементов
+        file_path = None
+        if model.get_item_type(index) in ['file', 'markdown']:
+            # Если элемент сам является файлом, берем путь напрямую
+            file_path = model.get_item_path(index)
+        else:
+            # Для template, folder и других типов ищем корневой файл в иерархии
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                file_path = file_root_info['path']
+
         return {
             'type': model.get_item_type(index),
-            'path': model.get_item_path(index),
+            'path': file_path,
             'level': model.get_item_level(index),
             'name': model.data(index, Qt.DisplayRole),
             'model': model,
             'index': index,
             'parent_index': parent_index,
+            'parent_name': model.data(parent_index, Qt.DisplayRole),
             'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',
             'tab_name': tab_name,
             'tree_view': tree_view
@@ -348,7 +360,7 @@ class TreeModelManager(QObject):
 
         return None
 
-    def creating_an_element(self, name, element) -> None:
+    def creating_an_element_old(self, name, element) -> None:
         # Проверяем наличие tab_widget
         if not self._tab_widget:
             print("❌ Tab widget не установлен в менеджере")
@@ -421,10 +433,86 @@ class TreeModelManager(QObject):
             if file_root_info:
                 file_path = info_item_dict['path']
                 root_index = file_root_info['index']
-                # file_st_structure = self.get_structure_to_st_file( model, root_index)
+                #file_st_structure = self.get_structure_to_st_file( model, root_index)
                 print(f"✅ Папка '{name}' успешно создана")
+                #print(file_st_structure)
             else:
                 print(f"❌ Не удалось создать папку '{name}'")
+
+    def _find_parent_in_structure(self, info_item_dict: dict):
+        print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру🔥🔥🔥🔥")
+        self.content_cache.find_point_selection(info_item_dict)
+    def creating_an_element(self, name, element) -> None:
+        # Проверяем наличие tab_widget
+        if not self._tab_widget:
+            print("❌ Tab widget не установлен в менеджере")
+            return
+
+        # 1) получаем информацию о выбранном элементе
+        info_item_dict = self.get_selection_info()
+        if not info_item_dict:
+            print("❌ Не выбран элемент для создания папки")
+            return
+
+        # 2)Подготавливаем данные для папки
+        element_dict = {
+            'name': name,  # ⚠️ Используем ВВЕДЕННОЕ имя, а не имя выбранного элемента!
+            'type': element,
+            'content': ''
+        }
+        # 3) Получаем модель и родительский элемент
+        index = info_item_dict['index']
+        model = info_item_dict['model']
+        file_path = info_item_dict['path']
+
+        # 4) Определяем КУДА добавлять папку:
+        selected_type = info_item_dict['type']
+
+        if selected_type == 'folder':
+            # ✅ Добавляем ВНУТРЬ выбранной папки
+            parent_index = index
+            item_parent = index.internalPointer()
+        elif selected_type == 'file':
+            # ✅ Файл: создаем В КОРНЕ этого файла
+            # Находим корневой элемент файла
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                parent_index = file_root_info['index']
+                item_parent = parent_index.internalPointer()
+            else:
+                # ✅ Добавляем РЯДОМ с выбранным элементом (в том же родителе)
+                parent_index = index.parent()
+                item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        elif selected_type == 'template':
+            # ✅ Шаблон: создаем В ТОЙ ЖЕ ПАПКЕ что и шаблон
+            parent_index = index.parent()
+            item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+        else:
+            # ❌ Неизвестный тип
+            print(f"❌ Неподдерживаемый тип элемента: {selected_type}")
+            return
+
+        # 5) Добавляем элемент в модель
+        success = model.add_folder(element_dict, item_parent, parent_index)
+
+        # 6) Записываем в файл новый элемент
+        if success:
+            # ✅ Раскрываем родительский элемент, чтобы пользователь увидел новую папку
+            tree_view = info_item_dict['tree_view']
+
+            # ✅ Исправленная строка: получаем модель правильно
+            model = tree_view.model()  # Вызываем метод model() чтобы получить модель
+
+            # ✅ Исправленный вызов: используем правильный синтаксис
+            model.layoutChanged.emit()
+
+            if parent_index.isValid():
+                tree_view.expand(parent_index)
+            print(f'обновили UI модель переменная model')
+            # 2. Получаем/создаем текущую структуру
+            #current_structure = self.content_cache.get(str(file_path))
+            #print(current_structure)
+            self._find_parent_in_structure(info_item_dict)
 
     def new_template(self, name_template) -> None:
         """Создает новый шаблон на основе выбранного элемента"""
