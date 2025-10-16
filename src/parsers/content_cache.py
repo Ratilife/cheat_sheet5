@@ -270,3 +270,103 @@ class ContentCache:
         """Удаляет файл из кэша"""
         if file_path in self._cache:
             del self._cache[file_path]
+
+    def find_point_selection(self, selection_info: dict):
+        print(f'зашли в метод find_point_selection')
+        print(f'словарь {selection_info}')
+        file_path = str(selection_info['path'])
+        print(file_path)
+        with self._lock:
+            if not isinstance(file_path, str):
+                raise TypeError("file_path должен быть строкой")
+
+            if file_path not in self._cache:
+                self._misses += 1
+                return None
+
+            # Получаем данные и обновляем позицию в LRU (перемещаем в конец)
+            data = self._cache.pop(file_path)
+            self._cache[file_path] = data  # ⬅️ Важно! Возвращаем обратно для LRU
+            self._hits += 1
+            data['access_count'] += 1
+
+        content_data = data['content']
+
+        # ✅ ИСПРАВЛЕНИЕ: проверяем тип данных и правильно извлекаем структуру
+        if isinstance(content_data, tuple) and len(content_data) == 2:
+            # Это кортеж: ('file', {'structure': [...], 'root_name': '...'})
+            structure_data = content_data[1]  # берем второй элемент (словарь)
+            structure_list = structure_data.get('structure', [])
+            print(f'✅ Извлекли структуру из кортежа')
+        elif isinstance(content_data, dict):
+            # Это словарь: {'structure': [...], 'root_name': '...'}
+            structure_list = content_data.get('structure', [])
+            print(f'✅ Извлекли структуру из словаря')
+        else:
+            print(f'❌ Неизвестный формат данных: {type(content_data)}')
+            return None
+
+        print(f'😊 Структура: {structure_list}')
+        print(f'тип объекта {selection_info["type"]}')
+
+        if selection_info['type'] == 'folder':
+            print(f'📂Зашли в {selection_info["type"]}')
+            # Ищем папку с таким же именем и уровнем
+            target_folder = self.find_folder_by_name(structure_list, selection_info['name'])
+            print(f'target_folder = {target_folder}')
+            if target_folder:
+                print(f'🟣Вставляем внутрь папки{target_folder.get("children", [])}')
+                return target_folder.get('children', [])  # вставляем внутрь папки
+        if selection_info['type'] == 'file':
+            print('📝Зашли в file')
+            # Вставляем в корень
+            print(f'🟠Вставляем в корень{structure_list}')
+            return structure_list
+        if selection_info['type'] == 'template':
+            print(f'🧾Зашли в {selection_info["type"]}')
+            # Нужно найти родителя шаблона и добавить в его дочерние элементы
+            target_template = self.find_folder_by_name(structure_list, selection_info['parent_name'])
+            if target_template:
+                print(f'🔵 Вставляем в шаблон {target_template.get("children", [])}')
+                return target_template.get("children", [])
+        return None
+
+
+
+    def find_folder_by_name(self, structure_list, target_name, target_type='folder'):
+        """
+        Рекурсивно ищет папку по имени в структуре
+        """
+        print(f'🔍 Поиск: "{target_name}" (тип: {target_type})')
+        print(f'📁 Структура для поиска: {len(structure_list)} элементов')
+        print(f'📁 Первые элементы: {[elem.get("name", "no-name") for elem in structure_list[:3]]}')
+
+        for index, element in enumerate(structure_list):
+            print(f'--- Элемент {index} ---')
+
+            # Пропускаем элементы, которые не являются словарями
+            if not isinstance(element, dict):
+                print(f'❌ Пропуск: не словарь')
+                continue
+
+            current_name = element.get('name')
+            current_type = element.get('type')
+            print(f'📝 Имя: "{current_name}", Тип: "{current_type}"')
+
+            # Проверяем текущий элемент
+            if current_name == target_name and current_type == target_type:
+                print(f'✅ НАЙДЕНО: {element}')
+                return element
+
+            # Рекурсивно ищем в детях
+            if 'children' in element:
+                print(f'🔍 Рекурсивный поиск в детях элемента "{current_name}"')
+                found = self.find_folder_by_name(element['children'], target_name, target_type)
+                if found:
+                    print(f'✅ Найдено в детях: {found}')
+                    return found
+            else:
+                print(f'📭 Нет детей у элемента "{current_name}"')
+
+        print(f'❌ Не найдено: "{target_name}" (тип: {target_type})')
+        return None
