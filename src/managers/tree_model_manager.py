@@ -5,6 +5,7 @@ from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 from src.controllers.selection_controller import TreeSelectionController
+from src.operation.file_operations import FileOperations
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
     def __init__(self, parser_service: FileParserService,
@@ -439,9 +440,13 @@ class TreeModelManager(QObject):
             else:
                 print(f"❌ Не удалось создать папку '{name}'")
 
-    def _find_parent_in_structure(self, info_item_dict: dict):
+    def _find_parent_in_structure(self, info_item_dict: dict, element_dict:dict):
         print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру🔥🔥🔥🔥")
-        self.content_cache.find_point_selection(info_item_dict)
+        self.selected_structure = self.content_cache.find_point_selection(info_item_dict)
+        self.file_operation = FileOperations()
+        self.file_operation.add_data_st_structure(self.selected_structure,element_dict)
+
+
     def creating_an_element(self, name, element) -> None:
         # Проверяем наличие tab_widget
         if not self._tab_widget:
@@ -512,7 +517,7 @@ class TreeModelManager(QObject):
             # 2. Получаем/создаем текущую структуру
             #current_structure = self.content_cache.get(str(file_path))
             #print(current_structure)
-            self._find_parent_in_structure(info_item_dict)
+            self._find_parent_in_structure(info_item_dict, element_dict)
 
     def new_template(self, name_template) -> None:
         """Создает новый шаблон на основе выбранного элемента"""
