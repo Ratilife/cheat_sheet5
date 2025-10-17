@@ -398,7 +398,7 @@ class ContentCache:
             if target_template:
                 print(f'🔵 Вставляем в шаблон {target_template.get("children", [])}')
 
-                return selection_info['neme'], structure_list, target_template, 'template'
+                return selection_info['name'], structure_list, target_template, 'template'
         return None
 
 
