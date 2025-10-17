@@ -7,7 +7,6 @@ from PySide6.QtWidgets import QInputDialog
 from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
-from src.managers.tree_model_manager import TreeModelManager
 from pathlib import Path
 
 
@@ -301,5 +300,130 @@ class FileOperations:
 
         return file_path
 
+    def create_st_template(self, template_name, flag=0, avto_text="", text=""):
+        """
+        Создает шаблон для ST-файла
+
+        Args:
+            template_name (str): Имя шаблона
+            flag (int): Флаг (0 или 1), по умолчанию 0
+            avto_text (str): имя автовставки шаблона
+            text (str): содержание шаблона
+
+        Returns:
+            str: Строка с шаблоном в формате ST-файла
+        """
+        #TODO 17.10.2025 - мертвый код create_st_template
+
+        # Проверяем корректность флага
+        if flag not in (0, 1):
+            raise ValueError("Flag must be 0 or 1")
+
+        # Экранируем кавычки в строках
+        def escape_string(s):
+            return f'"{s.replace('"', '""')}"'
+
+        # Формируем шаблон согласно грамматике
+        template = (
+            f"{{0, {{{escape_string(template_name)}, 0, {flag}, "
+            f"{escape_string(avto_text)}, {escape_string(text)}}}}}"
+        )
+
+        return template
+
+    def create_st_folder(self, folder_name, flag=1, items=None):
+        """
+        Создает папку для ST-файла согласно грамматике
+
+        Args:
+            folder_name (str): Имя папки
+            flag (int): Флаг (0 или 1), по умолчанию 1
+            items (list): Список вложенных элементов (шаблонов или других папок)
+
+        Returns:
+            str: Строка с папкой в формате ST-файла
+        """
+        #TODO - 17.10.2025 - мертвый код create_st_folder
+
+        if flag not in (0, 1):
+            raise ValueError("Flag must be 0 or 1")
+
+        # Экранируем кавычки в строках (удваиваем их)
+        def escape_string(s):
+            return f'"{s.replace('"', '""')}"'
+
+        # Формируем header папки
+        folder_header = f"{escape_string(folder_name)}, 1, {flag}, \"\", \"\""
+
+        # Определяем количество элементов
+        item_count = len(items) if items else 0
+
+        # Формируем папку
+        if items and item_count > 0:
+            # Папка с вложенными элементами
+            items_str = ", " + ", ".join(items)
+            folder = f"{{{item_count}, {{{folder_header}}}{items_str}}}"
+        else:
+            # Пустая папка
+            folder = f"{{{item_count}, {{{folder_header}}}}}"
+
+        return folder
+
+
+    def add_st_folder(self, new_folder_name: str)->dict:
+
+        # Создаем новую папку
+        new_folder = {
+            'name': new_folder_name,
+            'type': 'folder',
+            'children': []
+        }
+        return new_folder
+
+    def add_st_template(self,new_template_name: str, template_content: str = "")->dict:
+        # Создаем новый шаблон
+        new_template = {
+            'name': new_template_name,
+            'type': 'template',
+            'content': template_content
+        }
+        return new_template
+
+
+    def add_data_st_structure(self,data:tuple, new_element):
+        # Количество элементов в кортеже
+        name=''
+        structure = None
+        insert = None
+        type = ''
+        new_name = new_element['name']
+        new_type = new_element['type']
+
+        tuple_length = len(data)
+        if tuple_length == 4:
+            print(f'💊 tuple: {data}')
+            print(f'⭐ {data[0]}')
+            print(f'⭐ {data[1]}')
+            print(f'⭐ {data[2]}')
+            print(f'⭐ {data[3]}')
+
+            name = data[0]
+            structure = data[1]
+            insert = data[2]
+            type = data[3]
+
+        if tuple_length == 3:
+            name = data[0]
+            insert = data[1]
+            type = data[2]
+
+        if new_type == 'folder':
+            new_folder = self.add_st_folder(new_name)
+            insert['children'].append(new_folder)
+            print(f'🟢 folder insert: {insert}')
+        if new_type == 'template':
+            new_template = self.add_st_template(new_name)
+            insert['children'].append(new_template)
+            print(f'🟢 template insert: {insert}')
 
 
