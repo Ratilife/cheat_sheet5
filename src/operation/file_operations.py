@@ -427,10 +427,14 @@ class FileOperations:
                 new_folder = self.add_st_folder(new_name)
                 insert['children'].append(new_folder)
                 print(f'🟢 folder insert: {insert}')
+                print(f'🍀 structure: {structure}')
             if new_type == 'template':
                 new_template = self.add_st_template(new_name)
                 insert['children'].append(new_template)
                 print(f'🟢 template insert: {insert}')
+                print(f'🍀 structure: {structure}')
+            return structure
+
         elif type == 'file':
             print("зашел в type == 'file'")
             if new_type == 'folder':
@@ -441,6 +445,8 @@ class FileOperations:
                 new_template = self.add_st_template(new_name)
                 insert.append(new_template)
                 print(f'🟢 template insert: {insert}')
+
+            return insert
 
 
 
