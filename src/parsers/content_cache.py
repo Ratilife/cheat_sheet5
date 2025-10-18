@@ -336,6 +336,7 @@ class ContentCache:
 
     def find_point_selection(self, selection_info: dict)-> (Optional[tuple[str, list, list, str]]
                                                             | Optional[tuple[str, list, str]]):
+        # TODO 🚧 В разработке: 17.10.2025
         print(f'зашли в метод find_point_selection')
         print(f'словарь {selection_info}')
         file_path = str(selection_info['path'])
@@ -406,6 +407,7 @@ class ContentCache:
         """
         Рекурсивно ищет папку по имени в структуре
         """
+        # TODO 🚧 В разработке: 16.10.2025
         print(f'🔍 Поиск: "{target_name}" (тип: {target_type})')
         print(f'📁 Структура для поиска: {len(structure_list)} элементов')
         print(f'📁 Первые элементы: {[elem.get("name", "no-name") for elem in structure_list[:3]]}')

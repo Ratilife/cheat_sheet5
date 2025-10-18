@@ -286,7 +286,7 @@ class TreeModelManager(QObject):
 
     def get_selection_info(self):
         """Получает информацию о выделении используя существующие методы модели"""
-
+        # TODO 🚧 В разработке: 13.10.2025
         # Проверяем наличие tab_widget
         if not self._tab_widget:
             print("DEBUG: Локальный виджет вкладок не установлен")
@@ -342,6 +342,7 @@ class TreeModelManager(QObject):
 
     def get_file_root_from_selection(self, index):
         """Находит корневой элемент файла по выбранному индексу"""
+        # TODO 🚧 В разработке: 13.10.2025
         current_index = index
         model = index.model()
 
@@ -441,6 +442,7 @@ class TreeModelManager(QObject):
                 print(f"❌ Не удалось создать папку '{name}'")
 
     def _find_parent_in_structure(self, info_item_dict: dict, element_dict:dict):
+        # TODO 🚧 В разработке: 17.10.2025
         print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру🔥🔥🔥🔥")
         cache_data = self.content_cache.find_point_selection(info_item_dict)
         if cache_data:
@@ -451,6 +453,7 @@ class TreeModelManager(QObject):
 
 
     def creating_an_element(self, name, element) -> None:
+        # TODO 🚧 В разработке: 16.10.2025
         # Проверяем наличие tab_widget
         if not self._tab_widget:
             print("❌ Tab widget не установлен в менеджере")
@@ -524,14 +527,17 @@ class TreeModelManager(QObject):
 
     def new_template(self, name_template) -> None:
         """Создает новый шаблон на основе выбранного элемента"""
+        # TODO 🚧 В разработке: 14.10.2025
         self.creating_an_element(name_template, 'template')
 
     def new_folder(self, name_folder):
         """Создает новую папку на основе выбранного элемента"""
+        # TODO 🚧 В разработке: 14.10.2025
         self.creating_an_element(name_folder,'folder')
 
 
     def get_structure_to_st_file(self, model, index):
+        # TODO 🚧 В разработке: 13.10.2025
         # 1) Изменяем текущую структуру модели дерева в структуру st-файла
         file_structure = self.parser_service.serialize_st_structure(model, index)
         return file_structure
