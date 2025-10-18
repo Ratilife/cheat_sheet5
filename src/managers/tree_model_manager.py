@@ -447,10 +447,19 @@ class TreeModelManager(QObject):
         cache_data = self.content_cache.find_point_selection(info_item_dict)
         if cache_data:
             self.file_operation = FileOperations()
+            # 1. Изменяем структуру в кэше
             updated_structure = self.file_operation.add_data_st_structure(cache_data,element_dict)
             file_path = info_item_dict['path']
+            # 2. Сохраняем обновленную структуру обратно в кэш
             self.content_cache.set(file_path, updated_structure)
+            # 3. Сериализуем и записываем в файл
+            st_content = self.parser_service.serialize_st_structure(updated_structure)
+            success = self.file_operation.file_manager.write_file(file_path, st_content)
 
+            if success:
+                print(f"✅ Файл {file_path} успешно обновлен")
+            else:
+                print(f"❌ Ошибка записи файла {file_path}")
 
     def creating_an_element(self, name, element) -> None:
         # TODO 🚧 В разработке: 16.10.2025
