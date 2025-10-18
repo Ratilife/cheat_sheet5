@@ -442,9 +442,12 @@ class TreeModelManager(QObject):
 
     def _find_parent_in_structure(self, info_item_dict: dict, element_dict:dict):
         print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру🔥🔥🔥🔥")
-        self.selected_structure = self.content_cache.find_point_selection(info_item_dict)
-        self.file_operation = FileOperations()
-        self.file_operation.add_data_st_structure(self.selected_structure,element_dict)
+        cache_data = self.content_cache.find_point_selection(info_item_dict)
+        if cache_data:
+            self.file_operation = FileOperations()
+            updated_structure = self.file_operation.add_data_st_structure(cache_data,element_dict)
+            file_path = info_item_dict['path']
+            self.content_cache.set(file_path, updated_structure)
 
 
     def creating_an_element(self, name, element) -> None:
