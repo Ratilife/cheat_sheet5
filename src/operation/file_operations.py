@@ -416,14 +416,34 @@ class FileOperations:
             name = data[0]
             insert = data[1]
             type = data[2]
+            print(f'💊 tuple: {data}')
+            print(f'⭐ {data[0]}')
+            print(f'⭐ {data[1]}')
+            print(f'⭐ {data[2]}')
+            
 
-        if new_type == 'folder':
-            new_folder = self.add_st_folder(new_name)
-            insert['children'].append(new_folder)
-            print(f'🟢 folder insert: {insert}')
-        if new_type == 'template':
-            new_template = self.add_st_template(new_name)
-            insert['children'].append(new_template)
-            print(f'🟢 template insert: {insert}')
+        if type in ['folder', 'template']:
+            if new_type == 'folder':
+                new_folder = self.add_st_folder(new_name)
+                insert['children'].append(new_folder)
+                print(f'🟢 folder insert: {insert}')
+            if new_type == 'template':
+                new_template = self.add_st_template(new_name)
+                insert['children'].append(new_template)
+                print(f'🟢 template insert: {insert}')
+        elif type == 'file':
+            print("зашел в type == 'file'")
+            if new_type == 'folder':
+                new_folder = self.add_st_folder(new_name)
+                insert.append(new_folder)
+                print(f'🟢 folder insert: {insert}')
+            if new_type == 'template':
+                new_template = self.add_st_template(new_name)
+                insert.append(new_template)
+                print(f'🟢 template insert: {insert}')
+
+
+
+
 
 
