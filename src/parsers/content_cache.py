@@ -390,7 +390,7 @@ class ContentCache:
             # Вставляем в корень
             print(f'🟠Вставляем в корень{structure_list}')
 
-            return selection_info['neme'], structure_list, 'file'
+            return selection_info['name'], structure_list, 'file'
         if selection_info['type'] == 'template':
             print(f'🧾Зашли в {selection_info["type"]}')
             # Нужно найти родителя шаблона и добавить в его дочерние элементы
