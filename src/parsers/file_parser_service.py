@@ -39,54 +39,50 @@ class FileParserService:
 
     #---Новые методы проверить их работу
 
-    def serialize_st_structure(self, model, root_index):
+    def serialize_st_structure(self, model, cache_structure):
         # TODO 🚧 В разработке: 13.10.2025
         # 1. fileStructure: {count, rootContent}
-        root_content = self._serialize_root_content(model, root_index)
-        file_structure = f"{{{model.rowCount(root_index)}, {root_content}}}"
+        root_content = self._serialize_root_content(model, cache_structure)
+        file_structure = f"{{{model.rowCount(cache_structure)}, {root_content}}}"
         return file_structure
 
-    def _serialize_root_content(self, model, root_index):
+    def _serialize_root_content(self, model, cache_structure):
         # TODO 🚧 В разработке: 13.10.2025
         # 2. rootContent: {count, folderContent}
-        folder_content = self._serialize_folder_content(model, root_index)
-        return f"{{{model.rowCount(root_index)}, {folder_content}}}"
+        folder_content = self._serialize_folder_content(cache_structure['structure'])
+        return f"{{{model.rowCount(cache_structure['structure'])}, {folder_content}}}"
 
-    def _serialize_folder_content(self, model, parent_index):
+    def _serialize_folder_content(self, model, structure_list):
         # TODO 🚧 В разработке: 13.10.2025
         # 3. folderContent: folderHeader (',' entry)*
-        if model.rowCount(parent_index) == 0:
+        if model.rowCount(structure_list) == 0:
             return "{}"
 
         parts = []
-        for row in range(model.rowCount(parent_index)):
-            child_index = model.index(row, 0, parent_index)
-            item_type = model.get_item_type(child_index)
-            type_element = item_type ['type']
-            if type_element  == 'folder':
-                parts.append(self._serialize_folder(model, child_index))
-            elif type_element == 'template':
-                parts.append(self._serialize_template(model, child_index))
+        for item in structure_list:
+            if item['type'] == 'folder':
+                parts.append(self._serialize_folder(item))
+            elif item['type'] == 'template':
+                parts.append(self._serialize_template(item))
 
         return ', '.join(parts)
 
-    def _serialize_folder(self, model, folder_index):
+    def _serialize_folder(self,  folder_data):
         # TODO 🚧 В разработке: 13.10.2025
         # 4. entry для папки: {count, folderHeader, entryList} или {count, folderHeader}
-        folder_header = self._serialize_folder_header(model, folder_index)
+        folder_header = self._serialize_folder_header(folder_data)
+        children_count = len(folder_data.get('children', []))
 
-        if model.rowCount(folder_index) > 0:
-            # Папка с детьми: {count, folderHeader, entryList}
-            entry_list = self._serialize_entry_list(model, folder_index)
-            return f"{{{model.rowCount(folder_index)}, {folder_header}, {entry_list}}}"
+        if children_count > 0:
+            entry_list = self._serialize_entry_list(folder_data['children'])
+            return f"{{{children_count}, {folder_header}, {entry_list}}}"
         else:
-            # Пустая папка: {count, folderHeader}
             return f"{{0, {folder_header}}}"
 
-    def _serialize_template(self, model, template_index):
+    def _serialize_template(self, template_data):
         # TODO 🚧 В разработке: 13.10.2025
         # 5. entry для шаблона: {0, templateHeader}
-        template_header = self._serialize_template_header(model, template_index)
+        template_header = self._serialize_template_header(template_data)
         return f"{{0, {template_header}}}"
 
     def _get_item_flags(self, item):
@@ -110,40 +106,36 @@ class FileParserService:
             return item.item_data[5] or ""
         return ""
 
-    def _serialize_folder_header(self,  model, folder_index):
+    def _serialize_folder_header(self,  folder_data):
         # TODO 🚧 В разработке: 13.10.2025
         # 6. folderHeader: {name, 1, flags, desc1, desc2}
-        folder_element = folder_index.internalPointer()
-        name = model.data(folder_index, Qt.DisplayRole)
-        flags = self._get_item_flags(folder_element)
-        desc1 = self._get_item_description1(folder_element)
-        desc2 = self._get_item_description2(folder_element)
+        name = folder_data['name']
+        flags = folder_data.get('flags', 0)
+        desc1 = folder_data.get('desc1', '')
+        desc2 = folder_data.get('desc2', '')
+        return f'{{"{name}", 1, {flags}, "{desc1}", "{desc2}"}}'
 
         return f'{{"{name}", 1, {flags}, "{desc1}", "{desc2}"}}'
 
-    def _serialize_template_header(self,  model, template_index):
+    def _serialize_template_header(self, template_data):   #TODO проверить метод _serialize_template_header перем content не используется
         # TODO 🚧 В разработке: 13.10.2025
         # 7. templateHeader: {name, 0, flags, desc1, desc2}
-        template_element = template_index.internalPointer()
-        name = model.data(template_index, Qt.DisplayRole)
-        flags = self._get_item_flags(template_element)
-        desc1 = self._get_item_description1(template_element)
-        desc2 = self._get_item_description2(template_element)
-
+        name = template_data['name']
+        flags = template_data.get('flags', 0)
+        desc1 = template_data.get('desc1', '')
+        desc2 = template_data.get('desc2', '')
+        content = template_data.get('content', '')
         return f'{{"{name}", 0, {flags}, "{desc1}", "{desc2}"}}'
 
-    def _serialize_entry_list(self, model, parent_index):
+    def _serialize_entry_list(self, children_list):
         # TODO 🚧 В разработке: 13.10.2025
         # 8. entryList: entry (',' entry)*
         entries = []
-        for row in range(model.rowCount(parent_index)):
-            child_index = model.index(row, 0, parent_index)
-            item_type = model.get_item_type(child_index)
-
-            if item_type == 'folder':
-                entries.append(self._serialize_folder(model, child_index))
-            elif item_type == 'template':
-                entries.append(self._serialize_template(model, child_index))
+        for child in children_list:
+            if child['type'] == 'folder':
+                entries.append(self._serialize_folder(child))
+            elif child['type'] == 'template':
+                entries.append(self._serialize_template(child))
 
         return f"{{{', '.join(entries)}}}"
 
