@@ -455,7 +455,7 @@ class TreeModelManager(QObject):
             # 3. Сериализуем и записываем в файл
             st_content = self.parser_service.serialize_st_structure(updated_structure)
             success = self.file_operation.file_manager.write_file(file_path, st_content)
-
+            print(f'success = {success}')
             if success:
                 print(f"✅ Файл {file_path} успешно обновлен")
             else:
