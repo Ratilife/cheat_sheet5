@@ -443,17 +443,21 @@ class TreeModelManager(QObject):
 
     def _find_parent_in_structure(self, info_item_dict: dict, element_dict:dict):
         # TODO 🚧 В разработке: 17.10.2025
-        print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру🔥🔥🔥🔥")
+        print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру метод _find_parent_in_structure()🔥🔥🔥🔥")
         cache_data = self.content_cache.find_point_selection(info_item_dict)
+        print(f'cache_data:  {cache_data}')
         if cache_data:
             self.file_operation = FileOperations()
             # 1. Изменяем структуру в кэше
             updated_structure = self.file_operation.add_data_st_structure(cache_data,element_dict)
+            print(f'updated_structure:  {updated_structure}')
             file_path = info_item_dict['path']
             # 2. Сохраняем обновленную структуру обратно в кэш
             self.content_cache.set(file_path, updated_structure)
             # 3. Сериализуем и записываем в файл
+
             st_content = self.parser_service.serialize_st_structure(updated_structure)
+            print(f'st_content : {st_content}')
             success = self.file_operation.file_manager.write_file(file_path, st_content)
             print(f'success = {success}')
             if success:
