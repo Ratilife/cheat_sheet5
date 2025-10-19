@@ -39,24 +39,75 @@ class FileParserService:
 
     #---Новые методы проверить их работу
 
-    def serialize_st_structure(self, model, cache_structure):
+    def serialize_st_structure(self, cache_structure):
         # TODO 🚧 В разработке: 13.10.2025
         # 1. fileStructure: {count, rootContent}
-        root_content = self._serialize_root_content(model, cache_structure)
-        file_structure = f"{{{model.rowCount(cache_structure)}, {root_content}}}"
-        return file_structure
+        # Получаем структуру
+        print('🥺зашли в метод serialize_st_structure🥺')
+        print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
 
-    def _serialize_root_content(self, model, cache_structure):
+        # 🔧 ИЗВЛЕКАЕМ root_name И structure
+        if isinstance(cache_structure, dict):
+            if 'root_name' in cache_structure and 'structure' in cache_structure:
+                # Это полная структура с root_name
+                root_name = cache_structure['root_name']
+                structure_list = cache_structure['structure']
+            elif 'structure' in cache_structure:
+                # Только структура, создаем root_name из первого элемента
+                structure_list = cache_structure['structure']
+                root_name = structure_list[0]['name'] if structure_list else "Root"
+            else:
+                # Неизвестный формат
+                structure_list = cache_structure
+                root_name = "Root"
+        elif isinstance(cache_structure, list):
+            structure_list = cache_structure
+            root_name = structure_list[0]['name'] if structure_list else "Root"
+        else:
+            structure_list = []
+            root_name = "Root"
+
+        print(f'🔍 root_name: {root_name}')
+        print(f'🔍 structure_list: {structure_list}')
+
+        # 🔽 СОЗДАЕМ КОРНЕВОЙ ШАБЛОН С root_name
+        root_template = {
+            'name': root_name,
+            'type': 'template',
+            'flags': 0,
+            'desc1': '',
+            'desc2': ''
+        }
+
+        # 🔽 ДОБАВЛЯЕМ КОРНЕВОЙ ШАБЛОН В НАЧАЛО СТРУКТУРЫ
+        full_structure = [root_template] + structure_list
+
+        count = len(full_structure)
+        root_content = self._serialize_root_content(full_structure)
+
+        result = f"{count},\n{root_content}"
+        print(f'🟡 результат метода serialize_st_structure: {result}')
+        return result
+
+    def _serialize_root_content(self,  structure_list):
         # TODO 🚧 В разработке: 13.10.2025
         # 2. rootContent: {count, folderContent}
-        folder_content = self._serialize_folder_content(cache_structure['structure'])
-        return f"{{{model.rowCount(cache_structure['structure'])}, {folder_content}}}"
+        if not structure_list:
+            return "{}"
 
-    def _serialize_folder_content(self, model, structure_list):
+        count = len(structure_list)
+        folder_content = self._serialize_folder_content(structure_list)
+
+        # 🔽 ФОРМАТИРОВАНИЕ: {count, элементы_в_строку_но_с_переносами}
+        return f"{{\n{count},\n{folder_content}\n}}"
+
+
+    def _serialize_folder_content(self, structure_list):
         # TODO 🚧 В разработке: 13.10.2025
         # 3. folderContent: folderHeader (',' entry)*
-        if model.rowCount(structure_list) == 0:
-            return "{}"
+
+        if not structure_list:
+            return ""
 
         parts = []
         for item in structure_list:
@@ -65,25 +116,32 @@ class FileParserService:
             elif item['type'] == 'template':
                 parts.append(self._serialize_template(item))
 
-        return ', '.join(parts)
+        # 🔽 ЭЛЕМЕНТЫ В СТРОКУ, РАЗДЕЛЕННЫЕ ЗАПЯТЫМИ С ПЕРЕНОСОМ
+        return ',\n'.join(parts)
+
 
     def _serialize_folder(self,  folder_data):
         # TODO 🚧 В разработке: 13.10.2025
         # 4. entry для папки: {count, folderHeader, entryList} или {count, folderHeader}
+
         folder_header = self._serialize_folder_header(folder_data)
         children_count = len(folder_data.get('children', []))
 
         if children_count > 0:
             entry_list = self._serialize_entry_list(folder_data['children'])
-            return f"{{{children_count}, {folder_header}, {entry_list}}}"
+            # 🔽 ПАПКА: {count, заголовок_в_строку, содержимое_в_столбик}
+            return f"{{\n{children_count},\n{folder_header},\n{entry_list}\n}}"
         else:
-            return f"{{0, {folder_header}}}"
+            # 🔽 ПУСТАЯ ПАПКА: {0, заголовок_в_строку}
+            return f"{{\n0,\n{folder_header}\n}}"
+
 
     def _serialize_template(self, template_data):
         # TODO 🚧 В разработке: 13.10.2025
         # 5. entry для шаблона: {0, templateHeader}
         template_header = self._serialize_template_header(template_data)
-        return f"{{0, {template_header}}}"
+        # 🔽 ШАБЛОН: {0, заголовок_в_строку}
+        return f"{{\n0,\n{template_header}\n}}"
 
     def _get_item_flags(self, item):
         # TODO 🚧 В разработке: 13.10.2025
@@ -113,9 +171,8 @@ class FileParserService:
         flags = folder_data.get('flags', 0)
         desc1 = folder_data.get('desc1', '')
         desc2 = folder_data.get('desc2', '')
-        return f'{{"{name}", 1, {flags}, "{desc1}", "{desc2}"}}'
-
-        return f'{{"{name}", 1, {flags}, "{desc1}", "{desc2}"}}'
+        # 🔽 ЗАГОЛОВОК В СТРОКУ: {"name",1,flags,"desc1","desc2"}
+        return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
 
     def _serialize_template_header(self, template_data):   #TODO проверить метод _serialize_template_header перем content не используется
         # TODO 🚧 В разработке: 13.10.2025
@@ -124,12 +181,16 @@ class FileParserService:
         flags = template_data.get('flags', 0)
         desc1 = template_data.get('desc1', '')
         desc2 = template_data.get('desc2', '')
-        content = template_data.get('content', '')
-        return f'{{"{name}", 0, {flags}, "{desc1}", "{desc2}"}}'
+        # 🔽 ЗАГОЛОВОК В СТРОКУ: {"name",0,flags,"desc1","desc2"}
+        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+
 
     def _serialize_entry_list(self, children_list):
         # TODO 🚧 В разработке: 13.10.2025
         # 8. entryList: entry (',' entry)*
+        if not children_list:
+            return "{}"
+
         entries = []
         for child in children_list:
             if child['type'] == 'folder':
@@ -137,7 +198,9 @@ class FileParserService:
             elif child['type'] == 'template':
                 entries.append(self._serialize_template(child))
 
-        return f"{{{', '.join(entries)}}}"
+        # 🔽 ЭЛЕМЕНТЫ В СТРОКУ С ПЕРЕНОСАМИ
+        entries_str = ',\n'.join(entries)
+        return f"{{\n{entries_str}\n}}"
 
 
 
