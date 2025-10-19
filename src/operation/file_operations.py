@@ -273,7 +273,13 @@ class FileOperations:
         # Возвращает содержимое для нового ST-файла
         """Возвращает шаблон для нового ST-файла"""
         # TODO 🚧 В разработке: 08.10.2025
-        return '{1,{0,{"%s"},1,0,"",""}}'% name_file
+        template = """
+        {1,
+        {0,
+        {"%s",1,0,"",""}
+        }
+        }""" % name_file
+        return template
 
     def _get_md_base(self, name_file: str) -> str:
         return f"{name_file}\n"
