@@ -356,7 +356,7 @@ class ContentCache:
             data['access_count'] += 1
 
         content_data = data['content']
-        print(f'data: {data}')
+        print(f'данные из кэш data: {data}')
         print(f'content_data: {content_data}')
 
         # ✅ ИСПРАВЛЕНИЕ: проверяем тип данных и правильно извлекаем структуру
@@ -384,14 +384,14 @@ class ContentCache:
             print(f'target_folder = {target_folder}')
             if target_folder:
                 print(f'🟣Вставляем внутрь папки{target_folder.get("children", [])}')
-                return selection_info['name'], structure_list, target_folder, 'folder'
+                return selection_info['name'], structure_data, target_folder, 'folder'
                 #return structure_list, target_folder.get('children', []), 'folder'  # вставляем внутрь папки
         if selection_info['type'] == 'file':
             print('📝Зашли в file')
             # Вставляем в корень
             print(f'🟠Вставляем в корень{structure_list}')
 
-            return selection_info['name'], structure_list, 'file'
+            return selection_info['name'], structure_data, 'file'
         if selection_info['type'] == 'template':
             print(f'🧾Зашли в {selection_info["type"]}')
             # Нужно найти родителя шаблона и добавить в его дочерние элементы
@@ -399,7 +399,7 @@ class ContentCache:
             if target_template:
                 print(f'🔵 Вставляем в шаблон {target_template.get("children", [])}')
 
-                return selection_info['name'], structure_list, target_template, 'template'
+                return selection_info['name'], structure_data, target_template, 'template'
         return None
 
 
