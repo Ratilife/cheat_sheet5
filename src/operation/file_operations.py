@@ -396,7 +396,7 @@ class FileOperations:
         return new_template
 
 
-    def add_data_st_structure(self,data:tuple, new_element):
+    def add_data_st_structure_old(self,data:tuple, new_element):
         # TODO 🚧 В разработке: 17.10.2025
 
         # Количество элементов в кортеже
@@ -456,8 +456,97 @@ class FileOperations:
 
             return insert
 
+    def add_data_st_structure(self, data: tuple, new_element):
+        # TODO 🚧 В разработке: 17.10.2025
 
+        # Количество элементов в кортеже
+        name = ''
+        structure = None
+        insert = None
+        element_type = ''  # переименовано с type на element_type
+        new_name = new_element['name']
+        new_type = new_element['type']
 
+        tuple_length = len(data)
+        if tuple_length == 4:
+            print(f'💊 tuple: {data}')
+            print(f'⭐ name: {data[0]}')
+            print(f'⭐ structure: {data[1]}')
+            print(f'⭐ insert: {data[2]}')
+            print(f'⭐ type: {data[3]}')
 
+            name = data[0]
+            structure = data[1]
+            insert = data[2]
+            element_type = data[3]  # переименовано
+
+        elif tuple_length == 3:
+            print(f'💊 tuple: {data}')
+            print(f'⭐ name: {data[0]}')
+            print(f'⭐ structure: {data[1]}')
+            print(f'⭐ type: {data[2]}')
+
+            name = data[0]
+            structure = data[1]
+            element_type = data[2]  # переименовано
+            insert = None  # для кортежа из 3 элементов insert не определен
+
+        print(
+            f"🔍 DEBUG: type='{element_type}', structure type={type(structure)}, insert type={type(insert) if insert else 'None'}")
+
+        if element_type in ['folder', 'template']:  # переименовано
+            # Добавляем в детей родительского элемента
+            if new_type == 'folder':
+                new_folder = self.add_st_folder(new_name)
+                if insert and 'children' in insert:
+                    insert['children'].append(new_folder)
+                    print(f'🟢 folder добавлен в children: {new_folder}')
+                else:
+                    print(f'❌ Не могу добавить папку: insert={insert}')
+            elif new_type == 'template':
+                new_template = self.add_st_template(new_name)
+                if insert and 'children' in insert:
+                    insert['children'].append(new_template)
+                    print(f'🟢 template добавлен в children: {new_template}')
+                else:
+                    print(f'❌ Не могу добавить шаблон: insert={insert}')
+            return structure
+
+        elif element_type == 'file':  # переименовано
+            print("зашел в type == 'file'")
+            # Для файла добавляем в корневую структуру
+            if new_type == 'folder':
+                new_folder = self.add_st_folder(new_name)
+                # Проверяем тип structure и добавляем соответствующим образом
+                if isinstance(structure, dict) and 'structure' in structure:
+                    # structure это словарь с ключом 'structure'
+                    structure['structure'].append(new_folder)
+                    print(f'🟢 folder добавлен в structure: {new_folder}')
+                elif isinstance(structure, list):
+                    # structure это список
+                    structure.append(new_folder)
+                    print(f'🟢 folder добавлен в structure: {new_folder}')
+                else:
+                    print(f'❌ Неизвестный тип structure: {type(structure)}')
+
+            elif new_type == 'template':
+                new_template = self.add_st_template(new_name)
+                # Проверяем тип structure и добавляем соответствующим образом
+                if isinstance(structure, dict) and 'structure' in structure:
+                    # structure это словарь с ключом 'structure'
+                    structure['structure'].append(new_template)
+                    print(f'🟢 template добавлен в structure: {new_template}')
+                elif isinstance(structure, list):
+                    # structure это список
+                    structure.append(new_template)
+                    print(f'🟢 template добавлен в structure: {new_template}')
+                else:
+                    print(f'❌ Неизвестный тип structure: {type(structure)}')
+
+            return structure
+
+        else:
+            print(f"❌ Неизвестный тип: {element_type}")  # переименовано
+            return structure
 
 
