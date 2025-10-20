@@ -39,38 +39,58 @@ class FileParserService:
 
     #---Новые методы проверить их работу
 
-    def serialize_st_structure(self, cache_structure):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 1. fileStructure: {count, rootContent}
-        # Получаем структуру
+    '''def serialize_st_structure(self, cache_structure):
         print('🥺зашли в метод serialize_st_structure🥺')
         print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
 
         # 🔧 ИЗВЛЕКАЕМ root_name И structure
         if isinstance(cache_structure, dict):
-            if 'root_name' in cache_structure and 'structure' in cache_structure:
-                # Это полная структура с root_name
-                root_name = cache_structure['root_name']
-                structure_list = cache_structure['structure']
-            elif 'structure' in cache_structure:
-                # Только структура, создаем root_name из первого элемента
-                structure_list = cache_structure['structure']
-                root_name = structure_list[0]['name'] if structure_list else "Root"
-            else:
-                # Неизвестный формат
-                structure_list = cache_structure
-                root_name = "Root"
-        elif isinstance(cache_structure, list):
-            structure_list = cache_structure
-            root_name = structure_list[0]['name'] if structure_list else "Root"
+            root_name = cache_structure.get('root_name', 'Root')
+            structure_list = cache_structure.get('structure', [])
         else:
-            structure_list = []
             root_name = "Root"
+            structure_list = []
 
         print(f'🔍 root_name: {root_name}')
         print(f'🔍 structure_list: {structure_list}')
 
-        # 🔽 СОЗДАЕМ КОРНЕВОЙ ШАБЛОН С root_name
+        # 🔽 СОЗДАЕМ КОРНЕВУЮ ПАПКУ из root_name
+        root_folder = {
+            'name': root_name,
+            'type': 'folder',
+            'flags': 0,
+            'desc1': '',
+            'desc2': '',
+            'children': structure_list
+        }
+
+        # 🔽 fileStructure: {1, rootContent}
+        # rootContent: {count, folderContent} где count - количество элементов в корневой папке
+        children_count = len(structure_list)
+
+        # 🔽 Сериализуем корневую папку (без лишних скобок!)
+        folder_content = self._serialize_folder_content(structure_list)
+
+        result = f"{{\n1,\n{{\n{children_count},\n{folder_content}\n}}\n}}"
+        print(f'🟡 результат метода serialize_st_structure: {result}')
+        return result'''
+
+    def serialize_st_structure(self, cache_structure):
+        print('🥺зашли в метод serialize_st_structure🥺')
+        print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
+
+        # 🔧 ИЗВЛЕКАЕМ root_name И structure
+        if isinstance(cache_structure, dict):
+            root_name = cache_structure.get('root_name', 'Root')
+            structure_list = cache_structure.get('structure', [])
+        else:
+            root_name = "Root"
+            structure_list = []
+
+        print(f'🔍 root_name: {root_name}')
+        print(f'🔍 structure_list: {structure_list}')
+
+        # 🔽 СОЗДАЕМ КОРНЕВОЙ ШАБЛОН из root_name
         root_template = {
             'name': root_name,
             'type': 'template',
@@ -79,35 +99,42 @@ class FileParserService:
             'desc2': ''
         }
 
-        # 🔽 ДОБАВЛЯЕМ КОРНЕВОЙ ШАБЛОН В НАЧАЛО СТРУКТУРЫ
-        full_structure = [root_template] + structure_list
+        # 🔽 fileStructure: {1, rootContent}
+        # rootContent: {count, folderContent} где count - количество элементов из structure
+        structure_count = len(structure_list)
 
-        count = len(full_structure)
-        root_content = self._serialize_root_content(full_structure)
+        # 🔽 Сериализуем: корневой шаблон + элементы из structure
+        folder_content_parts = []
+        folder_content_parts.append(self._serialize_root_template(root_template))  # корневой шаблон
 
-        result = f"{count},\n{root_content}"
+        for item in structure_list:
+            if item['type'] == 'folder':
+                folder_content_parts.append(self._serialize_folder(item))
+            elif item['type'] == 'template':
+                folder_content_parts.append(self._serialize_template(item))
+
+        folder_content = ',\n'.join(folder_content_parts)
+
+        result = f"{{1,\n{{{structure_count},\n{folder_content}\n}}\n}}"
         print(f'🟡 результат метода serialize_st_structure: {result}')
         return result
 
-    def _serialize_root_content(self,  structure_list):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 2. rootContent: {count, folderContent}
+    def _serialize_root_template(self, template_data):
+        # 🔽 корневой шаблон: только templateHeader без {0,}
+        template_header = self._serialize_folder_header(template_data)
+        return template_header  # ⚠️ возвращаем без обертки {0,}
+
+    def _serialize_template_header(self, template_data):
+        # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
+        name = template_data['name']
+        flags = template_data.get('flags', 0)
+        desc1 = template_data.get('desc1', '')
+        desc2 = template_data.get('desc2', '')
+        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+    def _serialize_folder_content(self, structure_list):
+        # 🔽 folderContent: элементы через запятую
         if not structure_list:
             return "{}"
-
-        count = len(structure_list)
-        folder_content = self._serialize_folder_content(structure_list)
-
-        # 🔽 ФОРМАТИРОВАНИЕ: {count, элементы_в_строку_но_с_переносами}
-        return f"{{\n{count},\n{folder_content}\n}}"
-
-
-    def _serialize_folder_content(self, structure_list):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 3. folderContent: folderHeader (',' entry)*
-
-        if not structure_list:
-            return ""
 
         parts = []
         for item in structure_list:
@@ -119,75 +146,42 @@ class FileParserService:
         # 🔽 ЭЛЕМЕНТЫ В СТРОКУ, РАЗДЕЛЕННЫЕ ЗАПЯТЫМИ С ПЕРЕНОСОМ
         return ',\n'.join(parts)
 
-
-    def _serialize_folder(self,  folder_data):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 4. entry для папки: {count, folderHeader, entryList} или {count, folderHeader}
-
+    def _serialize_folder(self, folder_data):
+        # 🔽 entry для папки: {children_count, folderHeader, entryList}
         folder_header = self._serialize_folder_header(folder_data)
         children_count = len(folder_data.get('children', []))
 
         if children_count > 0:
             entry_list = self._serialize_entry_list(folder_data['children'])
-            # 🔽 ПАПКА: {count, заголовок_в_строку, содержимое_в_столбик}
-            return f"{{\n{children_count},\n{folder_header},\n{entry_list}\n}}"
+            # 🔽 ПАПКА С ЭЛЕМЕНТАМИ: {children_count, folderHeader, entryList}
+            return f"{{{children_count},\n{folder_header},\n{entry_list}\n}}"
         else:
-            # 🔽 ПУСТАЯ ПАПКА: {0, заголовок_в_строку}
-            return f"{{\n0,\n{folder_header}\n}}"
-
+            # 🔽 ПУСТАЯ ПАПКА: {0, folderHeader}
+            return f"{{0,\n{folder_header}\n}}"
 
     def _serialize_template(self, template_data):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 5. entry для шаблона: {0, templateHeader}
+        # 🔽 entry для шаблона: {0, templateHeader}
         template_header = self._serialize_template_header(template_data)
-        # 🔽 ШАБЛОН: {0, заголовок_в_строку}
-        return f"{{\n0,\n{template_header}\n}}"
+        return f"{{0,\n{template_header}\n}}"
 
-    def _get_item_flags(self, item):
-        # TODO 🚧 В разработке: 13.10.2025
-        """Получает флаги элемента - НУЖНО НАСТРОИТЬ ЭТОТ МЕТОД"""
-        if hasattr(item, 'item_data') and len(item.item_data) > 3:
-            return item.item_data[3]  # 🔍 Настрой под свою структуру
-        return 0
-
-    def _get_item_description1(self, item):
-        # TODO 🚧 В разработке: 13.10.2025
-        """Получает description1 - НУЖНО НАСТРОИТЬ"""
-        if hasattr(item, 'item_data') and len(item.item_data) > 4:
-            return item.item_data[4] or ""
-        return ""
-
-    def _get_item_description2(self, item):
-        # TODO 🚧 В разработке: 13.10.2025
-        """Получает description2 - НУЖНО НАСТРОИТЬ"""
-        if hasattr(item, 'item_data') and len(item.item_data) > 5:
-            return item.item_data[5] or ""
-        return ""
-
-    def _serialize_folder_header(self,  folder_data):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 6. folderHeader: {name, 1, flags, desc1, desc2}
+    def _serialize_folder_header(self, folder_data):
+        # 🔽 folderHeader: {name, 1, flags, desc1, desc2}
         name = folder_data['name']
         flags = folder_data.get('flags', 0)
         desc1 = folder_data.get('desc1', '')
         desc2 = folder_data.get('desc2', '')
-        # 🔽 ЗАГОЛОВОК В СТРОКУ: {"name",1,flags,"desc1","desc2"}
         return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
 
-    def _serialize_template_header(self, template_data):   #TODO проверить метод _serialize_template_header перем content не используется
-        # TODO 🚧 В разработке: 13.10.2025
-        # 7. templateHeader: {name, 0, flags, desc1, desc2}
+    def _serialize_template_header(self, template_data):
+        # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
         name = template_data['name']
         flags = template_data.get('flags', 0)
         desc1 = template_data.get('desc1', '')
         desc2 = template_data.get('desc2', '')
-        # 🔽 ЗАГОЛОВОК В СТРОКУ: {"name",0,flags,"desc1","desc2"}
         return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
 
-
     def _serialize_entry_list(self, children_list):
-        # TODO 🚧 В разработке: 13.10.2025
-        # 8. entryList: entry (',' entry)*
+        # 🔽 entryList: entry (',' entry)*
         if not children_list:
             return "{}"
 
@@ -198,12 +192,288 @@ class FileParserService:
             elif child['type'] == 'template':
                 entries.append(self._serialize_template(child))
 
-        # 🔽 ЭЛЕМЕНТЫ В СТРОКУ С ПЕРЕНОСАМИ
         entries_str = ',\n'.join(entries)
         return f"{{\n{entries_str}\n}}"
 
+    '''
+    def serialize_st_structure(self, cache_structure):
+        print('🥺зашли в метод serialize_st_structure🥺')
+        print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
+
+        # 🔧 ИЗВЛЕКАЕМ root_name И structure
+        if isinstance(cache_structure, dict):
+            root_name = cache_structure.get('root_name', 'Root')
+            structure_list = cache_structure.get('structure', [])
+        else:
+            root_name = "Root"
+            structure_list = []
+
+        print(f'🔍 root_name: {root_name}')
+        print(f'🔍 structure_list: {structure_list}')
+
+        # 🔽 СОЗДАЕМ КОРНЕВУЮ ПАПКУ из root_name, куда вкладываем structure_list
+        root_folder = {
+            'name': root_name,
+            'type': 'folder',
+            'flags': 0,
+            'desc1': '',
+            'desc2': '',
+            'children': structure_list
+        }
+
+        # 🔽 fileStructure: {1, rootContent}
+        # rootContent: {count, folderContent} где count - количество элементов в корневой папке
+        children_count = len(structure_list)
+
+        # 🔽 Сериализуем корневую папку с ее содержимым
+        folder_content = self._serialize_folder(root_folder)
+
+        result = f"{{\n1,\n{{\n{children_count},\n{folder_content}\n}}\n}}"
+        print(f'🟡 результат метода serialize_st_structure: {result}')
+        return result
+
+    def _serialize_folder(self, folder_data):
+        # 🔽 entry для папки: {children_count, folderHeader, entryList}
+        folder_header = self._serialize_folder_header(folder_data)
+        children_count = len(folder_data.get('children', []))
+
+        if children_count > 0:
+            entry_list = self._serialize_entry_list(folder_data['children'])
+            # 🔽 ПАПКА С ЭЛЕМЕНТАМИ: {children_count, folderHeader, entryList}
+            return f"{{\n{children_count},\n{folder_header},\n{entry_list}\n}}"  # ✅ ДОБАВИЛ ВНЕШНИЕ СКОБКИ
+        else:
+            # 🔽 ПУСТАЯ ПАПКА: {0, folderHeader}
+            return f"{{\n0,\n{folder_header}\n}}"  # ✅ ДОБАВИЛ ВНЕШНИЕ СКОБКИ
+
+    def _serialize_template(self, template_data):
+        # 🔽 entry для шаблона: {0, templateHeader}
+        template_header = self._serialize_template_header(template_data)
+        return f"{{\n0,\n{template_header}\n}}"
+
+    def _serialize_folder_header(self, folder_data):
+        # 🔽 folderHeader: {name, 1, flags, desc1, desc2}
+        name = folder_data['name']
+        flags = folder_data.get('flags', 0)
+        desc1 = folder_data.get('desc1', '')
+        desc2 = folder_data.get('desc2', '')
+        return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+    def _serialize_template_header(self, template_data):
+        # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
+        name = template_data['name']
+        flags = template_data.get('flags', 0)
+        desc1 = template_data.get('desc1', '')
+        desc2 = template_data.get('desc2', '')
+        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+    def _serialize_entry_list(self, children_list):
+        # 🔽 entryList: entry (',' entry)*
+        if not children_list:
+            return "{}"
+
+        entries = []
+        for child in children_list:
+            if child['type'] == 'folder':
+                entries.append(self._serialize_folder(child))
+            elif child['type'] == 'template':
+                entries.append(self._serialize_template(child))
+
+        entries_str = ',\n'.join(entries)
+        return f"{{\n{entries_str}\n}}"
+    
 
 
+    def serialize_st_structure(self, cache_structure):
+        print('🥺зашли в метод serialize_st_structure🥺')
+        print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
+
+        # 🔧 ИЗВЛЕКАЕМ root_name И structure
+        if isinstance(cache_structure, dict):
+            root_name = cache_structure.get('root_name', 'Root')
+            structure_list = cache_structure.get('structure', [])
+        else:
+            root_name = "Root"
+            structure_list = []
+
+        print(f'🔍 root_name: {root_name}')
+        print(f'🔍 structure_list: {structure_list}')
+        print(f'🔍 количество элементов в structure: {len(structure_list)}')
+
+        # 🔽 СОЗДАЕМ КОРНЕВУЮ ПАПКУ из root_name, куда вкладываем structure_list
+        root_folder = {
+            'name': root_name,
+            'type': 'folder',
+            'flags': 0,
+            'desc1': '',
+            'desc2': '',
+            'children': structure_list  # все элементы вкладываются в корневую папку
+        }
+
+        # 🔽 fileStructure: {1, rootContent}
+        # rootContent сразу содержит folderContent корневой папки: {count, folderContent}
+        children_count = len(structure_list)
+        folder_content = self._serialize_folder([root_folder])
+
+        result = f"{{\n1,\n{{\n{children_count},\n{folder_content}\n}}\n}}"
+        print(f'🟡 результат метода serialize_st_structure: {result}')
+        return result
+
+    def _serialize_folder(self, folder_data):
+        # 🔽 entry для папки: {children_count, folderHeader, entryList}
+        if isinstance(folder_data, list):
+            folder_data = folder_data[0] if folder_data else {}
+
+        folder_header = self._serialize_folder_header(folder_data)
+        children_count = len(folder_data.get('children', []))
+
+        if children_count > 0:
+            entry_list = self._serialize_entry_list(folder_data['children'])
+            # 🔽 ПАПКА С ЭЛЕМЕНТАМИ: {children_count, folderHeader, entryList}
+            return f"{{\n{children_count},\n{folder_header},\n{entry_list}\n}}"
+        else:
+            # 🔽 ПУСТАЯ ПАПКА: {0, folderHeader}
+            return f"{{\n0,\n{folder_header}\n}}"
+
+    def _serialize_folder_content(self, structure_list):
+        # 🔽 folderContent: элементы через запятую
+        if not structure_list:
+            return "{}"
+
+        parts = []
+        for item in structure_list:
+            if item['type'] == 'folder':
+                parts.append(self._serialize_folder(item))
+            elif item['type'] == 'template':
+                parts.append(self._serialize_template(item))
+
+        # 🔽 ЭЛЕМЕНТЫ В СТРОКУ, РАЗДЕЛЕННЫЕ ЗАПЯТЫМИ С ПЕРЕНОСОМ
+        return ',\n'.join(parts)
+
+    def _serialize_template(self, template_data):
+        # 🔽 entry для шаблона: {0, templateHeader}
+        template_header = self._serialize_template_header(template_data)
+        return f"{{\n0,\n{template_header}\n}}"
+
+    def _serialize_folder_header(self, folder_data):
+        # 🔽 folderHeader: {name, 1, flags, desc1, desc2}
+        name = folder_data['name']
+        flags = folder_data.get('flags', 0)
+        desc1 = folder_data.get('desc1', '')
+        desc2 = folder_data.get('desc2', '')
+        return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+    def _serialize_template_header(self, template_data):
+        # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
+        name = template_data['name']
+        flags = template_data.get('flags', 0)
+        desc1 = template_data.get('desc1', '')
+        desc2 = template_data.get('desc2', '')
+        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+    def _serialize_entry_list(self, children_list):
+        # 🔽 entryList: entry (',' entry)*
+        if not children_list:
+            return "{}"
+
+        entries = []
+        for child in children_list:
+            if child['type'] == 'folder':
+                entries.append(self._serialize_folder(child))
+            elif child['type'] == 'template':
+                entries.append(self._serialize_template(child))
+
+        entries_str = ',\n'.join(entries)
+        return f"{{\n{entries_str}\n}}"
+        '''
+
+    """
+    def serialize_st_structure(self, cache_structure):
+        print('🥺зашли в метод serialize_st_structure🥺')
+        print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
+
+        # 🔧 ИЗВЛЕКАЕМ root_name И structure
+        if isinstance(cache_structure, dict):
+            root_name = cache_structure.get('root_name', 'Root')
+            structure_list = cache_structure.get('structure', [])
+        else:
+            root_name = "Root"
+            structure_list = []
+
+        print(f'🔍 root_name: {root_name}')
+        print(f'🔍 structure_list: {structure_list}')
+
+        # 🔽 СОЗДАЕМ КОРНЕВУЮ ПАПКУ из root_name
+        root_folder = {
+            'name': root_name,
+            'type': 'folder',
+            'flags': 0,
+            'desc1': '',
+            'desc2': '',
+            'children': structure_list
+        }
+
+        # 🔽 fileStructure: {1, rootContent}
+        # rootContent: {count, folderContent} где count - количество элементов в корневой папке
+        children_count = len(structure_list)
+
+        # 🔽 Сериализуем корневую папку
+        folder_content = self._serialize_folder(root_folder)
+
+        result = f"{{\n1,\n{{\n{children_count},\n{folder_content}\n}}\n}}"
+        print(f'🟡 результат метода serialize_st_structure: {result}')
+        return result
 
 
+    def _serialize_folder(self, folder_data):
+        # 🔽 entry для папки: {children_count, folderHeader, entryList}
+        folder_header = self._serialize_folder_header(folder_data)
+        children_count = len(folder_data.get('children', []))
 
+        if children_count > 0:
+            entry_list = self._serialize_entry_list(folder_data['children'])
+            # 🔽 ПАПКА С ЭЛЕМЕНТАМИ: {children_count, folderHeader, entryList}
+            return f"{folder_header},\n{entry_list}"
+        else:
+            # 🔽 ПУСТАЯ ПАПКА: {0, folderHeader}
+            return f"{folder_header}"
+
+
+    def _serialize_template(self, template_data):
+        # 🔽 entry для шаблона: {0, templateHeader}
+        template_header = self._serialize_template_header(template_data)
+        return f"{{\n0,\n{template_header}\n}}"
+
+
+    def _serialize_folder_header(self, folder_data):
+        # 🔽 folderHeader: {name, 1, flags, desc1, desc2}
+        name = folder_data['name']
+        flags = folder_data.get('flags', 0)
+        desc1 = folder_data.get('desc1', '')
+        desc2 = folder_data.get('desc2', '')
+        return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+
+    def _serialize_template_header(self, template_data):
+        # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
+        name = template_data['name']
+        flags = template_data.get('flags', 0)
+        desc1 = template_data.get('desc1', '')
+        desc2 = template_data.get('desc2', '')
+        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+
+
+    def _serialize_entry_list(self, children_list):
+        # 🔽 entryList: entry (',' entry)*
+        if not children_list:
+            return "{}"
+
+        entries = []
+        for child in children_list:
+            if child['type'] == 'folder':
+                entries.append(self._serialize_folder(child))
+            elif child['type'] == 'template':
+                entries.append(self._serialize_template(child))
+
+        entries_str = ',\n'.join(entries)
+        return f"{{\n{entries_str}\n}}"
+    """
