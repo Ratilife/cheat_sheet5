@@ -39,8 +39,6 @@ class FileParserService:
 
     #---Новые методы проверить их работу
 
-
-
     def serialize_st_structure(self, cache_structure):
         print('🥺зашли в метод serialize_st_structure🥺')
         print(f'✅️ Параметр cache_structure содержит: {cache_structure}')
