@@ -341,6 +341,11 @@ class ContentCache:
         print(f'словарь {selection_info}')
         file_path = str(selection_info['path'])
         print(file_path)
+
+        # Инициализируем переменные заранее
+        structure_data = None
+        structure_list = None
+
         with self._lock:
             if not isinstance(file_path, str):
                 raise TypeError("file_path должен быть строкой")
