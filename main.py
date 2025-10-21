@@ -1,12 +1,12 @@
 import sys
-import os
 from PySide6.QtWidgets import QApplication
 from src.start_panel.views.view import MainWindow
 from src.start_panel.view_models.view_model import ButtonViewModel
 from src.start_panel.models.model import ButtonListModel
 from src.ui.start_panel_buttons import StartPanelButtons
 from src.ui.customization_start_panel import CostStartPanel
-from src.global_var.config import set_for_program_path,get_for_program_path, set_bookmarks
+from src.global_var.config import get_for_program_path
+
 def start():
     app = QApplication([])
 
@@ -42,5 +42,3 @@ if __name__ == '__main__':
     start()
     #run_start_panel_buttons()
     #run_cost_start_panel()
-
-
