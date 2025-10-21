@@ -368,6 +368,7 @@ class ContentCache:
         if isinstance(content_data, tuple) and len(content_data) == 2:
             # Это кортеж: ('file', {'structure': [...], 'root_name': '...'})
             structure_data = content_data[1]  # берем второй элемент (словарь)
+            print(f'🍆 structure_data: {structure_data}')
             structure_list = structure_data.get('structure', [])
             # structure_list = structure_data.get()
             print(f'✅ Извлекли структуру из кортежа')
@@ -446,3 +447,31 @@ class ContentCache:
 
         print(f'❌ Не найдено: "{target_name}" (тип: {target_type})')
         return None
+
+    def debug_detailed_contents(self) -> Dict[str, Any]:
+        """
+        Подробное содержимое кэша с полными данными.
+        ВНИМАНИЕ: Может быть большим по объему!
+        """
+        with self._lock:
+            return dict(self._cache)
+
+    def debug_show_cache_contents(self) -> Dict[str, Any]:
+        """
+        Показывает всё содержимое кэша для отладки.
+
+        Returns:
+            Dict[str, Any]: Словарь со всеми элементами кэша и их метаданными
+        """
+        with self._lock:
+            contents = {}
+            for file_path, data in self._cache.items():
+                contents[file_path] = {
+                    'size': data['size'],
+                    'timestamp': data['timestamp'],
+                    'access_count': data['access_count'],
+                    'content_keys': list(data['content'].keys()) if isinstance(data['content'], dict) else type(
+                        data['content']),
+                    'content_type': type(data['content']).__name__
+                }
+            return contents
