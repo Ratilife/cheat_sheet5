@@ -154,7 +154,7 @@ class FileParserService:
         if children_count > 0:
             entry_list = self._serialize_entry_list(folder_data['children'])
             # 🔽 ПАПКА С ЭЛЕМЕНТАМИ: {children_count, folderHeader, entryList}
-            return f"{{{children_count},\n{folder_header},\n{entry_list}\n}}"
+            return f"В{{{children_count},\n{folder_header},\n{entry_list}\n}}В"
         else:
             # 🔽 ПУСТАЯ ПАПКА: {0, folderHeader}
             return f"{{0,\n{folder_header}\n}}"
@@ -162,7 +162,7 @@ class FileParserService:
     def _serialize_template(self, template_data):
         # 🔽 entry для шаблона: {0, templateHeader}
         template_header = self._serialize_template_header(template_data)
-        return f"{{0,\n{template_header}\n}}"
+        return f"Г{{0,\n{template_header}\n}}Г"
 
     def _serialize_folder_header(self, folder_data):
         # 🔽 folderHeader: {name, 1, flags, desc1, desc2}
@@ -170,7 +170,7 @@ class FileParserService:
         flags = folder_data.get('flags', 0)
         desc1 = folder_data.get('desc1', '')
         desc2 = folder_data.get('desc2', '')
-        return f"{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}"
+        return f"А{{\"{name}\",1,{flags},\"{desc1}\",\"{desc2}\"}}А"
 
     def _serialize_template_header(self, template_data):
         # 🔽 templateHeader: {name, 0, flags, desc1, desc2}
@@ -178,7 +178,7 @@ class FileParserService:
         flags = template_data.get('flags', 0)
         desc1 = template_data.get('desc1', '')
         desc2 = template_data.get('desc2', '')
-        return f"{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}"
+        return f"Б{{\"{name}\",0,{flags},\"{desc1}\",\"{desc2}\"}}Б"
 
     def _serialize_entry_list(self, children_list):
         # 🔽 entryList: entry (',' entry)*
@@ -193,7 +193,7 @@ class FileParserService:
                 entries.append(self._serialize_template(child))
 
         entries_str = ',\n'.join(entries)
-        return f"{{\n{entries_str}\n}}"
+        return f"Д{entries_str}Д"
 
     '''
     def serialize_st_structure(self, cache_structure):
