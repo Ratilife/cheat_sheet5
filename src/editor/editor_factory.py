@@ -159,7 +159,7 @@ class EditorFactory:
 
     @staticmethod
     def create_editor_for_type( content_type, parent=None):
-        if content_type == 'template':
+        if content_type == 'template' or 'folder' or 'file':
             return EditorFactory.create_editor('.st', parent)
         elif content_type == 'markdown':
             return EditorFactory.create_editor('.md', parent)
