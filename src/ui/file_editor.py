@@ -478,6 +478,7 @@ class FileEditorWindow(QMainWindow):
         # Получаем контент из кэша или другим способом
         content = self._get_content_for_file(file_path, item_type)
         if content:
+            print('🙋🏻‍♂️ метод on_display_content() запустили через метод on_selection_changed()')
             self.on_display_content(content_type=item_type, content=content, path_file=file_path)
 
     def _get_content_for_file(self, file_path, content_type):
@@ -487,6 +488,7 @@ class FileEditorWindow(QMainWindow):
             if hasattr(self, 'content_cache'):
                 cached_data = self.content_cache.get(file_path)
                 if cached_data:
+                    print(f'💡 Получает контент файла для отображения cached_data: {cached_data}')
                     return cached_data.get('content', '')
 
             # Или прочитайте файл напрямую
