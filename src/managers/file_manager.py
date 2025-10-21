@@ -342,7 +342,7 @@ class FileManager:
             print(f"✅ DEBUG write_file: папки созданы/проверены")
 
             # Записываем файл
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, 'w', encoding='utf-8-sig') as f:
                 f.write(content if content else "")
             print(f"✅ DEBUG write_file: файл записан успешно")
 
