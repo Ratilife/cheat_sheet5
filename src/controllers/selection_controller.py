@@ -14,6 +14,7 @@ class TreeSelectionController(QObject):
     content_for_editor = Signal(str, str, str)
     selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}                 выбранный параметр изменен
     error_occurred = Signal(str)  # error_message                                                 произошла ошибка
+    content_for_element = Signal(str, str, str, dict)  # type, element_content, path, element_info
 
     def __init__(self, content_cache, parent=None):
         super().__init__(parent)
@@ -178,4 +179,26 @@ class TreeSelectionController(QObject):
                 return cached_data.get('content', '') if isinstance(cached_data, dict) else str(cached_data)
 
         # 3. Контент не найден
+        return None
+
+    def _find_element_in_structure(self, structure, target_name, target_type):
+        """Рекурсивно ищет элемент в структуре ST-файла"""
+        if isinstance(structure, dict):
+            # Проверяем текущий элемент
+            if (structure.get('name') == target_name and
+                    structure.get('type') == target_type):
+                return structure
+
+            # Ищем в детях
+            if 'children' in structure:
+                for child in structure['children']:
+                    found = self._find_element_in_structure(child, target_name, target_type)
+                    if found:
+                        return found
+
+        elif isinstance(structure, list):
+            for item in structure:
+                found = self._find_element_in_structure(item, target_name, target_type)
+                if found:
+                    return found
         return None
