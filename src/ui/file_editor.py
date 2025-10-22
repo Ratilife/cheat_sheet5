@@ -283,6 +283,31 @@ class FileEditorWindow(QMainWindow):
         # 10. Настраиваем политики размеров для правильного растягивания
         self.text_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         html_viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def _clear_editor(self):
+        """Очищает текущий редактор и сбрасывает состояние"""
+        # TODO 🚧 В разработке: 22.10.2025
+        if hasattr(self, 'current_editor') and self.current_editor:
+            try:
+                # Очищаем содержимое редактора
+                self.current_editor.set_content("")
+                # Сбрасываем путь к файлу
+                self.current_editor.file_path = None
+                # Сбрасываем флаг модификации
+                self.current_editor.is_modified = False
+
+                # Обновляем UI
+                self._update_window_title(False)
+                if hasattr(self, 'save_action'):
+                    self.save_action.setEnabled(False)
+
+                print("DEBUG: Редактор очищен")
+
+            except Exception as e:
+                print(f"Ошибка при очистке редактора: {e}")
+
+        # Также можно показать сообщение о том, что выбрана папка
+        self.statusBar().showMessage("Выбрана папка - редактор очищен")
     def _on_model_updated(self, tab_name, file_path):
         """Обработчик обновления модели - автоматическая синхронизация!"""
         # TODO 🚧 В разработке: 02.09.2025 не понял этот метод
@@ -420,6 +445,13 @@ class FileEditorWindow(QMainWindow):
         if not self.isVisible():
             return
 
+        # ✅ ЗАПРЕТ на отображение папок в редакторе
+        if content_type == 'folder':
+            print(f"DEBUG: Папки не отображаются в редакторе - {path_file}")
+            self.statusBar().showMessage("Папки не отображаются в редакторе")
+            self._clear_editor()
+            return  # Прерываем выполнение
+
         try:
             print("👍 Работает метод on_display_content()")
             # 1. Создаем appropriate редактор через фабрику
@@ -429,6 +461,9 @@ class FileEditorWindow(QMainWindow):
                 raise ValueError(f"Не удалось создать редактор для типа: {content_type}")
 
             # 2. Устанавливаем контент в редактор и путь к файлу
+            print(f'content_type = {content_type}')
+            print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
+
             editor.set_content(content)
             editor.file_path = Path(path_file)
 
@@ -477,6 +512,7 @@ class FileEditorWindow(QMainWindow):
         file_path = metadata.get('path')
         # Получаем контент из кэша или другим способом
         content = self._get_content_for_file(file_path, item_type)
+
         if content:
             print('🙋🏻‍♂️ метод on_display_content() запустили через метод on_selection_changed()')
             self.on_display_content(content_type=item_type, content=content, path_file=file_path)
