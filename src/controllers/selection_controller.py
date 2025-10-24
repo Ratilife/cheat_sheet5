@@ -1,5 +1,5 @@
 
-from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Signal, Qt, QModelIndex
 from typing import Optional
 
 
@@ -30,7 +30,7 @@ class TreeSelectionController(QObject):
         else:
             self.error_occurred.emit(f"Древовидное представление не поддерживает клики: {type(tree_view)}")
 
-    def _handle_selection(self, index):
+    def _handle_selection(self, index: QModelIndex) -> None:
         """Обрабатывает выделение элемента"""
         try:
             if not index.isValid():
@@ -64,7 +64,7 @@ class TreeSelectionController(QObject):
                 len(item.item_data) > 1 and
                 item.item_data[1] == 'markdown'):
 
-            parent_item = getattr(item, 'parent_item', None)
+            parent_item = getattr(item, 'parent_item', None)    # Получаем родителя
             if (parent_item and
                     hasattr(parent_item, 'item_data') and
                     len(parent_item.item_data) > 2):
@@ -82,8 +82,9 @@ class TreeSelectionController(QObject):
             current_item = getattr(current_item, 'parent_item', None)
 
         return None
-    def _get_file_path_for_item_ex(self, item):
+    def _get_file_path_for_item_ex(self, item: object) -> Optional[str]:
         """Рекурсивно ищет путь к файлу через цепочку родителей"""
+        # TODO - мертвый код
         current_item = item
 
         # Сначала проверяем сам элемент
@@ -112,6 +113,7 @@ class TreeSelectionController(QObject):
 
     def _get_file_path_for_item_old(self, item):
         """Рекурсивно ищет путь к файлу через цепочку родителей"""
+        # TODO - мертвый код
         current_item = item
 
         # Поднимаемся по иерархии пока не найдем файл или markdown
@@ -127,7 +129,7 @@ class TreeSelectionController(QObject):
             current_item = getattr(current_item, 'parent_item', None)
 
         return None
-    def _process_content(self, metadata, item, source_name):
+    def _process_content(self, metadata: dict, item: object, source_name: str) -> None:
         """
         Получает и отправляет контент с явным указанием источника
 
@@ -166,7 +168,7 @@ class TreeSelectionController(QObject):
         except Exception as e:
             self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
 
-    def _extract_content(self, metadata, item):
+    def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
         # 1. Пробуем из данных элемента
         if len(item.item_data) > 2 and item.item_data[2]:
