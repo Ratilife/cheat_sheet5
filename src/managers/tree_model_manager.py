@@ -185,7 +185,7 @@ class TreeModelManager(QObject):
         """Подключает контроллер выделения ко всем деревьям"""
         for tab_name, tree_view in trees_dict.items():
             self.selection_controller.connect_tree_view(tree_view, "editor")
-            print(f"DEBUG: Контроллер подключен к дереву вкладки '{tab_name}'")
+            print(f"DEBUG: 🏷️ Контроллер подключен к дереву вкладки '{tab_name}'")
 
     def add_files_to_tab_old(self, tab_name: str, file_paths: list[str]):
         """
