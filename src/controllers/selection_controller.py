@@ -149,24 +149,63 @@ class TreeSelectionController(QObject):
 
         try:
             # 1. Извлекаем контент
-            content = self._extract_content(metadata, item)
-            if content is None:
-                self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
-                return
+            # Для элементов внутри файла (шаблоны, папки)
+            if metadata['type'] in ['template', 'folder']:
+                element_content = self._extract_element_content(metadata, item)
+                element_info = {
+                    'name': metadata['name'],
+                    'type': metadata['type'],
+                    'file_path': self._get_file_path_for_item(item),  # путь к родительскому файлу
+                    'full_path': metadata.get('path', '')
+                }
 
-            # 2. Валидация источника
-            if source_name not in ['sidepanel', 'editor']:
-                self.error_occurred.emit(f"Неизвестный источник: {source_name}")
-                return
+                # Отправляем в НОВЫЙ сигнал
+                self.content_for_element.emit(
+                    metadata['type'],
+                    element_content or '',
+                    metadata.get('path', ''),
+                    element_info
+                )
 
-            # 3. Отправка в соответствующий сигнал
-            if source_name == "sidepanel":
-                self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
-            elif source_name == "editor":
-                self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
+            else:
+                content = self._extract_content(metadata, item)
+                if content is None:
+                    self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
+                    return
+
+                # 2. Валидация источника
+                if source_name not in ['sidepanel', 'editor']:
+                    self.error_occurred.emit(f"Неизвестный источник: {source_name}")
+                    return
+
+                # 3. Отправка в соответствующий сигнал
+                if source_name == "sidepanel":
+                    self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
+                elif source_name == "editor":
+                    self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
 
         except Exception as e:
             self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
+
+    def _extract_element_content(self, metadata, item):
+        """Извлекает контент только выбранного элемента"""
+        file_path = self._get_file_path_for_item(item)
+        if not file_path or not self.content_cache:
+            return None
+
+        # Получаем полную структуру из кэша
+        full_data = self.content_cache.get(file_path)
+        if not full_data:
+            return None
+
+        # Находим конкретный элемент в структуре
+        target_element = self._find_element_in_structure(
+            full_data,
+            metadata['name'],
+            metadata['type']
+        )
+
+        return target_element.get('content', '') if target_element else ''
 
     def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
