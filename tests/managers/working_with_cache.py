@@ -1,6 +1,21 @@
 from src.parsers.content_cache import ContentCache
 from src.operation.file_operations import FileOperations
 
+def print_all_cache_entries(self):
+    """
+    Перебирает весь кэш и выводит содержимое каждой записи.
+    """
+    if not cache:
+        print("Кэш пуст.")
+        return
+
+    for file_path, cache_entry in cache.items():
+        print(f"\nФайл: {file_path}")
+        print(f"  Контент: {cache_entry.get('content')}")
+        print(f"  Размер: {cache_entry.get('size')} байт")
+        print(f"  Время последнего обновления: {cache_entry.get('timestamp')}")
+        print(f"  Количество обращений: {cache_entry.get('access_count')}")
+
 def get_cache(cache):
     # Простой способ посмотреть что в кэше
     #cache = ContentCache()
@@ -10,6 +25,9 @@ def get_cache(cache):
         print(f" - {key}")
 
     print(f"\nВсего элементов: {len(cache._cache)}")
+
+    #for volue in cache._cache.values():
+    #    print(f'{volue}')
 
 def get_cache_path(cache,file_path):
     if file_path in cache._cache:
@@ -24,9 +42,9 @@ def get_cache_path(cache,file_path):
         print("Файл не найден в кэше")
 
     # Посмотреть все доступные файлы в кэше
-    #print("Файлы в кэше:")
-    #for path in cache._cache.keys():
-    #    print(f" - {path}")
+    print("Файлы в кэше:")
+    for path in cache._cache.keys():
+        print(f" - {path}")
 
 def working_with_cache(info_item_dict, element_dict):
     print(f'🔥🔥🔥🔥 Зашли в метод working_with_cache 🔥🔥🔥🔥')
