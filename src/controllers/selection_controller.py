@@ -2,6 +2,8 @@
 from PySide6.QtCore import QObject, Signal, Qt, QModelIndex
 from typing import Optional
 
+from parsers.content_cache import ContentCache
+from tests.managers.working_with_cache import print_all_cache_entries
 
 class TreeSelectionController(QObject):
     """
@@ -68,6 +70,8 @@ class TreeSelectionController(QObject):
             if (parent_item and
                     hasattr(parent_item, 'item_data') and
                     len(parent_item.item_data) > 2):
+                print(f'😈метод _get_file_path_for_item() : {parent_item.item_data}')
+                print(f' parent_item.item_data[2]: {parent_item.item_data[2]}')
                 return parent_item.item_data[2]
 
         # Для file и других типов используем стандартную логику
@@ -77,6 +81,8 @@ class TreeSelectionController(QObject):
                     len(current_item.item_data) > 1 and
                     current_item.item_data[1] in ['file'] and
                     len(current_item.item_data) > 2):
+                print(f'😅 метод _get_file_path_for_item() : {current_item.item_data}')
+                print(f' current_item.item_data[2]: {current_item.item_data[2]}')
                 return current_item.item_data[2]
 
             current_item = getattr(current_item, 'parent_item', None)
@@ -149,40 +155,22 @@ class TreeSelectionController(QObject):
 
         try:
             # 1. Извлекаем контент
-            # Для элементов внутри файла (шаблоны, папки)
-            if metadata['type'] in ['template', 'folder']:
-                element_content = self._extract_element_content(metadata, item)
-                element_info = {
-                    'name': metadata['name'],
-                    'type': metadata['type'],
-                    'file_path': self._get_file_path_for_item(item),  # путь к родительскому файлу
-                    'full_path': metadata.get('path', '')
-                }
 
-                # Отправляем в НОВЫЙ сигнал
-                self.content_for_element.emit(
-                    metadata['type'],
-                    element_content or '',
-                    metadata.get('path', ''),
-                    element_info
-                )
+            content = self._extract_content(metadata, item)
+            if content is None:
+                self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
+                return
 
-            else:
-                content = self._extract_content(metadata, item)
-                if content is None:
-                    self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
-                    return
+            # 2. Валидация источника
+            if source_name not in ['sidepanel', 'editor']:
+                self.error_occurred.emit(f"Неизвестный источник: {source_name}")
+                return
 
-                # 2. Валидация источника
-                if source_name not in ['sidepanel', 'editor']:
-                    self.error_occurred.emit(f"Неизвестный источник: {source_name}")
-                    return
-
-                # 3. Отправка в соответствующий сигнал
-                if source_name == "sidepanel":
-                    self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
-                elif source_name == "editor":
-                    self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
+            # 3. Отправка в соответствующий сигнал
+            if source_name == "sidepanel":
+                self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
+            elif source_name == "editor":
+                self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
 
         except Exception as e:
             self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
@@ -209,13 +197,18 @@ class TreeSelectionController(QObject):
 
     def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
+
         # 1. Пробуем из данных элемента
         if len(item.item_data) > 2 and item.item_data[2]:
+            print(f'🤓☝️ 1. Пробуем из данных элемента через метод _extract_content(): {item.item_data}')
+
             return item.item_data[2]
 
         # 2. Пробуем из кэша (если есть путь)
         elif self.content_cache and metadata.get('path'):
             cached_data = self.content_cache.get(metadata['path'])
+            print(f'🤭 2. Пробуем из кэша (если есть путь) через метод _extract_content(): {cached_data}')
+
             if cached_data:
                 return cached_data.get('content', '') if isinstance(cached_data, dict) else str(cached_data)
 
