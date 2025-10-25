@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
                                QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QInputDialog)
 from operation.file_operations import FileOperations
+from tests.managers.working_with_cache import get_cache
 
 
 class FileEditorWindowObserver(MyBaseObserver):
@@ -462,7 +463,7 @@ class FileEditorWindow(QMainWindow):
 
             # 2. Устанавливаем контент в редактор и путь к файлу
             print(f'content_type = {content_type}')
-            print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
+            #print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
 
             editor.set_content(content)
             editor.file_path = Path(path_file)
@@ -520,21 +521,24 @@ class FileEditorWindow(QMainWindow):
     def _get_content_for_file(self, file_path, content_type):
         """Получает контент файла для отображения"""
         try:
+            print('😈😈😈😈😈😈😈 зашли в метод _get_content_for_file()😈😈😈😈😈😈😈😈')
             # Попробуйте получить из кэша
             if hasattr(self, 'content_cache'):
                 cached_data = self.content_cache.get(file_path)
                 if cached_data:
                     print(f'💡 Получает контент файла для отображения cached_data: {cached_data}')
+                    print('🎃🎃🎃🎃🎃Вышли из метода _get_content_for_file🎃🎃🎃🎃🎃')
                     return cached_data.get('content', '')
 
             # Или прочитайте файл напрямую
             if file_path and os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
+                    print('🐗🐗🐗🐗Вышли из метода _get_content_for_file🐗🐗🐗🐗')
                     return f.read()
 
         except Exception as e:
             print(f"Ошибка чтения файла {file_path}: {e}")
-
+        print('😄😄😄😄Вышли из метода _get_content_for_file😄😄😄😄')
         return None
 
     def _on_template_changed(self, text):
