@@ -475,3 +475,18 @@ class ContentCache:
                     'content_type': type(data['content']).__name__
                 }
             return contents
+
+    def print_all_cache_entries(self):
+        """
+        Перебирает весь кэш и выводит содержимое каждой записи.
+        """
+        if not self._cache:
+            print("Кэш пуст.")
+            return
+
+        for file_path, cache_entry in self._cache.items():
+            print(f"\nФайл: {file_path}")
+            print(f"  Контент: {cache_entry.get('content')}")
+            print(f"  Размер: {cache_entry.get('size')} байт")
+            print(f"  Время последнего обновления: {cache_entry.get('timestamp')}")
+            print(f"  Количество обращений: {cache_entry.get('access_count')}")
