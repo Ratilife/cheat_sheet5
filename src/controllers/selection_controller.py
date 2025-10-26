@@ -197,7 +197,18 @@ class TreeSelectionController(QObject):
 
     def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
+        print(f'item.item_data: {item.item_data}')
+        # 1. Пробуем из данных элемента
+        if len(item.item_data) > 0:
+            print(f'🤓☝️ 1. Пробуем из данных элемента через метод _extract_content(): {item.item_data}')
 
+            return item.item_data[2]
+
+        # 2. Контент не найден
+        return None
+    def _extract_content_Вопрос(self, metadata: dict, item: object) -> Optional[str]:
+        """Извлекает контент из различных источников"""
+        print(f'item.item_data: {item.item_data}')
         # 1. Пробуем из данных элемента
         if len(item.item_data) > 2 and item.item_data[2]:
             print(f'🤓☝️ 1. Пробуем из данных элемента через метод _extract_content(): {item.item_data}')
@@ -215,24 +226,3 @@ class TreeSelectionController(QObject):
         # 3. Контент не найден
         return None
 
-    def _find_element_in_structure(self, structure, target_name, target_type):
-        """Рекурсивно ищет элемент в структуре ST-файла"""
-        if isinstance(structure, dict):
-            # Проверяем текущий элемент
-            if (structure.get('name') == target_name and
-                    structure.get('type') == target_type):
-                return structure
-
-            # Ищем в детях
-            if 'children' in structure:
-                for child in structure['children']:
-                    found = self._find_element_in_structure(child, target_name, target_type)
-                    if found:
-                        return found
-
-        elif isinstance(structure, list):
-            for item in structure:
-                found = self._find_element_in_structure(item, target_name, target_type)
-                if found:
-                    return found
-        return None
