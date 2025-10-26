@@ -14,12 +14,12 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         Абстрактный базовый класс для всех редакторов файлов.
         Наследуется от QWidget, так как каждый редактор будет виджетом для размещения в UI.
     """
+    # Сигналы
 
     # Сигнал для отмены/повтора
     undo_available = Signal(bool)
     redo_available = Signal(bool)
 
-    #Сигналы
     # Сигнал об изменении модифицированного состояния (is_modified)
     modification_changed = Signal(bool)
     # Сигнал о том, что файл успешно сохранен по новому пути
