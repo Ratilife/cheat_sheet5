@@ -411,7 +411,7 @@ self._connect_file_watcher()
 self._watching_enabled = enabled
 ```
 
-***get_editor_widget() -> QWidget***
+### `get_editor_widget() -> QWidget`
 **Назначение**: Возвращает основной виджет редактора для встраивания в пользовательский интерфейс приложения.
 
 **Когда вызывается**:
@@ -419,6 +419,7 @@ self._watching_enabled = enabled
 - При динамическом переключении между различными редакторами
 - При создании плавающих окон или панелей с редактором
 - В тестах для получения доступа к виджету редактора
+- в методе `_set_current_editor()` класс FileEditorWindow , вызывается, для получения виджета старого редактора при его замене и для получения виджета нового редактора при его добавлении в интерфейс
 
 **Параметры**: Нет
 
@@ -433,7 +434,7 @@ def get_editor_widget(self) -> QWidget:
     return self  # STEditor наследуется от QWidget, поэтому возвращает self
 ```
 
-***`set_file_watcher(file_watcher: FileWatcher) -> None***
+### `set_file_watcher(file_watcher: FileWatcher) -> None`
 **Назначение**: Устанавливает кастомный экземпляр FileWatcher для отслеживания изменений файлов в файловой системе.
 
 **Когда вызывается**:
@@ -768,7 +769,7 @@ def _on_watching_paused(self, paused: bool) -> None:
     print(f"DEBUG: Отслеживание {status}")
 ```    
 
-***_identify_language(content: str) -> None`***
+## `_identify_language(content: str) -> None`
 **Назначение**: Определяет язык программирования по специальному маркеру в первой строке содержимого файла.
 
 **Когда вызывается**:
@@ -820,6 +821,7 @@ def _identify_language(self, content: str) -> None:
 - При обновлении состояния UI (кнопки, меню)
 - Внутри системы управления состоянием редактора
 - При обработке горячих клавиш (Ctrl+Z)
+- Обновляем состояние кнопок метод _set_current_editor() класс FileEditorWindow, после того, как новый редактор установлен как self.current_editor, и после подключения его сигналов
 
 **Параметры**: Нет
 
