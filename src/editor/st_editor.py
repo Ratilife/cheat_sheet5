@@ -92,6 +92,7 @@ class STEditor(BaseFileEditor):
         Args:
             file_watcher: Экземпляр FileWatcher для отслеживания
         """
+        # TODO - мертвый код нужно определить место
         if self._file_watcher:
             # Отключаем старые соединения если watcher уже был установлен
             self._disconnect_file_watcher()
