@@ -1,0 +1,14 @@
+Target: method_call_analyzer:ProjectIndex.add_class
+
+USAGES (who calls target):
+  No usages found.
+
+CALL GRAPH EDGES (caller -> callee):
+  No outgoing method calls found from the target (or depth limit = 0).
+
+NODES:
+  - method_call_analyzer:ProjectIndex.add_class
+
+SUMMARY:
+  Nodes: 1
+  Edges: 0
