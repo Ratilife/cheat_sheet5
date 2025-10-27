@@ -1,0 +1,190 @@
+Dead Code Report
+Generated: 2025-08-16 11:08:06
+Root: /workspace
+Exclude patterns: __pycache__, venv, .venv, .mypy_cache, build, .git, .pytest_cache, dist
+Ignore names regex: ^__.*__$
+
+Total files scanned: 60
+Unused imports: 81
+Unused functions/methods: 5
+Unused classes: 1
+Unused module variables: 76
+Unreachable code locations: 0
+Syntax issues: 0
+
+Unused imports (file:line alias)
+  /workspace/docs/working_hours_with_tasks.py:1 os
+  /workspace/main.py:2 os
+  /workspace/main.py:9 set_bookmarks
+  /workspace/main.py:9 set_for_program_path
+  /workspace/src/ANTLR4/STFileLexer.py:3 StringIO
+  /workspace/src/ANTLR4/STFileParser.py:4 StringIO
+  /workspace/src/dialogs/dialog_manager.py:3 Union
+  /workspace/src/dialogs/dialog_manager.py:4 Path
+  /workspace/src/dialogs/dialog_manager.py:7 datetime
+  /workspace/src/managers/dynamic_tabs.py:3 QIcon
+  /workspace/src/managers/ui_manager.py:10 QSpacerItem
+  /workspace/src/models/st_md_file_tree_model.py:3 QFileIconProvider
+  /workspace/src/models/st_md_file_tree_model.py:5 QIcon
+  /workspace/src/operation/file_operations.py:6 TreeModelManager
+  /workspace/src/parsers/background_parser.py:3 Qt
+  /workspace/src/start_panel/models/model.py:4 Dict
+  /workspace/src/start_panel/view_models/view_model_delete_buttons.py:1 Dict
+  /workspace/src/start_panel/views/view.py:5 QBuffer
+  /workspace/src/start_panel/views/view.py:5 QByteArray
+  /workspace/src/start_panel/views/view.py:5 QIODevice
+  /workspace/src/start_panel/views/view.py:5 QSize
+  /workspace/src/ui/customization_start_panel_window.py:11 QDate
+  /workspace/src/ui/customization_start_panel_window.py:11 QDateTime
+  /workspace/src/ui/customization_start_panel_window.py:11 QLocale
+  /workspace/src/ui/customization_start_panel_window.py:11 QObject
+  /workspace/src/ui/customization_start_panel_window.py:11 QPoint
+  /workspace/src/ui/customization_start_panel_window.py:11 QSize
+  /workspace/src/ui/customization_start_panel_window.py:11 QTime
+  /workspace/src/ui/customization_start_panel_window.py:11 QUrl
+  /workspace/src/ui/customization_start_panel_window.py:11 Qt
+  /workspace/src/ui/customization_start_panel_window.py:14 QBrush
+  /workspace/src/ui/customization_start_panel_window.py:14 QColor
+  /workspace/src/ui/customization_start_panel_window.py:14 QConicalGradient
+  /workspace/src/ui/customization_start_panel_window.py:14 QCursor
+  /workspace/src/ui/customization_start_panel_window.py:14 QFont
+  /workspace/src/ui/customization_start_panel_window.py:14 QFontDatabase
+  /workspace/src/ui/customization_start_panel_window.py:14 QGradient
+  /workspace/src/ui/customization_start_panel_window.py:14 QIcon
+  /workspace/src/ui/customization_start_panel_window.py:14 QImage
+  /workspace/src/ui/customization_start_panel_window.py:14 QKeySequence
+  /workspace/src/ui/customization_start_panel_window.py:14 QLinearGradient
+  /workspace/src/ui/customization_start_panel_window.py:14 QPainter
+  /workspace/src/ui/customization_start_panel_window.py:14 QPalette
+  /workspace/src/ui/customization_start_panel_window.py:14 QPixmap
+  /workspace/src/ui/customization_start_panel_window.py:14 QRadialGradient
+  /workspace/src/ui/customization_start_panel_window.py:14 QTransform
+  /workspace/src/ui/customization_start_panel_window.py:18 QApplication
+  /workspace/src/ui/customization_start_panel_window.py:18 QMainWindow
+  /workspace/src/ui/customization_start_panel_window.py:18 QSizePolicy
+  /workspace/src/ui/side_panel.py:1 QTreeWidgetItem
+  /workspace/src/ui/start_panel_buttons_window.py:11 QDate
+  /workspace/src/ui/start_panel_buttons_window.py:11 QDateTime
+  /workspace/src/ui/start_panel_buttons_window.py:11 QLocale
+  /workspace/src/ui/start_panel_buttons_window.py:11 QObject
+  /workspace/src/ui/start_panel_buttons_window.py:11 QPoint
+  /workspace/src/ui/start_panel_buttons_window.py:11 QSize
+  /workspace/src/ui/start_panel_buttons_window.py:11 QTime
+  /workspace/src/ui/start_panel_buttons_window.py:11 QUrl
+  /workspace/src/ui/start_panel_buttons_window.py:11 Qt
+  /workspace/src/ui/start_panel_buttons_window.py:14 QBrush
+  /workspace/src/ui/start_panel_buttons_window.py:14 QColor
+  /workspace/src/ui/start_panel_buttons_window.py:14 QConicalGradient
+  /workspace/src/ui/start_panel_buttons_window.py:14 QCursor
+  /workspace/src/ui/start_panel_buttons_window.py:14 QFont
+  /workspace/src/ui/start_panel_buttons_window.py:14 QFontDatabase
+  /workspace/src/ui/start_panel_buttons_window.py:14 QGradient
+  /workspace/src/ui/start_panel_buttons_window.py:14 QIcon
+  /workspace/src/ui/start_panel_buttons_window.py:14 QImage
+  /workspace/src/ui/start_panel_buttons_window.py:14 QKeySequence
+  /workspace/src/ui/start_panel_buttons_window.py:14 QLinearGradient
+  /workspace/src/ui/start_panel_buttons_window.py:14 QPainter
+  /workspace/src/ui/start_panel_buttons_window.py:14 QPalette
+  /workspace/src/ui/start_panel_buttons_window.py:14 QPixmap
+  /workspace/src/ui/start_panel_buttons_window.py:14 QRadialGradient
+  /workspace/src/ui/start_panel_buttons_window.py:14 QTransform
+  /workspace/src/ui/start_panel_buttons_window.py:18 QApplication
+  /workspace/src/ui/start_panel_buttons_window.py:18 QHeaderView
+  /workspace/src/ui/start_panel_buttons_window.py:18 QMainWindow
+  /workspace/src/ui/start_panel_buttons_window.py:18 QSizePolicy
+  /workspace/tests/draft/test_model.py.py:1 pytest
+  /workspace/tests/draft/test_model.py.py:2 ButtonModel
+
+Unused functions/methods (file:line name)
+  /workspace/main.py:29 run_start_panel_buttons
+  /workspace/main.py:35 run_cost_start_panel
+  /workspace/tests/draft/test_is_button_name_unique.py:2 test_is_button_name_unique
+  /workspace/tests/draft/test_model.py.py:4 test_add_button
+  /workspace/tests/draft/test_model.py.py:19 test_remove_button
+
+Unused classes (file:line name)
+  /workspace/src/parsers/content_cache.py:1 ContentCache
+
+Unused module variables (file:line name)
+  /workspace/src/ANTLR4/STFileLexer.py:38 decisionsToDFA
+  /workspace/src/ANTLR4/STFileLexer.py:40 T__0
+  /workspace/src/ANTLR4/STFileLexer.py:41 T__1
+  /workspace/src/ANTLR4/STFileLexer.py:42 T__2
+  /workspace/src/ANTLR4/STFileLexer.py:43 BOM
+  /workspace/src/ANTLR4/STFileLexer.py:44 INT
+  /workspace/src/ANTLR4/STFileLexer.py:45 STRING
+  /workspace/src/ANTLR4/STFileLexer.py:46 LBRACE
+  /workspace/src/ANTLR4/STFileLexer.py:47 RBRACE
+  /workspace/src/ANTLR4/STFileLexer.py:48 WS
+  /workspace/src/ANTLR4/STFileLexer.py:50 channelNames
+  /workspace/src/ANTLR4/STFileLexer.py:52 modeNames
+  /workspace/src/ANTLR4/STFileLexer.py:54 literalNames
+  /workspace/src/ANTLR4/STFileLexer.py:57 symbolicNames
+  /workspace/src/ANTLR4/STFileLexer.py:60 ruleNames
+  /workspace/src/ANTLR4/STFileLexer.py:63 grammarFileName
+  /workspace/src/ANTLR4/STFileParser.py:44 grammarFileName
+  /workspace/src/ANTLR4/STFileParser.py:48 decisionsToDFA
+  /workspace/src/ANTLR4/STFileParser.py:50 sharedContextCache
+  /workspace/src/ANTLR4/STFileParser.py:52 literalNames
+  /workspace/src/ANTLR4/STFileParser.py:55 symbolicNames
+  /workspace/src/ANTLR4/STFileParser.py:58 RULE_fileStructure
+  /workspace/src/ANTLR4/STFileParser.py:59 RULE_rootContent
+  /workspace/src/ANTLR4/STFileParser.py:60 RULE_folderContent
+  /workspace/src/ANTLR4/STFileParser.py:61 RULE_entry
+  /workspace/src/ANTLR4/STFileParser.py:62 RULE_entryList
+  /workspace/src/ANTLR4/STFileParser.py:63 RULE_folderHeader
+  /workspace/src/ANTLR4/STFileParser.py:64 RULE_templateHeader
+  /workspace/src/ANTLR4/STFileParser.py:65 RULE_int_value
+  /workspace/src/ANTLR4/STFileParser.py:67 ruleNames
+  /workspace/src/ANTLR4/STFileParser.py:70 EOF
+  /workspace/src/ANTLR4/STFileParser.py:71 T__0
+  /workspace/src/ANTLR4/STFileParser.py:72 T__1
+  /workspace/src/ANTLR4/STFileParser.py:73 T__2
+  /workspace/src/ANTLR4/STFileParser.py:74 BOM
+  /workspace/src/ANTLR4/STFileParser.py:75 INT
+  /workspace/src/ANTLR4/STFileParser.py:76 STRING
+  /workspace/src/ANTLR4/STFileParser.py:77 LBRACE
+  /workspace/src/ANTLR4/STFileParser.py:78 RBRACE
+  /workspace/src/ANTLR4/STFileParser.py:79 WS
+  /workspace/src/dialogs/dialog_manager.py:9 INFO
+  /workspace/src/dialogs/dialog_manager.py:10 WARNING
+  /workspace/src/dialogs/dialog_manager.py:11 ERROR
+  /workspace/src/dialogs/dialog_manager.py:12 SUCCESS
+  /workspace/src/managers/dynamic_tabs.py:10 tab_created
+  /workspace/src/managers/toolbar_manager.py:14 load_requested
+  /workspace/src/managers/toolbar_manager.py:15 editor_toggled
+  /workspace/src/managers/toolbar_manager.py:16 format_action
+  /workspace/src/managers/toolbar_manager.py:18 collapse_all
+  /workspace/src/managers/toolbar_manager.py:19 expand_all
+  /workspace/src/managers/toolbar_manager.py:20 new_st_file
+  /workspace/src/managers/toolbar_manager.py:21 new_md_file
+  /workspace/src/managers/toolbar_manager.py:22 new_folder
+  /workspace/src/managers/toolbar_manager.py:23 new_template
+  /workspace/src/managers/toolbar_manager.py:24 save_file
+  /workspace/src/managers/toolbar_manager.py:25 save_file_as
+  /workspace/src/managers/toolbar_manager.py:26 delete_action
+  /workspace/src/managers/toolbar_manager.py:27 cut_action
+  /workspace/src/managers/toolbar_manager.py:28 copy_action
+  /workspace/src/managers/toolbar_manager.py:29 paste_action
+  /workspace/src/managers/tree_model_manager.py:15 model_updated
+  /workspace/src/observers/file_watcher.py:11 file_updated
+  /workspace/src/observers/file_watcher.py:12 file_deleted
+  /workspace/src/observers/file_watcher.py:13 dir_changed
+  /workspace/src/observers/my_base_observer.py:7 file_selected
+  /workspace/src/observers/my_base_observer.py:9 file_changed
+  /workspace/src/observers/my_base_observer.py:10 file_deleted
+  /workspace/src/observers/my_base_observer.py:12 file_created
+  /workspace/src/observers/my_base_observer.py:13 file_saved
+  /workspace/src/parsers/background_parser.py:9 VISIBLE
+  /workspace/src/parsers/background_parser.py:10 PRELOAD
+  /workspace/src/parsers/background_parser.py:11 DEEP
+  /workspace/src/parsers/background_parser.py:28 task_finished
+  /workspace/src/start_panel/view_models/view_model.py:27 buttonsChanged
+  /workspace/src/start_panel/view_models/view_model_delete_buttons.py:14 buttonsUpdated
+  /workspace/src/start_panel/view_models/view_model_delete_buttons.py:15 selection_changed
+
+Unreachable code (file:line function reason)
+  (none)
+
+Syntax issues (file:line:col message)
+  (none)
