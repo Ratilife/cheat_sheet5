@@ -1,0 +1,1350 @@
+Project Callgraph Report (intra-module)
+
+callgraph_analyzer
+
+  _ModuleCollector.__init__()
+
+  _ModuleCollector.visit_Assign()
+
+  _ModuleCollector.visit_AsyncFunctionDef()
+      └─> _ModuleCollector._add_function_like()
+
+  _ModuleCollector.visit_ClassDef()
+
+  _ModuleCollector.visit_FunctionDef()
+      └─> _ModuleCollector._add_function_like()
+
+  _ModuleCollector.visit_Import()
+
+  _ModuleCollector.visit_ImportFrom()
+
+  _UsageCollector.__init__()
+
+  _UsageCollector.visit_Assign()
+      └─> _UsageCollector._resolve_name_to_qualname()
+
+  _UsageCollector.visit_AsyncFunctionDef()
+      ├─> _UsageCollector._enter_function()
+      │   └─> _UsageCollector._get_enclosing_class_name()
+      └─> _UsageCollector._exit_function()
+
+  _UsageCollector.visit_Attribute()
+
+  _UsageCollector.visit_Call()
+      ├─> _UsageCollector._add_call_edge_from_current()
+      └─> _UsageCollector._resolve_call_qualname()
+          └─> _UsageCollector._resolve_name_to_qualname()
+
+  _UsageCollector.visit_ClassDef()
+
+  _UsageCollector.visit_FunctionDef()
+      ├─> _UsageCollector._enter_function()
+      │   └─> _UsageCollector._get_enclosing_class_name()
+      └─> _UsageCollector._exit_function()
+
+  _UsageCollector.visit_Name()
+      └─> _UsageCollector._add_call_edge_from_current()
+
+  main()
+      ├─> analyze_project()
+      │   ├─> build_text_report()
+      │   │   ├─> callees_with_parens()
+      │   │   ├─> choose_roots()
+      │   │   └─> render_tree_lines()
+      │   │       └─> dfs()
+      │   │           └─> dfs()
+      │   │               ↩ (cycle to dfs)
+      │   ├─> discover_python_files()
+      │   ├─> draw_module_graph()
+      │   └─> module_name_from_path()
+      └─> parse_args()
+
+  Method usages:
+    - _ModuleCollector.__init__() ⇐ used by: <none>
+    - _ModuleCollector._add_function_like() ⇐ used by: _ModuleCollector.visit_AsyncFunctionDef(), _ModuleCollector.visit_FunctionDef()
+    - _ModuleCollector.visit_Assign() ⇐ used by: <none>
+    - _ModuleCollector.visit_AsyncFunctionDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_ClassDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_FunctionDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_Import() ⇐ used by: <none>
+    - _ModuleCollector.visit_ImportFrom() ⇐ used by: <none>
+    - _UsageCollector.__init__() ⇐ used by: <none>
+    - _UsageCollector._add_call_edge_from_current() ⇐ used by: _UsageCollector.visit_Call(), _UsageCollector.visit_Name()
+    - _UsageCollector._enter_function() ⇐ used by: _UsageCollector.visit_AsyncFunctionDef(), _UsageCollector.visit_FunctionDef()
+    - _UsageCollector._exit_function() ⇐ used by: _UsageCollector.visit_AsyncFunctionDef(), _UsageCollector.visit_FunctionDef()
+    - _UsageCollector._get_enclosing_class_name() ⇐ used by: _UsageCollector._enter_function()
+    - _UsageCollector._resolve_call_qualname() ⇐ used by: _UsageCollector.visit_Call()
+    - _UsageCollector._resolve_name_to_qualname() ⇐ used by: _UsageCollector._resolve_call_qualname(), _UsageCollector.visit_Assign()
+    - _UsageCollector.visit_Assign() ⇐ used by: <none>
+    - _UsageCollector.visit_AsyncFunctionDef() ⇐ used by: <none>
+    - _UsageCollector.visit_Attribute() ⇐ used by: <none>
+    - _UsageCollector.visit_Call() ⇐ used by: <none>
+    - _UsageCollector.visit_ClassDef() ⇐ used by: <none>
+    - _UsageCollector.visit_FunctionDef() ⇐ used by: <none>
+    - _UsageCollector.visit_Name() ⇐ used by: <none>
+
+
+docs.working_hours_with_tasks
+
+  main()
+      ├─> calculate_time_duration()
+      ├─> format_time_duration()
+      ├─> get_weekday()
+      ├─> save_to_file()
+      ├─> validate_date()
+      └─> validate_time()
+
+
+
+main
+
+  run_cost_start_panel()
+
+  run_start_panel_buttons()
+
+  start()
+
+
+
+src.ANTLR4
+
+
+
+src.ANTLR4.STFileLexer
+
+  STFileLexer.__init__()
+
+  serializedATN()
+
+  Method usages:
+    - STFileLexer.__init__() ⇐ used by: <none>
+
+
+src.ANTLR4.STFileListener
+
+  STFileListener.enterEntry()
+
+  STFileListener.enterEntryList()
+
+  STFileListener.enterFileStructure()
+
+  STFileListener.enterFolderContent()
+
+  STFileListener.enterFolderHeader()
+
+  STFileListener.enterInt_value()
+
+  STFileListener.enterRootContent()
+
+  STFileListener.enterTemplateHeader()
+
+  STFileListener.exitEntry()
+
+  STFileListener.exitEntryList()
+
+  STFileListener.exitFileStructure()
+
+  STFileListener.exitFolderContent()
+
+  STFileListener.exitFolderHeader()
+
+  STFileListener.exitInt_value()
+
+  STFileListener.exitRootContent()
+
+  STFileListener.exitTemplateHeader()
+
+  Method usages:
+    - STFileListener.enterEntry() ⇐ used by: <none>
+    - STFileListener.enterEntryList() ⇐ used by: <none>
+    - STFileListener.enterFileStructure() ⇐ used by: <none>
+    - STFileListener.enterFolderContent() ⇐ used by: <none>
+    - STFileListener.enterFolderHeader() ⇐ used by: <none>
+    - STFileListener.enterInt_value() ⇐ used by: <none>
+    - STFileListener.enterRootContent() ⇐ used by: <none>
+    - STFileListener.enterTemplateHeader() ⇐ used by: <none>
+    - STFileListener.exitEntry() ⇐ used by: <none>
+    - STFileListener.exitEntryList() ⇐ used by: <none>
+    - STFileListener.exitFileStructure() ⇐ used by: <none>
+    - STFileListener.exitFolderContent() ⇐ used by: <none>
+    - STFileListener.exitFolderHeader() ⇐ used by: <none>
+    - STFileListener.exitInt_value() ⇐ used by: <none>
+    - STFileListener.exitRootContent() ⇐ used by: <none>
+    - STFileListener.exitTemplateHeader() ⇐ used by: <none>
+
+
+src.ANTLR4.STFileParser
+
+  STFileParser.EntryContext.LBRACE()
+
+  STFileParser.EntryContext.RBRACE()
+
+  STFileParser.EntryContext.__init__()
+
+  STFileParser.EntryContext.enterRule()
+
+  STFileParser.EntryContext.entryList()
+
+  STFileParser.EntryContext.exitRule()
+
+  STFileParser.EntryContext.folderHeader()
+
+  STFileParser.EntryContext.getRuleIndex()
+
+  STFileParser.EntryContext.int_value()
+
+  STFileParser.EntryContext.templateHeader()
+
+  STFileParser.EntryListContext.__init__()
+
+  STFileParser.EntryListContext.enterRule()
+
+  STFileParser.EntryListContext.entry()
+
+  STFileParser.EntryListContext.exitRule()
+
+  STFileParser.EntryListContext.getRuleIndex()
+
+  STFileParser.FileStructureContext.LBRACE()
+
+  STFileParser.FileStructureContext.RBRACE()
+
+  STFileParser.FileStructureContext.__init__()
+
+  STFileParser.FileStructureContext.enterRule()
+
+  STFileParser.FileStructureContext.exitRule()
+
+  STFileParser.FileStructureContext.getRuleIndex()
+
+  STFileParser.FileStructureContext.int_value()
+
+  STFileParser.FileStructureContext.rootContent()
+
+  STFileParser.FolderContentContext.__init__()
+
+  STFileParser.FolderContentContext.enterRule()
+
+  STFileParser.FolderContentContext.entry()
+
+  STFileParser.FolderContentContext.exitRule()
+
+  STFileParser.FolderContentContext.folderHeader()
+
+  STFileParser.FolderContentContext.getRuleIndex()
+
+  STFileParser.FolderHeaderContext.LBRACE()
+
+  STFileParser.FolderHeaderContext.RBRACE()
+
+  STFileParser.FolderHeaderContext.STRING()
+
+  STFileParser.FolderHeaderContext.__init__()
+
+  STFileParser.FolderHeaderContext.enterRule()
+
+  STFileParser.FolderHeaderContext.exitRule()
+
+  STFileParser.FolderHeaderContext.getRuleIndex()
+
+  STFileParser.Int_valueContext.INT()
+
+  STFileParser.Int_valueContext.__init__()
+
+  STFileParser.Int_valueContext.enterRule()
+
+  STFileParser.Int_valueContext.exitRule()
+
+  STFileParser.Int_valueContext.getRuleIndex()
+
+  STFileParser.RootContentContext.LBRACE()
+
+  STFileParser.RootContentContext.RBRACE()
+
+  STFileParser.RootContentContext.__init__()
+
+  STFileParser.RootContentContext.enterRule()
+
+  STFileParser.RootContentContext.exitRule()
+
+  STFileParser.RootContentContext.folderContent()
+
+  STFileParser.RootContentContext.getRuleIndex()
+
+  STFileParser.RootContentContext.int_value()
+
+  STFileParser.TemplateHeaderContext.LBRACE()
+
+  STFileParser.TemplateHeaderContext.RBRACE()
+
+  STFileParser.TemplateHeaderContext.STRING()
+
+  STFileParser.TemplateHeaderContext.__init__()
+
+  STFileParser.TemplateHeaderContext.enterRule()
+
+  STFileParser.TemplateHeaderContext.exitRule()
+
+  STFileParser.TemplateHeaderContext.getRuleIndex()
+
+  STFileParser.__init__()
+
+  STFileParser.fileStructure()
+      ├─> STFileParser.int_value()
+      └─> STFileParser.rootContent()
+          ├─> STFileParser.folderContent()
+          │   ├─> STFileParser.entry()
+          │   │   ├─> STFileParser.entryList()
+          │   │   │   └─> STFileParser.entry()
+          │   │   │       ↩ (cycle to STFileParser.entry)
+          │   │   ├─> STFileParser.folderHeader()
+          │   │   ├─> STFileParser.int_value()
+          │   │   └─> STFileParser.templateHeader()
+          │   └─> STFileParser.folderHeader()
+          └─> STFileParser.int_value()
+
+  serializedATN()
+
+  Method usages:
+    - STFileParser.EntryContext.LBRACE() ⇐ used by: <none>
+    - STFileParser.EntryContext.RBRACE() ⇐ used by: <none>
+    - STFileParser.EntryContext.__init__() ⇐ used by: <none>
+    - STFileParser.EntryContext.enterRule() ⇐ used by: <none>
+    - STFileParser.EntryContext.entryList() ⇐ used by: <none>
+    - STFileParser.EntryContext.exitRule() ⇐ used by: <none>
+    - STFileParser.EntryContext.folderHeader() ⇐ used by: <none>
+    - STFileParser.EntryContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.EntryContext.int_value() ⇐ used by: <none>
+    - STFileParser.EntryContext.templateHeader() ⇐ used by: <none>
+    - STFileParser.EntryListContext.__init__() ⇐ used by: <none>
+    - STFileParser.EntryListContext.enterRule() ⇐ used by: <none>
+    - STFileParser.EntryListContext.entry() ⇐ used by: <none>
+    - STFileParser.EntryListContext.exitRule() ⇐ used by: <none>
+    - STFileParser.EntryListContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.LBRACE() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.RBRACE() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.__init__() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.enterRule() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.exitRule() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.int_value() ⇐ used by: <none>
+    - STFileParser.FileStructureContext.rootContent() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.__init__() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.enterRule() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.entry() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.exitRule() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.folderHeader() ⇐ used by: <none>
+    - STFileParser.FolderContentContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.LBRACE() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.RBRACE() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.STRING() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.__init__() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.enterRule() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.exitRule() ⇐ used by: <none>
+    - STFileParser.FolderHeaderContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.Int_valueContext.INT() ⇐ used by: <none>
+    - STFileParser.Int_valueContext.__init__() ⇐ used by: <none>
+    - STFileParser.Int_valueContext.enterRule() ⇐ used by: <none>
+    - STFileParser.Int_valueContext.exitRule() ⇐ used by: <none>
+    - STFileParser.Int_valueContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.RootContentContext.LBRACE() ⇐ used by: <none>
+    - STFileParser.RootContentContext.RBRACE() ⇐ used by: <none>
+    - STFileParser.RootContentContext.__init__() ⇐ used by: <none>
+    - STFileParser.RootContentContext.enterRule() ⇐ used by: <none>
+    - STFileParser.RootContentContext.exitRule() ⇐ used by: <none>
+    - STFileParser.RootContentContext.folderContent() ⇐ used by: <none>
+    - STFileParser.RootContentContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.RootContentContext.int_value() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.LBRACE() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.RBRACE() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.STRING() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.__init__() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.enterRule() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.exitRule() ⇐ used by: <none>
+    - STFileParser.TemplateHeaderContext.getRuleIndex() ⇐ used by: <none>
+    - STFileParser.__init__() ⇐ used by: <none>
+    - STFileParser.entry() ⇐ used by: STFileParser.entryList(), STFileParser.folderContent()
+    - STFileParser.entryList() ⇐ used by: STFileParser.entry()
+    - STFileParser.fileStructure() ⇐ used by: <none>
+    - STFileParser.folderContent() ⇐ used by: STFileParser.rootContent()
+    - STFileParser.folderHeader() ⇐ used by: STFileParser.entry(), STFileParser.folderContent()
+    - STFileParser.int_value() ⇐ used by: STFileParser.entry(), STFileParser.fileStructure(), STFileParser.rootContent()
+    - STFileParser.rootContent() ⇐ used by: STFileParser.fileStructure()
+    - STFileParser.templateHeader() ⇐ used by: STFileParser.entry()
+
+
+src.dialogs
+
+
+
+src.dialogs.dialog_manager
+
+  DialogManager.__init__()
+
+  DialogManager.show_error()
+      └─> DialogManager.show_message()
+          ├─> DialogManager._console_output()
+          └─> DialogManager._gui_output()
+
+  DialogManager.show_info()
+      └─> DialogManager.show_message()
+          ├─> DialogManager._console_output()
+          └─> DialogManager._gui_output()
+
+  DialogManager.show_question()
+
+  DialogManager.show_success()
+      └─> DialogManager.show_message()
+          ├─> DialogManager._console_output()
+          └─> DialogManager._gui_output()
+
+  DialogManager.show_warning()
+      └─> DialogManager.show_message()
+          ├─> DialogManager._console_output()
+          └─> DialogManager._gui_output()
+
+  Method usages:
+    - DialogManager.__init__() ⇐ used by: <none>
+    - DialogManager._console_output() ⇐ used by: DialogManager.show_message()
+    - DialogManager._gui_output() ⇐ used by: DialogManager.show_message()
+    - DialogManager.show_error() ⇐ used by: <none>
+    - DialogManager.show_info() ⇐ used by: <none>
+    - DialogManager.show_message() ⇐ used by: DialogManager.show_error(), DialogManager.show_info(), DialogManager.show_success(), DialogManager.show_warning()
+    - DialogManager.show_question() ⇐ used by: <none>
+    - DialogManager.show_success() ⇐ used by: <none>
+    - DialogManager.show_warning() ⇐ used by: <none>
+
+
+src.global_var
+
+
+
+src.global_var.config
+
+  get_bookmarks()
+
+  get_for_program_path()
+
+  load_config()
+      ├─> set_bookmarks()
+      │   └─> get_root_folder()
+      └─> set_for_program_path()
+          └─> get_root_folder()
+
+  update_root_folder()
+      └─> _save_config()
+
+
+
+src.managers
+
+
+
+src.managers.dynamic_tabs
+
+  DynamicTabManager.__init__()
+
+  DynamicTabManager._update_tree()
+
+  DynamicTabManager.create_tabs()
+      └─> DynamicTabManager._add_tab()
+
+  Method usages:
+    - DynamicTabManager.__init__() ⇐ used by: <none>
+    - DynamicTabManager._add_tab() ⇐ used by: DynamicTabManager.create_tabs()
+    - DynamicTabManager._update_tree() ⇐ used by: <none>
+    - DynamicTabManager.create_tabs() ⇐ used by: <none>
+
+
+src.managers.file_manager
+
+  FileManager.check_path_exists()
+
+  FileManager.create_files_dict_with_paths()
+
+  FileManager.create_root_folder_structure()
+      └─> FileManager.is_path_already_exists()
+
+  FileManager.get_create_folder_path()
+
+  FileManager.load_json_file()
+
+  FileManager.save_data_to_json()
+
+  Method usages:
+    - FileManager.check_path_exists() ⇐ used by: <none>
+    - FileManager.create_files_dict_with_paths() ⇐ used by: <none>
+    - FileManager.create_root_folder_structure() ⇐ used by: <none>
+    - FileManager.get_create_folder_path() ⇐ used by: <none>
+    - FileManager.is_path_already_exists() ⇐ used by: FileManager.create_root_folder_structure()
+    - FileManager.load_json_file() ⇐ used by: <none>
+    - FileManager.save_data_to_json() ⇐ used by: <none>
+
+
+src.managers.toolbar_manager
+
+  ToolbarManager.__init__()
+      ├─> ToolbarManager._connect_tree_manager()
+      ├─> ToolbarManager._setup_buttons()
+      └─> ToolbarManager._setup_toolbars()
+
+  ToolbarManager.get_above_tree_toolbar_editor()
+
+  ToolbarManager.get_editor_toolbar()
+
+  ToolbarManager.get_title_layout()
+
+  ToolbarManager.set_tree_model()
+
+  Method usages:
+    - ToolbarManager.__init__() ⇐ used by: <none>
+    - ToolbarManager._connect_tree_manager() ⇐ used by: ToolbarManager.__init__()
+    - ToolbarManager._setup_buttons() ⇐ used by: ToolbarManager.__init__()
+    - ToolbarManager._setup_toolbars() ⇐ used by: ToolbarManager.__init__()
+    - ToolbarManager.get_above_tree_toolbar_editor() ⇐ used by: <none>
+    - ToolbarManager.get_editor_toolbar() ⇐ used by: <none>
+    - ToolbarManager.get_title_layout() ⇐ used by: <none>
+    - ToolbarManager.set_tree_model() ⇐ used by: <none>
+
+
+src.managers.tree_model_manager
+
+  TreeModelManager.__init__()
+
+  TreeModelManager.add_st_file()
+      └─> TreeModelManager.get_model()
+
+  TreeModelManager.build_skeleton_model()
+      └─> TreeModelManager._parse_metadata()
+
+  TreeModelManager.create_models_from_tabs()
+      └─> TreeModelManager.create_tree_model()
+          └─> TreeModelManager._add_file_to_model()
+              ├─> TreeModelManager._add_md_structure()
+              └─> TreeModelManager._add_st_structure()
+                  └─> TreeModelManager._add_st_item()
+                      └─> TreeModelManager._add_st_item()
+                          ↩ (cycle to TreeModelManager._add_st_item)
+
+  TreeModelManager.refresh_model()
+      └─> TreeModelManager._create_single_model()
+          └─> TreeModelManager._add_file_to_model()
+              ├─> TreeModelManager._add_md_structure()
+              └─> TreeModelManager._add_st_structure()
+                  └─> TreeModelManager._add_st_item()
+                      └─> TreeModelManager._add_st_item()
+                          ↩ (cycle to TreeModelManager._add_st_item)
+
+  TreeModelManager.update_item()
+      └─> TreeModelManager._find_index()
+
+  Method usages:
+    - TreeModelManager.__init__() ⇐ used by: <none>
+    - TreeModelManager._add_file_to_model() ⇐ used by: TreeModelManager._create_single_model(), TreeModelManager.create_tree_model()
+    - TreeModelManager._add_md_structure() ⇐ used by: TreeModelManager._add_file_to_model()
+    - TreeModelManager._add_st_item() ⇐ used by: TreeModelManager._add_st_item(), TreeModelManager._add_st_structure()
+    - TreeModelManager._add_st_structure() ⇐ used by: TreeModelManager._add_file_to_model()
+    - TreeModelManager._create_single_model() ⇐ used by: TreeModelManager.refresh_model()
+    - TreeModelManager._find_index() ⇐ used by: TreeModelManager.update_item()
+    - TreeModelManager._parse_metadata() ⇐ used by: TreeModelManager.build_skeleton_model()
+    - TreeModelManager.add_st_file() ⇐ used by: <none>
+    - TreeModelManager.build_skeleton_model() ⇐ used by: <none>
+    - TreeModelManager.create_models_from_tabs() ⇐ used by: <none>
+    - TreeModelManager.create_tree_model() ⇐ used by: TreeModelManager.create_models_from_tabs()
+    - TreeModelManager.get_model() ⇐ used by: TreeModelManager.add_st_file()
+    - TreeModelManager.refresh_model() ⇐ used by: <none>
+    - TreeModelManager.update_item() ⇐ used by: <none>
+
+
+src.managers.ui_manager
+
+  UIManager.__init__()
+
+  UIManager.create_button()
+
+  UIManager.create_horizontal_panel()
+
+  UIManager.create_splitter()
+
+  UIManager.create_toolbar()
+
+  Method usages:
+    - UIManager.__init__() ⇐ used by: <none>
+    - UIManager.create_button() ⇐ used by: <none>
+    - UIManager.create_horizontal_panel() ⇐ used by: <none>
+    - UIManager.create_splitter() ⇐ used by: <none>
+    - UIManager.create_toolbar() ⇐ used by: <none>
+
+
+src.models
+
+
+
+src.models.st_md_file_tree_item
+
+  STMDFileTreeItem.__init__()
+
+  Method usages:
+    - STMDFileTreeItem.__init__() ⇐ used by: <none>
+
+
+src.models.st_md_file_tree_model
+
+  STMDFileTreeModel.__init__()
+
+  STMDFileTreeModel.add_st_file()
+      ├─> STMDFileTreeModel._build_tree()
+      │   └─> STMDFileTreeModel._build_tree()
+      │       ↩ (cycle to STMDFileTreeModel._build_tree)
+      └─> STMDFileTreeModel.rowCount()
+
+  STMDFileTreeModel.canFetchMore()
+
+  STMDFileTreeModel.columnCount()
+
+  STMDFileTreeModel.data()
+      └─> STMDFileTreeModel._calculate_item_level()
+
+  STMDFileTreeModel.flags()
+
+  STMDFileTreeModel.get_item_level()
+
+  STMDFileTreeModel.get_item_path()
+
+  STMDFileTreeModel.get_item_type()
+
+  STMDFileTreeModel.has_children()
+
+  STMDFileTreeModel.index()
+
+  STMDFileTreeModel.parent()
+
+  STMDFileTreeModel.removeRow()
+
+  Method usages:
+    - STMDFileTreeModel.__init__() ⇐ used by: <none>
+    - STMDFileTreeModel._build_tree() ⇐ used by: STMDFileTreeModel._build_tree(), STMDFileTreeModel.add_st_file()
+    - STMDFileTreeModel._calculate_item_level() ⇐ used by: STMDFileTreeModel.data()
+    - STMDFileTreeModel.add_st_file() ⇐ used by: <none>
+    - STMDFileTreeModel.canFetchMore() ⇐ used by: <none>
+    - STMDFileTreeModel.columnCount() ⇐ used by: <none>
+    - STMDFileTreeModel.data() ⇐ used by: <none>
+    - STMDFileTreeModel.flags() ⇐ used by: <none>
+    - STMDFileTreeModel.get_item_level() ⇐ used by: <none>
+    - STMDFileTreeModel.get_item_path() ⇐ used by: <none>
+    - STMDFileTreeModel.get_item_type() ⇐ used by: <none>
+    - STMDFileTreeModel.has_children() ⇐ used by: <none>
+    - STMDFileTreeModel.index() ⇐ used by: <none>
+    - STMDFileTreeModel.parent() ⇐ used by: <none>
+    - STMDFileTreeModel.removeRow() ⇐ used by: <none>
+    - STMDFileTreeModel.rowCount() ⇐ used by: STMDFileTreeModel.add_st_file()
+
+
+src.observers
+
+
+
+src.observers.file_watcher
+
+  FileWatcher.__init__()
+
+  FileWatcher._handle_dir_change()
+      └─> FileWatcher._rescan_directory()
+
+  FileWatcher._handle_file_change()
+
+  FileWatcher.clear_watched_files()
+
+  FileWatcher.get_watched_files()
+
+  FileWatcher.remove_path()
+
+  FileWatcher.watch_directory()
+      └─> FileWatcher._watch_subdirectories()
+
+  FileWatcher.watch_file()
+      └─> FileWatcher._add_path()
+
+  Method usages:
+    - FileWatcher.__init__() ⇐ used by: <none>
+    - FileWatcher._add_path() ⇐ used by: FileWatcher.watch_file()
+    - FileWatcher._handle_dir_change() ⇐ used by: <none>
+    - FileWatcher._handle_file_change() ⇐ used by: <none>
+    - FileWatcher._rescan_directory() ⇐ used by: FileWatcher._handle_dir_change()
+    - FileWatcher._watch_subdirectories() ⇐ used by: FileWatcher.watch_directory()
+    - FileWatcher.clear_watched_files() ⇐ used by: <none>
+    - FileWatcher.get_watched_files() ⇐ used by: <none>
+    - FileWatcher.remove_path() ⇐ used by: <none>
+    - FileWatcher.watch_directory() ⇐ used by: <none>
+    - FileWatcher.watch_file() ⇐ used by: <none>
+
+
+src.observers.my_base_observer
+
+  MyBaseObserver.__init__()
+
+  MyBaseObserver.is_watched()
+
+  MyBaseObserver.unwatch_file()
+
+  MyBaseObserver.watch_file()
+
+  Method usages:
+    - MyBaseObserver.__init__() ⇐ used by: <none>
+    - MyBaseObserver.is_watched() ⇐ used by: <none>
+    - MyBaseObserver.unwatch_file() ⇐ used by: <none>
+    - MyBaseObserver.watch_file() ⇐ used by: <none>
+
+
+src.operation
+
+
+
+src.operation.file_operations
+
+  FileOperations.__init__()
+
+  FileOperations.create_root_folder()
+
+  FileOperations.fetch_file_heararchy()
+
+  FileOperations.get_path_root_folder()
+
+  FileOperations.save_path_root_folder()
+
+  Method usages:
+    - FileOperations.__init__() ⇐ used by: <none>
+    - FileOperations.create_root_folder() ⇐ used by: <none>
+    - FileOperations.fetch_file_heararchy() ⇐ used by: <none>
+    - FileOperations.get_path_root_folder() ⇐ used by: <none>
+    - FileOperations.save_path_root_folder() ⇐ used by: <none>
+
+
+src.parsers
+
+
+
+src.parsers.background_parser
+
+  BackgroundParser.__init__()
+
+  BackgroundParser.add_task()
+      └─> BackgroundParser._process_queue()
+
+  ParserTask.__init__()
+
+  ParserTask.run()
+
+  Method usages:
+    - BackgroundParser.__init__() ⇐ used by: <none>
+    - BackgroundParser._process_queue() ⇐ used by: BackgroundParser.add_task()
+    - BackgroundParser.add_task() ⇐ used by: <none>
+    - ParserTask.__init__() ⇐ used by: <none>
+    - ParserTask.run() ⇐ used by: <none>
+
+
+src.parsers.content_cache
+
+  ContentCache.save()
+
+  Method usages:
+    - ContentCache.save() ⇐ used by: <none>
+
+
+src.parsers.file_parser_service
+
+  FileParserService.__init__()
+
+  FileParserService.parse_and_get_type()
+
+  FileParserService.parse_metadata()
+
+  Method usages:
+    - FileParserService.__init__() ⇐ used by: <none>
+    - FileParserService.parse_and_get_type() ⇐ used by: <none>
+    - FileParserService.parse_metadata() ⇐ used by: <none>
+
+
+src.parsers.md_file_parser
+
+  MarkdownListener.__init__()
+
+  MarkdownListener.get_structure()
+
+  MarkdownListener.parse_markdown_file()
+
+  MarkdownListener.parse_md_metadata()
+
+  Method usages:
+    - MarkdownListener.__init__() ⇐ used by: <none>
+    - MarkdownListener.get_structure() ⇐ used by: <none>
+    - MarkdownListener.parse_markdown_file() ⇐ used by: <none>
+    - MarkdownListener.parse_md_metadata() ⇐ used by: <none>
+
+
+src.parsers.metadata_cache
+
+
+
+src.parsers.st_file_parser
+
+  ExceptionErrorListener.syntaxError()
+
+  STFileParserWrapper.build_folder()
+
+  STFileParserWrapper.parse_st_metadata()
+
+  STFileParserWrapper.remove_folder()
+      ├─> STFileParserWrapper._remove_from_structure()
+      │   └─> STFileParserWrapper._remove_from_structure()
+      │       ↩ (cycle to STFileParserWrapper._remove_from_structure)
+      ├─> STFileParserWrapper._save_structure()
+      │   └─> STFileParserWrapper._generate_st_content()
+      └─> STFileParserWrapper.parse_st_file()
+
+  STFileParserWrapper.remove_template()
+      ├─> STFileParserWrapper._remove_from_structure()
+      │   └─> STFileParserWrapper._remove_from_structure()
+      │       ↩ (cycle to STFileParserWrapper._remove_from_structure)
+      ├─> STFileParserWrapper._save_structure()
+      │   └─> STFileParserWrapper._generate_st_content()
+      └─> STFileParserWrapper.parse_st_file()
+
+  StructureListener.__init__()
+
+  StructureListener.enterEntry()
+
+  StructureListener.exitEntry()
+
+  StructureListener.get_structure()
+
+  Method usages:
+    - ExceptionErrorListener.syntaxError() ⇐ used by: <none>
+    - STFileParserWrapper._generate_st_content() ⇐ used by: STFileParserWrapper._save_structure()
+    - STFileParserWrapper._remove_from_structure() ⇐ used by: STFileParserWrapper._remove_from_structure(), STFileParserWrapper.remove_folder(), STFileParserWrapper.remove_template()
+    - STFileParserWrapper._save_structure() ⇐ used by: STFileParserWrapper.remove_folder(), STFileParserWrapper.remove_template()
+    - STFileParserWrapper.build_folder() ⇐ used by: <none>
+    - STFileParserWrapper.parse_st_file() ⇐ used by: STFileParserWrapper.remove_folder(), STFileParserWrapper.remove_template()
+    - STFileParserWrapper.parse_st_metadata() ⇐ used by: <none>
+    - STFileParserWrapper.remove_folder() ⇐ used by: <none>
+    - STFileParserWrapper.remove_template() ⇐ used by: <none>
+    - StructureListener.__init__() ⇐ used by: <none>
+    - StructureListener.enterEntry() ⇐ used by: <none>
+    - StructureListener.exitEntry() ⇐ used by: <none>
+    - StructureListener.get_structure() ⇐ used by: <none>
+
+
+src.start_panel
+
+
+
+src.start_panel.models
+
+
+
+src.start_panel.models.model
+
+  ButtonListModel.__init__()
+      └─> ButtonListModel.load_buttons()
+          └─> ButtonListModel.add_button()
+              └─> ButtonListModel.is_button_name_unique()
+
+  ButtonListModel.edit_button()
+
+  ButtonListModel.get_button()
+
+  ButtonListModel.get_buttons()
+
+  ButtonListModel.is_valid_button()
+
+  ButtonListModel.remove_button()
+
+  ButtonListModel.save_buttons()
+
+  ButtonListModel.sort_buttons()
+
+  IButtonModel.add_button()
+
+  IButtonModel.get_buttons()
+
+  IButtonModel.load_buttons()
+
+  IButtonModel.remove_button()
+
+  IButtonModel.save_buttons()
+
+  Method usages:
+    - ButtonListModel.__init__() ⇐ used by: <none>
+    - ButtonListModel.add_button() ⇐ used by: ButtonListModel.load_buttons()
+    - ButtonListModel.edit_button() ⇐ used by: <none>
+    - ButtonListModel.get_button() ⇐ used by: <none>
+    - ButtonListModel.get_buttons() ⇐ used by: <none>
+    - ButtonListModel.is_button_name_unique() ⇐ used by: ButtonListModel.add_button()
+    - ButtonListModel.is_valid_button() ⇐ used by: <none>
+    - ButtonListModel.load_buttons() ⇐ used by: ButtonListModel.__init__()
+    - ButtonListModel.remove_button() ⇐ used by: <none>
+    - ButtonListModel.save_buttons() ⇐ used by: <none>
+    - ButtonListModel.sort_buttons() ⇐ used by: <none>
+    - IButtonModel.add_button() ⇐ used by: <none>
+    - IButtonModel.get_buttons() ⇐ used by: <none>
+    - IButtonModel.load_buttons() ⇐ used by: <none>
+    - IButtonModel.remove_button() ⇐ used by: <none>
+    - IButtonModel.save_buttons() ⇐ used by: <none>
+
+
+src.start_panel.view_models
+
+
+
+src.start_panel.view_models.view_model
+
+  ButtonViewModel.__init__()
+
+  ButtonViewModel.add_button()
+
+  ButtonViewModel.edit_button()
+
+  ButtonViewModel.execute_program()
+
+  ButtonViewModel.get_buttons()
+
+  ButtonViewModel.is_valid_button()
+
+  ButtonViewModel.remove_button()
+
+  ButtonViewModel.save_buttons()
+
+  ButtonViewModel.sort_buttons()
+
+  IButtonViewModel.add_button()
+
+  IButtonViewModel.execute_program()
+
+  IButtonViewModel.get_buttons()
+
+  Method usages:
+    - ButtonViewModel.__init__() ⇐ used by: <none>
+    - ButtonViewModel.add_button() ⇐ used by: <none>
+    - ButtonViewModel.edit_button() ⇐ used by: <none>
+    - ButtonViewModel.execute_program() ⇐ used by: <none>
+    - ButtonViewModel.get_buttons() ⇐ used by: <none>
+    - ButtonViewModel.is_valid_button() ⇐ used by: <none>
+    - ButtonViewModel.remove_button() ⇐ used by: <none>
+    - ButtonViewModel.save_buttons() ⇐ used by: <none>
+    - ButtonViewModel.sort_buttons() ⇐ used by: <none>
+    - IButtonViewModel.add_button() ⇐ used by: <none>
+    - IButtonViewModel.execute_program() ⇐ used by: <none>
+    - IButtonViewModel.get_buttons() ⇐ used by: <none>
+
+
+src.start_panel.view_models.view_model_delete_buttons
+
+  DeleteButtonsViewModel.__init__()
+
+  DeleteButtonsViewModel.get_all_buttons()
+
+  DeleteButtonsViewModel.get_buttons()
+
+  DeleteButtonsViewModel.get_selected_buttons()
+
+  DeleteButtonsViewModel.get_selected_indices()
+
+  DeleteButtonsViewModel.remove_button()
+
+  DeleteButtonsViewModel.toggle_selection()
+
+  Method usages:
+    - DeleteButtonsViewModel.__init__() ⇐ used by: <none>
+    - DeleteButtonsViewModel.get_all_buttons() ⇐ used by: <none>
+    - DeleteButtonsViewModel.get_buttons() ⇐ used by: <none>
+    - DeleteButtonsViewModel.get_selected_buttons() ⇐ used by: <none>
+    - DeleteButtonsViewModel.get_selected_indices() ⇐ used by: <none>
+    - DeleteButtonsViewModel.remove_button() ⇐ used by: <none>
+    - DeleteButtonsViewModel.toggle_selection() ⇐ used by: <none>
+
+
+src.start_panel.views
+
+
+
+src.start_panel.views.view
+
+  MainWindow.__init__()
+      ├─> MainWindow._init_position_menu()
+      ├─> MainWindow.load_icon_from_base64()
+      ├─> MainWindow.set_initial_position()
+      └─> MainWindow.update_buttons()
+
+  MainWindow._display_top_windows()
+
+  MainWindow.add_button_clicked()
+
+  MainWindow.closeEvent()
+
+  MainWindow.close_panel()
+
+  MainWindow.delete_button_clicked()
+      └─> MainWindow.adjust_size()
+
+  MainWindow.mouseMoveEvent()
+
+  MainWindow.mousePressEvent()
+
+  MainWindow.mouseReleaseEvent()
+
+  MainWindow.open_side_panel()
+
+  MainWindow.open_structure_manager_clicked()
+
+  MainWindow.show_context_menu()
+
+  MainWindow.toggle_panel()
+      ├─> MainWindow.adjust_size()
+      └─> MainWindow.load_icon_from_base64()
+
+  Method usages:
+    - MainWindow.__init__() ⇐ used by: <none>
+    - MainWindow._display_top_windows() ⇐ used by: <none>
+    - MainWindow._init_position_menu() ⇐ used by: MainWindow.__init__()
+    - MainWindow.add_button_clicked() ⇐ used by: <none>
+    - MainWindow.adjust_size() ⇐ used by: MainWindow.delete_button_clicked(), MainWindow.toggle_panel()
+    - MainWindow.closeEvent() ⇐ used by: <none>
+    - MainWindow.close_panel() ⇐ used by: <none>
+    - MainWindow.delete_button_clicked() ⇐ used by: <none>
+    - MainWindow.load_icon_from_base64() ⇐ used by: MainWindow.__init__(), MainWindow.toggle_panel()
+    - MainWindow.mouseMoveEvent() ⇐ used by: <none>
+    - MainWindow.mousePressEvent() ⇐ used by: <none>
+    - MainWindow.mouseReleaseEvent() ⇐ used by: <none>
+    - MainWindow.open_side_panel() ⇐ used by: <none>
+    - MainWindow.open_structure_manager_clicked() ⇐ used by: <none>
+    - MainWindow.set_initial_position() ⇐ used by: MainWindow.__init__()
+    - MainWindow.show_context_menu() ⇐ used by: <none>
+    - MainWindow.toggle_panel() ⇐ used by: <none>
+    - MainWindow.update_buttons() ⇐ used by: MainWindow.__init__()
+
+
+src.start_panel.views.view_delete_buttons
+
+  DeleteButtonsDialog.__init__()
+      └─> DeleteButtonsDialog.update_table()
+
+  DeleteButtonsDialog.get_selected_buttons()
+
+  Method usages:
+    - DeleteButtonsDialog.__init__() ⇐ used by: <none>
+    - DeleteButtonsDialog.get_selected_buttons() ⇐ used by: <none>
+    - DeleteButtonsDialog.update_table() ⇐ used by: DeleteButtonsDialog.__init__()
+
+
+src.ui
+
+
+
+src.ui.customization_start_panel
+
+  CostStartPanel.__init__()
+
+  CostStartPanel._on_dialog_create_folder()
+
+  CostStartPanel._on_save_and_close()
+      └─> CostStartPanel._get_root_path()
+
+  Method usages:
+    - CostStartPanel.__init__() ⇐ used by: <none>
+    - CostStartPanel._get_root_path() ⇐ used by: CostStartPanel._on_save_and_close()
+    - CostStartPanel._on_dialog_create_folder() ⇐ used by: <none>
+    - CostStartPanel._on_save_and_close() ⇐ used by: <none>
+
+
+src.ui.customization_start_panel_window
+
+  CostStartPanelWindow.setupUi()
+      └─> CostStartPanelWindow.retranslateUi()
+
+  Method usages:
+    - CostStartPanelWindow.retranslateUi() ⇐ used by: CostStartPanelWindow.setupUi()
+    - CostStartPanelWindow.setupUi() ⇐ used by: <none>
+
+
+src.ui.side_panel
+
+  SidePanel.__init__()
+      ├─> SidePanel._init_position_menu()
+      ├─> SidePanel._init_ui()
+      │   └─> SidePanel._create_tabs_with_trees()
+      └─> SidePanel._setup_screen_edge_docking()
+          └─> SidePanel.update_dock_position()
+
+  SidePanel._dock_to_left()
+      ├─> SidePanel._update_menu_checks()
+      └─> SidePanel.update_dock_position()
+
+  SidePanel._dock_to_right()
+      ├─> SidePanel._update_menu_checks()
+      └─> SidePanel.update_dock_position()
+
+  SidePanel._enable_floating()
+      └─> SidePanel._update_menu_checks()
+
+  SidePanel._on_dir_changed()
+
+  SidePanel._on_file_deleted()
+
+  SidePanel._on_file_updated()
+
+  SidePanel._on_fill_tab_tree()
+
+  SidePanel._on_parsing_done()
+
+  SidePanel._open_editor()
+
+  SidePanel.set_manedger()
+
+  SidePanel.show_context_menu()
+
+  SidePanelObserver.__init__()
+
+  Method usages:
+    - SidePanel.__init__() ⇐ used by: <none>
+    - SidePanel._create_tabs_with_trees() ⇐ used by: SidePanel._init_ui()
+    - SidePanel._dock_to_left() ⇐ used by: <none>
+    - SidePanel._dock_to_right() ⇐ used by: <none>
+    - SidePanel._enable_floating() ⇐ used by: <none>
+    - SidePanel._init_position_menu() ⇐ used by: SidePanel.__init__()
+    - SidePanel._init_ui() ⇐ used by: SidePanel.__init__()
+    - SidePanel._on_dir_changed() ⇐ used by: <none>
+    - SidePanel._on_file_deleted() ⇐ used by: <none>
+    - SidePanel._on_file_updated() ⇐ used by: <none>
+    - SidePanel._on_fill_tab_tree() ⇐ used by: <none>
+    - SidePanel._on_parsing_done() ⇐ used by: <none>
+    - SidePanel._open_editor() ⇐ used by: <none>
+    - SidePanel._setup_screen_edge_docking() ⇐ used by: SidePanel.__init__()
+    - SidePanel._update_menu_checks() ⇐ used by: SidePanel._dock_to_left(), SidePanel._dock_to_right(), SidePanel._enable_floating()
+    - SidePanel.set_manedger() ⇐ used by: <none>
+    - SidePanel.show_context_menu() ⇐ used by: <none>
+    - SidePanel.update_dock_position() ⇐ used by: SidePanel._dock_to_left(), SidePanel._dock_to_right(), SidePanel._setup_screen_edge_docking()
+    - SidePanelObserver.__init__() ⇐ used by: <none>
+
+
+src.ui.start_panel_buttons
+
+  StartPanelButtons.__init__()
+
+  Method usages:
+    - StartPanelButtons.__init__() ⇐ used by: <none>
+
+
+src.ui.start_panel_buttons_window
+
+  StartPanelButtonsWindow.setupUi()
+      └─> StartPanelButtonsWindow.retranslateUi()
+
+  Method usages:
+    - StartPanelButtonsWindow.retranslateUi() ⇐ used by: StartPanelButtonsWindow.setupUi()
+    - StartPanelButtonsWindow.setupUi() ⇐ used by: <none>
+
+
+src.utils
+
+
+
+src.widgets
+
+
+
+src.widgets.markdown_converter
+
+  MarkdownConverter.convert_md_to_html()
+
+  MarkdownConverter.highlight_code()
+
+  Method usages:
+    - MarkdownConverter.convert_md_to_html() ⇐ used by: <none>
+    - MarkdownConverter.highlight_code() ⇐ used by: <none>
+
+
+src.widgets.markdown_highlighter
+
+  MarkdownHighlighter.__init__()
+
+  MarkdownHighlighter.highlightBlock()
+
+  Method usages:
+    - MarkdownHighlighter.__init__() ⇐ used by: <none>
+    - MarkdownHighlighter.highlightBlock() ⇐ used by: <none>
+
+
+src.widgets.markdown_styles
+
+  MarkdownStyles.__init__()
+      ├─> MarkdownStyles._init_code_block_format()
+      └─> MarkdownStyles._init_rules()
+
+  Method usages:
+    - MarkdownStyles.__init__() ⇐ used by: <none>
+    - MarkdownStyles._init_code_block_format() ⇐ used by: MarkdownStyles.__init__()
+    - MarkdownStyles._init_rules() ⇐ used by: MarkdownStyles.__init__()
+
+
+src.widgets.markdown_viewer_widget
+
+  MarkdownViewer.__init__()
+      └─> MarkdownViewer._init_ui()
+
+  MarkdownViewer.get_content()
+
+  MarkdownViewer.set_content()
+
+  MarkdownViewer.set_view_mode()
+      └─> MarkdownViewer._change_mode()
+
+  Method usages:
+    - MarkdownViewer.__init__() ⇐ used by: <none>
+    - MarkdownViewer._change_mode() ⇐ used by: MarkdownViewer.set_view_mode()
+    - MarkdownViewer._init_ui() ⇐ used by: MarkdownViewer.__init__()
+    - MarkdownViewer.get_content() ⇐ used by: <none>
+    - MarkdownViewer.set_content() ⇐ used by: <none>
+    - MarkdownViewer.set_view_mode() ⇐ used by: <none>
+
+
+tests
+
+
+
+tests.draft.test_is_button_name_unique
+
+  test_is_button_name_unique()
+
+
+
+tests.draft.test_is_button_name_unique2
+
+  test_is_button_name_unique()
+
+
+
+tests.draft.test_model.py
+
+  test_add_button()
+
+  test_remove_button()
+
+
+
+tests.integration
+
+
+
+tests.searching_for_dead_code
+
+
+
+tests.searching_for_dead_code.dead_code_finder
+
+  ModuleInfo.__init__()
+
+  ProjectAnalyzer.__init__()
+
+  ProjectAnalyzer.format_list()
+
+  ProjectAnalyzer.run()
+      ├─> ProjectAnalyzer.collect_python_files()
+      │   ├─> ProjectAnalyzer._is_excluded()
+      │   └─> ProjectAnalyzer._module_name_from_path()
+      ├─> ProjectAnalyzer.compile_report()
+      ├─> ProjectAnalyzer.first_pass_collect()
+      ├─> ProjectAnalyzer.second_pass_usage()
+      └─> ProjectAnalyzer.write_report()
+
+  _ModuleCollector.__init__()
+
+  _ModuleCollector.visit_AnnAssign()
+      ├─> _ModuleCollector._add_definition()
+      └─> _names_from_target()
+          └─> _names_from_target()
+              ↩ (cycle to _names_from_target)
+
+  _ModuleCollector.visit_Assign()
+      ├─> _ModuleCollector._add_definition()
+      ├─> _ModuleCollector._collect_all_exports()
+      │   └─> _extract_str_names()
+      │       └─> _extract_str_names()
+      │           ↩ (cycle to _extract_str_names)
+      └─> _names_from_target()
+          └─> _names_from_target()
+              ↩ (cycle to _names_from_target)
+
+  _ModuleCollector.visit_AsyncFunctionDef()
+      └─> _ModuleCollector._visit_function_like()
+          ├─> _ModuleCollector._add_definition()
+          └─> _ModuleCollector._collect_unreachable_in_function()
+
+  _ModuleCollector.visit_AugAssign()
+      ├─> _ModuleCollector._add_definition()
+      └─> _names_from_target()
+          └─> _names_from_target()
+              ↩ (cycle to _names_from_target)
+
+  _ModuleCollector.visit_ClassDef()
+      └─> _ModuleCollector._add_definition()
+
+  _ModuleCollector.visit_FunctionDef()
+      └─> _ModuleCollector._visit_function_like()
+          ├─> _ModuleCollector._add_definition()
+          └─> _ModuleCollector._collect_unreachable_in_function()
+
+  _ModuleCollector.visit_Import()
+
+  _ModuleCollector.visit_ImportFrom()
+
+  _UsageCollector.__init__()
+
+  _UsageCollector.visit_Attribute()
+      └─> _UsageCollector._get_current_module_info()
+
+  _UsageCollector.visit_Name()
+      ├─> _UsageCollector._get_current_module_info()
+      └─> _UsageCollector._resolve_from_module()
+
+  main()
+      └─> parse_args()
+
+  Method usages:
+    - ModuleInfo.__init__() ⇐ used by: <none>
+    - ProjectAnalyzer.__init__() ⇐ used by: <none>
+    - ProjectAnalyzer._is_excluded() ⇐ used by: ProjectAnalyzer.collect_python_files()
+    - ProjectAnalyzer._module_name_from_path() ⇐ used by: ProjectAnalyzer.collect_python_files()
+    - ProjectAnalyzer.collect_python_files() ⇐ used by: ProjectAnalyzer.run()
+    - ProjectAnalyzer.compile_report() ⇐ used by: ProjectAnalyzer.run()
+    - ProjectAnalyzer.first_pass_collect() ⇐ used by: ProjectAnalyzer.run()
+    - ProjectAnalyzer.format_list() ⇐ used by: <none>
+    - ProjectAnalyzer.run() ⇐ used by: <none>
+    - ProjectAnalyzer.second_pass_usage() ⇐ used by: ProjectAnalyzer.run()
+    - ProjectAnalyzer.write_report() ⇐ used by: ProjectAnalyzer.run()
+    - _ModuleCollector.__init__() ⇐ used by: <none>
+    - _ModuleCollector._add_definition() ⇐ used by: _ModuleCollector._visit_function_like(), _ModuleCollector.visit_AnnAssign(), _ModuleCollector.visit_Assign(), _ModuleCollector.visit_AugAssign(), _ModuleCollector.visit_ClassDef()
+    - _ModuleCollector._collect_all_exports() ⇐ used by: _ModuleCollector.visit_Assign()
+    - _ModuleCollector._collect_unreachable_in_function() ⇐ used by: _ModuleCollector._visit_function_like()
+    - _ModuleCollector._visit_function_like() ⇐ used by: _ModuleCollector.visit_AsyncFunctionDef(), _ModuleCollector.visit_FunctionDef()
+    - _ModuleCollector.visit_AnnAssign() ⇐ used by: <none>
+    - _ModuleCollector.visit_Assign() ⇐ used by: <none>
+    - _ModuleCollector.visit_AsyncFunctionDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_AugAssign() ⇐ used by: <none>
+    - _ModuleCollector.visit_ClassDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_FunctionDef() ⇐ used by: <none>
+    - _ModuleCollector.visit_Import() ⇐ used by: <none>
+    - _ModuleCollector.visit_ImportFrom() ⇐ used by: <none>
+    - _UsageCollector.__init__() ⇐ used by: <none>
+    - _UsageCollector._get_current_module_info() ⇐ used by: _UsageCollector.visit_Attribute(), _UsageCollector.visit_Name()
+    - _UsageCollector._resolve_from_module() ⇐ used by: _UsageCollector.visit_Name()
+    - _UsageCollector.visit_Attribute() ⇐ used by: <none>
+    - _UsageCollector.visit_Name() ⇐ used by: <none>
+
+
+tests.unit
+
+
+
+tests.unit.test_views
+
+
