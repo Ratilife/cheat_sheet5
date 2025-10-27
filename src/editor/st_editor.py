@@ -33,29 +33,29 @@ class STEditor(BaseFileEditor):
         # Устанавливаем начальное состояние
         self._update_watching_state(False)  # По умолчанию отслеживание выключено
 
-        self._state_save_timer = QTimer()
-        self._state_save_timer.setSingleShot(True)
-        self._state_save_timer.timeout.connect(self.save_state)
+        self._state_save_timer = QTimer()          # Создание таймера для отложенного сохранения состояния
+        self._state_save_timer.setSingleShot(True) # Установка таймера как одноразового (он сработает только один раз после запуска)
+        self._state_save_timer.timeout.connect(self.save_state) # Подключение сигнала timeout таймера к методу save_state
 
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
         # Основной layout
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout = QVBoxLayout(self)              # Создание вертикального слоя (layout) и привязка его к текущему виджету
+        layout.setContentsMargins(0, 0, 0, 0)   # Установка внешних отступов слоя в 0 (сверху, слева, снизу, справа)
+        layout.setSpacing(0)                    # Установка расстояния между элементами внутри слоя в 0
 
         # Создаем текстовый редактор
-        self._text_edit = QTextEdit()
-        self._text_edit.setAcceptRichText(False)  # Режим plain text
+        self._text_edit = QTextEdit()           # Создание экземпляра QTextEdit для редактирования текста
+        self._text_edit.setAcceptRichText(False)  # Режим plain text, отключение поддержки форматированного текста, редактор будет работать только с простым текстом
 
         # TODO: Здесь позже добавим подсветку синтаксиса
         # self._highlighter = STHighlighter(self._text_edit.document())
 
         # Добавляем редактор в layout
-        layout.addWidget(self._text_edit)
+        layout.addWidget(self._text_edit)       # Добавление виджета текстового редактора в вертикальный слой
 
         # Устанавливаем layout
-        self.setLayout(layout)
+        self.setLayout(layout)                  # Установка созданного слоя как основного слоя для текущего виджета
 
     def _setup_connections(self) -> None:
         """Настройка сигналов и соединений"""
@@ -252,37 +252,69 @@ class STEditor(BaseFileEditor):
         return len(self._redo_stack) > 0
 
     def undo(self) -> bool:
+        """Отменяет последнее действие редактирования текста.
+
+                Извлекает предыдущее состояние текста из стека отмены (_undo_stack),
+                сохраняет текущее состояние в стек повтора (_redo_stack), обновляет
+                содержимое текстового поля (_text_edit) и внутреннее состояние (_current_state).
+                Также обновляет доступность действий "отменить" и "повторить", излучая
+                соответствующие сигналы (undo_available, redo_available).
+
+                Returns:
+                    bool: True, если отмена выполнена успешно, иначе False.
+                          Возвращает False, если отмена невозможна (стек пуст) или произошла ошибка.
+        """
+        # Проверка, доступно ли действие "отменить"
         if not self.can_undo():
-            return False
+            return False   # Если действие "отменить" недоступно, метод возвращает False
 
         try:
+            # Сохранение текущего состояния в стек повтора (для redo)
             self._redo_stack.append(self._current_state)
+            # Извлечение предыдущего состояния из стека отмены
             previous_state = self._undo_stack.pop()
+            # Установка текущего состояния равным извлечённому предыдущему
             self._current_state = previous_state
-
+            # Отображение предыдущего состояния в текстовом поле
             self._text_edit.setPlainText(previous_state)
 
-            self.undo_available.emit(self.can_undo())
-            self.redo_available.emit(self.can_redo())
-            return True
+            self.undo_available.emit(self.can_undo()) # Сигнал об изменении доступности действия "отменить"
+            self.redo_available.emit(self.can_redo()) # Сигнал об изменении доступности действия "повторить"
+            return True  # Метод возвращает True, указывая на успешное выполнение
 
         except Exception as e:
             print(f"Ошибка отмены: {e}")
             return False
 
     def redo(self) -> bool:
+        """Повторяет последнее отменённое действие редактирования текста.
+
+                Извлекает следующее состояние текста из стека повтора (_redo_stack),
+                сохраняет текущее состояние в стек отмены (_undo_stack), обновляет
+                содержимое текстового поля (_text_edit) и внутреннее состояние (_current_state).
+                Также обновляет доступность действий "отменить" и "повторить", излучая
+                соответствующие сигналы (undo_available, redo_available).
+
+                Returns:
+                    bool: True, если повтор выполнен успешно, иначе False.
+                          Возвращает False, если повтор невозможен (стек пуст) или произошла ошибка.
+        """
+        # Проверка, доступно ли действие "повторить"
         if not self.can_redo():
-            return False
+            return False # Если действие "повторить" недоступно, метод возвращает False
 
         try:
+            # Сохранение текущего состояния в стек отмены (для undo)
             self._undo_stack.append(self._current_state)
+            # Извлечение следующего состояния из стека повтора
             next_state = self._redo_stack.pop()
+            # Установка текущего состояния равным извлечённому следующему
             self._current_state = next_state
-
+            # Отображение следующего состояния в текстовом поле
             self._text_edit.setPlainText(next_state)
 
-            self.undo_available.emit(self.can_undo())
-            self.redo_available.emit(self.can_redo())
+            self.undo_available.emit(self.can_undo()) # Сигнал об изменении доступности действия "отменить"
+            self.redo_available.emit(self.can_redo()) # Сигнал об изменении доступности действия "повторить"
             return True
 
         except Exception as e:
@@ -395,19 +427,20 @@ class STEditor(BaseFileEditor):
 
     def set_content(self, content: str) -> None:
         """Устанавливает содержимое редактора из строки."""
+        # Устанавливает переданное содержимое в текстовое поле редактора
         self._text_edit.setPlainText(content)
 
         # ⭐ ОБНОВЛЯЕМ СОСТОЯНИЕ ОТМЕНЫ
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._current_state = content
-        self.undo_available.emit(False)
-        self.redo_available.emit(False)
+        self._undo_stack.clear()            # Очищает стек отмены, так как история теряется при установке нового содержимого
+        self._redo_stack.clear()            # Очищает стек повтора по той же причине
+        self._current_state = content       # Сохраняет новое содержимое как текущее состояние
+        self.undo_available.emit(False)     # Излучает сигнал, что действие "отменить" больше недоступно
+        self.redo_available.emit(False)     # Излучает сигнал, что действие "повторить" больше недоступно
 
         # Сбрасываем флаг модификации при установке нового содержимого
         self.is_modified = False
         # Определяем язык для подсветки по первой строке
-        self._identify_language(content)
+        self._identify_language(content) # Вызывает внутренний метод для определения языка подсветки синтаксиса на основе переданного содержимого
 
     def get_content(self) -> str:
         """
