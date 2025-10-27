@@ -1,0 +1,22 @@
+// Loop demo
+let n = 10;
+let i = 0;
+let sum = 0;
+
+while (i <= n) {
+  sum = sum + i;
+  i = i + 1;
+}
+
+print("sum(0.." + n + ") = " + sum);
+
+// Nested loops: 1..3 x 1..3
+let a = 1;
+while (a <= 3) {
+  let b = 1;
+  while (b <= 3) {
+    print("pair " + a + "," + b);
+    b = b + 1;
+  }
+  a = a + 1;
+}

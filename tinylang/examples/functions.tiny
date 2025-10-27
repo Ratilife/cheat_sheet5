@@ -1,0 +1,22 @@
+// Functions demo
+func add(a, b) {
+  return a + b;
+}
+
+func greet(name) {
+  return "Hi, " + name;
+}
+
+func pow(base, exp) {
+  if (exp <= 0) {
+    return 1;
+  } else {
+    return base * pow(base, exp - 1);
+  }
+}
+
+let s = greet("Tiny");
+let p = add(2, 3) + pow(2, 5);
+
+print(s);
+print("p = " + p);
