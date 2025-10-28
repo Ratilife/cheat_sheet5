@@ -1253,6 +1253,8 @@ def load(self, file_path: Path) -> bool:
 3. Частичная очистка при новых изменениях: `save_state()`
 - Назначение: Новые пользовательские изменения делают историю повтора неактуальной.
 
+#### Диаграмма жизненного цикла _undo_stack
+
 ![undo_stack.png](docs/pictures/undo_stack.png)
 
 ```graph TD
@@ -1291,4 +1293,244 @@ def load(self, file_path: Path) -> bool:
     R --> B
     U --> F
 ```
+#### Альтернативная версия - последовательная диаграмма
 
+![undo_stack2.png](docs/pictures/undo_stack2.png)
+
+```sequenceDiagram
+    participant П as Пользователь
+    participant R as Редактор
+    participant US as _undo_stack
+    participant RS as _redo_stack
+    participant CS as _current_state
+    
+    Note over R,CS: 1. Инициализация
+    R->>US: = []
+    R->>RS: = [] 
+    R->>CS: = ""
+    
+    Note over R,CS: 2. Пользователь редактирует
+    П->>R: Вводит текст
+    R->>R: _on_viewer_text_changed()
+    R->>R: Таймер 500ms → save_state()
+    R->>US: append(_current_state)
+    R->>RS: clear()
+    R->>CS: = новый текст
+    
+    Note over R,CS: 3. Дополнительные правки
+    П->>R: Продолжает ввод
+    R->>US: append(_current_state)
+    R->>RS: clear()
+    R->>CS: = обновленный текст
+    
+    Note over R,CS: 4. Операция Undo
+    П->>R: Нажимает Undo
+    R->>RS: append(_current_state)
+    R->>US: pop() → previous_state
+    R->>CS: = previous_state
+    R->>R: setPlainText(previous_state)
+    
+    Note over R,CS: 5. Загрузка нового файла
+    R->>R: set_content("новый текст")
+    R->>US: clear()
+    R->>RS: clear()
+    R->>CS: = "новый текст"
+    
+    Note over R,CS: 6. Сохранение файла
+    R->>R: save() → after_save_cleanup()
+    R->>US: clear()
+    R->>RS: clear()
+    R->>CS: = текущий текст
+```
+
+### Система стека повтора `_redo_stack`
+
+**_redo_stack** - это стек (LIFO - Last In, First Out), который хранит отмененные состояния документа для реализации функциональности "Повторить" (Redo). Работает в паре с _undo_stack.
+
+*Место инициализации:* Конструктор `BaseFileEditor`
+
+*Когда выполняется:* При создании любого редактора, наследуемого от BaseFileEditor.
+*Начальное состояние:* Пустой список []
+*Добавление данных в стек:*
+- метод `undo()`
+
+*Когда вызывается:* При каждой операции отмены (Undo).
+*Логика:* Текущее состояние перемещается из редактора в _redo_stack перед восстановлением предыдущего состояния.
+
+*Удаление данных из стека:*
+- метод `redo()`
+- *Операция:* `pop()` - удаляет и возвращает последний элемент стека (LIFO)
+- *Результат:* Состояние перемещается из `_redo_stack` в `_undo_stack`
+
+*Очистка стека:*
+1. Полная очистка при установке нового содержимого: set_content()
+*Когда вызывается:*
+- При загрузке файла (load())
+- При внешнем обновлении файла
+- При программной установке содержимого
+
+2. Очистка при сохранении файла: `after_save_cleanup()`
+*Когда вызывается:* В методе save() после успешного сохранения файла.
+
+3. Очистка при новых пользовательских изменениях: `save_state()`
+*Логика:* Новые пользовательские изменения делают историю повтора неактуальной.
+
+#### Диаграмма жизненного цикла стека _redo_stack
+
+```graph TD
+    A[Инициализация редактора] --> B[_redo_stack = []]
+    
+    B --> C{Операция Undo}
+    C -->|Выполнена| D[_redo_stack.append<br/>current_state]
+    D --> E[Стек повтора<br/>заполнен]
+    
+    E --> F{Операция Redo}
+    F -->|Выполнена| G[_redo_stack.pop<br/>next_state]
+    G --> H[Стек повтора<br/>уменьшен]
+    
+    E --> I{Новые изменения<br/>пользователя}
+    I -->|save_state| J[_redo_stack.clear]
+    J --> B
+    
+    E --> K[set_content<br/>или after_save_cleanup]
+    K --> B
+    
+    H --> C
+```
+
+#### Взаимодействие с _undo_stack
+
+```sequenceDiagram
+    participant U as _undo_stack
+    participant R as _redo_stack  
+    participant C as _current_state
+    
+    Note over U,R: Начальное состояние
+    U->>U: [s1, s2, s3]
+    R->>R: []
+    C->>C: s3
+    
+    Note over U,R: Операция Undo
+    C->>R: append(s3)
+    U->>U: pop() → s2
+    C->>C: = s2
+    
+    Note over U,R: Состояние после Undo
+    U->>U: [s1, s2]
+    R->>R: [s3]
+    C->>C: s2
+    
+    Note over U,R: Операция Redo
+    C->>U: append(s2)
+    R->>R: pop() → s3
+    C->>C: = s3
+    
+    Note over U,R: Состояние после Redo
+    U->>U: [s1, s2, s3]
+    R->>R: []
+    C->>C: s3
+    
+    Note over U,R: Новые изменения
+    C->>C: s4 (новое)
+    R->>R: clear()
+    U->>U: append(s3)
+```
+
+#### Пример полного цикла работы
+
+```python
+# 1. Инициализация
+editor = STEditor()
+print(editor._redo_stack)  # []
+
+# 2. Пользователь вводит несколько состояний
+editor.set_content("State1")  # _undo_stack = [], _redo_stack = []
+editor.save_state()           # _undo_stack = [""], _redo_stack = []
+editor.set_content("State2")  
+editor.save_state()           # _undo_stack = ["", "State1"], _redo_stack = []
+editor.set_content("State3")
+editor.save_state()           # _undo_stack = ["", "State1", "State2"], _redo_stack = []
+
+# 3. Операция Undo - заполнение redo stack
+editor.undo()                 # _undo_stack = ["", "State1"], _redo_stack = ["State3"]
+print(editor._redo_stack)     # ["State3"]
+editor.undo()                 # _undo_stack = [""], _redo_stack = ["State3", "State2"] 
+print(editor._redo_stack)     # ["State3", "State2"]
+
+# 4. Операция Redo - очистка redo stack
+editor.redo()                 # _undo_stack = ["", "State1"], _redo_stack = ["State3"]
+print(editor._redo_stack)     # ["State3"]
+editor.redo()                 # _undo_stack = ["", "State1", "State2"], _redo_stack = []
+print(editor._redo_stack)     # []
+
+# 5. Новые изменения - очистка redo stack
+editor.set_content("New State")
+editor.save_state()           # _redo_stack.clear() → _redo_stack = []
+print(editor._redo_stack)     # []
+```
+
+### Переменная `self.is_modified`
+
+**self.is_modified** - это флаг-свойство (property), который отслеживает наличие несохраненных изменений в документе. Является ключевым компонентом системы управления состоянием редактора.
+
+Место инициализации: Конструктор BaseFileEditor
+
+Начальное значение: False (документ не изменен)
+
+**Реализация как property:** `Getter` и `Setter` в `BaseFileEditor`
+```python
+@property
+def is_modified(self) -> bool:
+    """Возвращает флаг, был ли документ изменен с момента последнего сохранения."""
+    return self._is_modified
+
+@is_modified.setter
+def is_modified(self, value: bool):
+    """Устанавливает флаг модификации и испускает соответствующий сигнал."""
+    if self._is_modified != value:
+        self._is_modified = value
+        self.modification_changed.emit(value)  # ← СИГНАЛ ИЗМЕНЕНИЯ
+```
+*Особенности:*
+- Сигнал испускается только при реальном изменении значения
+- Гарантирует согласованность UI с состоянием документа
+
+*Установка в `True` (документ изменен)*
+1. При пользовательском редактировании: `_on_viewer_text_changed()`
+*Когда вызывается:* При любом изменении текста пользователем в QTextEdit.
+
+2. При программных изменениях с модификацией
+**Важно:**<span style="color: red;">*Не реализован пункт 2.*</span>
+
+*Установка в `False` (документ не изменен)*
+
+1. При установке нового содержимого: `set_content()`
+*Логика:* Новое содержимое считается "чистым" состоянием.
+
+2. При успешном сохранении файла: `save()` и `save_as()`
+
+3. При ручном сбросе: `set_clean()`
+
+#### Диаграмма жизненного цикла `is_modified`
+
+```stateDiagram-v2
+    [*] --> НеИзменен : is_modified = False
+    
+    НеИзменен --> Изменен : _on_viewer_text_changed()
+    НеИзменен --> НеИзменен : set_content() / save()
+    
+    Изменен --> НеИзменен : save() / save_as() / set_clean()
+    Изменен --> Изменен : Дополнительные правки
+    
+    note right of Изменен
+        UI показывает индикатор "*"
+        Кнопка "Сохранить" активна
+        При закрытии - запрос сохранения
+    end note
+    
+    note left of НеИзменен
+        UI без индикатора
+        Кнопка "Сохранить" неактивна
+        Можно закрывать без предупреждения
+    end note
+```
