@@ -1253,6 +1253,8 @@ def load(self, file_path: Path) -> bool:
 3. Частичная очистка при новых изменениях: `save_state()`
 - Назначение: Новые пользовательские изменения делают историю повтора неактуальной.
 
+![undo_stack.png](docs/pictures/undo_stack.png)
+
 ```graph TD
     A[Инициализация редактора] --> B[_undo_stack = <br/>[]]
     
@@ -1289,3 +1291,4 @@ def load(self, file_path: Path) -> bool:
     R --> B
     U --> F
 ```
+
