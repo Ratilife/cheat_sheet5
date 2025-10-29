@@ -824,11 +824,25 @@ class FileEditorWindow(QMainWindow):
     def handle_tab_change(self, tab_name, index):
         print(f"Вкладка изменилась: {tab_name}, индекс: {index}")
         self.tab_name = tab_name
-    def _set_active_tab(self):
-        active_info = self.parent.tab_manager.get_active_tab_info()
-        if hasattr(self, 'tab_name') and isinstance(self.tab_name, str) and self.tab_name:
-            return self.tab_name
 
+    def _set_active_tab(self):
+        """Получает имя активной вкладки.
+
+                Метод сначала проверяет, есть ли у текущего экземпляра локально сохранённое
+                имя вкладки (в атрибуте self.tab_name), и если оно есть, строковое и не пустое,
+                возвращает его. В противном случае, он запрашивает актуальное имя активной
+                вкладки у родительского объекта через его tab_manager и возвращает его.
+
+         Returns:
+                 str: Имя активной вкладки.
+        """
+        # Получение словаря с информацией об активной вкладке от родительского менеджера вкладок
+        active_info = self.parent.tab_manager.get_active_tab_info()
+        # Проверка: существует ли атрибут tab_name у текущего объекта, является ли он строкой и не пустой ли он
+        if hasattr(self, 'tab_name') and isinstance(self.tab_name, str) and self.tab_name:
+            # Возврат локально сохранённого имени вкладки, если все условия выше выполнены
+            return self.tab_name
+        # Возврат имени активной вкладки из словаря информации, полученного от менеджера вкладок
         return active_info['tab_name']
 
     def _handle_new_st_file(self)->str:

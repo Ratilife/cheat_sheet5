@@ -325,6 +325,19 @@ class FileManager:
 
 
     def write_file(self, path: str, content: str = "") -> bool:
+        """Записывает содержимое в файл по указанному пути.
+
+            Автоматически создает все необходимые родительские каталоги,
+            если они не существуют. Использует кодировку 'utf-8-sig' для
+            записи текста. В случае успеха возвращает True, иначе False.
+
+            Args:
+                 path (str): Полный путь к файлу, в который нужно записать содержимое.
+                 content (str, optional): Строка с содержимым для записи. По умолчанию "".
+
+            Returns:
+                 bool: True, если файл был успешно записан, иначе False.
+        """
         print(f"🔍 DEBUG write_file: path='{path}', content='{content}'")
 
         if not path:
