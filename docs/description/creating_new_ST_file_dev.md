@@ -121,3 +121,6 @@
     
     FE-->>User: Показывает новый файл в редакторе
 ```
+
+![new_ST_file.png](docs/pictures/new_ST_file.png)
+
