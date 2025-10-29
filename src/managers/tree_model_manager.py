@@ -299,30 +299,52 @@ class TreeModelManager(QObject):
         return False
 
     def get_selection_info(self):
-        """Получает информацию о выделении используя существующие методы модели"""
+
+        """Получает подробную информацию о текущем выделенном элементе в активной вкладке.
+
+                Метод определяет активную вкладку в _tab_widget, получает связанный с ней
+                QTreeView, находит в нём текущий выделенный индекс (QModelIndex) и извлекает
+                из модели (QAbstractItemModel) данные об этом элементе (тип, имя, уровень,
+                родительский элемент и т.д.). Также пытается определить путь к файлу,
+                к которому относится выделенный элемент, рекурсивно поднимаясь по иерархии,
+                если элемент не является файлом напрямую. Возвращает словарь с различной
+                информацией об элементе или None, если выделение отсутствует или
+                _tab_widget не установлен.
+
+                Returns:
+                    dict or None: Словарь с информацией о выделенном элементе или None.
+        """
         # TODO 🚧 В разработке: 13.10.2025
         # Проверяем наличие tab_widget
         if not self._tab_widget:
             print("DEBUG: Локальный виджет вкладок не установлен")
             return None
 
+        # Получение индекса текущей активной вкладки
         current_index = self._tab_widget.currentIndex()
         if current_index < 0:
             return None
 
+        # Получение текста (имени) активной вкладки по индексу
         tab_name = self._tab_widget.tabText(current_index)
+        # Получение виджета (предположительно QTreeView), связанный с активной вкладкой
         tree_view = self._tab_widget.widget(current_index)
 
+        # Получение виджета (предположительно QTreeView), связанный с активной вкладкой
         if not tree_view:
             print(f"DEBUG: Не найден tree_view для вкладки '{tab_name}'")
-            return None
+            return None # Возврат None, если виджет дерева не найден
 
+        # Проверка, есть ли действительный (выделенный) индекс в дереве
         if not tree_view.currentIndex().isValid():
             print(f"DEBUG: В дереве вкладки '{tab_name}' нет выделенного элемента")
             return None
 
+        # Получение QModelIndex выделенного элемента
         index = tree_view.currentIndex()
+        # Получение QModelIndex родительского элемента
         parent_index = index.parent()
+        # Получение модели данных, связанной с деревом
         model = tree_view.model()
 
         if not model:
@@ -331,27 +353,30 @@ class TreeModelManager(QObject):
 
         # Получаем путь к файлу - для всех типов элементов
         file_path = None
+        # Проверка, является ли выделенный элемент файлом или markdown-файлом
         if model.get_item_type(index) in ['file', 'markdown']:
             # Если элемент сам является файлом, берем путь напрямую
             file_path = model.get_item_path(index)
         else:
             # Для template, folder и других типов ищем корневой файл в иерархии
             file_root_info = self.get_file_root_from_selection(index)
+            # Проверка, найдена ли информация о корневом файле
             if file_root_info:
+                # Извлечение пути к файлу из результата поиска
                 file_path = file_root_info['path']
 
-        return {
-            'type': model.get_item_type(index),
-            'path': file_path,
-            'level': model.get_item_level(index),
-            'name': model.data(index, Qt.DisplayRole),
-            'model': model,
-            'index': index,
-            'parent_index': parent_index,
-            'parent_name': model.data(parent_index, Qt.DisplayRole),
-            'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',
-            'tab_name': tab_name,
-            'tree_view': tree_view
+        return {  # Возврат словаря с информацией о выделенном элементе
+            'type': model.get_item_type(index),        # Тип выделенного элемента (например, 'file', 'folder', 'template')
+            'path': file_path,                         # Путь к файлу, связанному с элементом (или None)
+            'level': model.get_item_level(index),      # Путь к файлу, связанному с элементом (или None)
+            'name': model.data(index, Qt.DisplayRole), # Отображаемое имя (имя файла или папки)
+            'model': model,                            # Ссылка на модель дерева
+            'index': index,                            # QModelIndex выделенного элемента
+            'parent_index': parent_index,              # QModelIndex родительского элемента
+            'parent_name': model.data(parent_index, Qt.DisplayRole),   # Имя родительского элемента
+            'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root', # Тип родительского элемента ('root', если корень)
+            'tab_name': tab_name,                      # Имя активной вкладки
+            'tree_view': tree_view                     # Ссылка на виджет QTreeView
         }
 
     def get_file_root_from_selection(self, index):
@@ -484,6 +509,22 @@ class TreeModelManager(QObject):
 
 
     def creating_an_element(self, name, element) -> None:
+        """Создает новый элемент (папку или файл) в дереве файлов.
+
+            Метод определяет, где именно нужно создать новый элемент,
+            в зависимости от типа выбранного в данный момент элемента
+            (папка, файл, шаблон). Новый элемент добавляется в модель
+            дерева через метод add_folder. После успешного добавления
+            обновляется пользовательский интерфейс: испускается сигнал
+            layoutChanged для обновления модели представления и,
+            при необходимости, родительский элемент раскрывается,
+            чтобы показать новый элемент. Также обновляется внутренняя
+            структура данных, представляющая файл.
+
+            Args:
+                name (str): Имя создаваемого элемента.
+                element (str): Тип создаваемого элемента (например, 'folder', 'file').
+        """
         # TODO 🚧 В разработке: 16.10.2025
         # Проверяем наличие tab_widget
         if not self._tab_widget:
@@ -529,6 +570,7 @@ class TreeModelManager(QObject):
             # ✅ Шаблон: создаем В ТОЙ ЖЕ ПАПКЕ что и шаблон
             parent_index = index.parent()
             item_parent = parent_index.internalPointer() if parent_index.isValid() else model.root_item
+
         else:
             # ❌ Неизвестный тип
             print(f"❌ Неподдерживаемый тип элемента: {selected_type}")
