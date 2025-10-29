@@ -891,6 +891,7 @@ class FileEditorWindow(QMainWindow):
         if not ok or not name_template.strip():
             return
         self.tree_model_manager.new_template(name_template)
+
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает указанный файл в соответствующем редакторе.
 
