@@ -1,4 +1,4 @@
-# модуль selection_controller.py
+# модуль selection_controller.py   **ПЕРЕПИСАТЬ**
 
 в модуле реализован класс TreeSelectionController унаследован от класса QObject библиотеки PySide6.QtCore
 Класс TreeSelectionController это контроллер для обработки выделения элементов в дереве.
