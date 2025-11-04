@@ -1,9 +1,11 @@
 # Редактор для .st файлов
+from datetime import time
 from pathlib import Path
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit
 
 from observers.file_watcher import FileWatcher
+from operation.delta_operations import DeltaOperation
 from src.editor.base_editor import BaseFileEditor
 from PySide6.QtCore import Signal, QTimer
 
@@ -279,6 +281,115 @@ class STEditor(BaseFileEditor):
 
         print(f"DEBUG: Определен язык: '{self.language}'")
 
+    def _apply_delta_to_structure(self, delta):
+        # TODO 🚧 В разработке: 03.11.2025 мертвый код
+        # 1. Получаем актуальную структуру из кэша
+        current_structure = self.content_cache.get(self.template_context['file_path'])
+
+        # 2. Находим целевой элемент по пути
+        target_element = self._navigate_to_element(current_structure, delta['element_path'])
+
+        if not target_element:
+            return False
+
+        # 3. Применяем изменение
+        target_element['content'] = delta['new_content']
+
+        # 4. Сериализуем ТОЛЬКО если структура изменилась
+        if current_structure != self.template_context['original_structure']:
+            st_content = self.parser_service.serialize_st_structure(current_structure)
+            self.file_operations.write_file(self.template_context['file_path'], st_content)
+
+        # 5. Обновляем кэш
+        self.content_cache.set(self.template_context['file_path'], current_structure)
+
+        return True
+
+    def _apply_pending_deltas(self):
+        """Применяет все ожидающие дельты к структуре"""
+        # TODO 🚧 В разработке: 04.11.2025
+        if not self.template_context['pending_deltas']:
+            return True  # Нет изменений
+
+        # 1. Получаем актуальную структуру
+        current_structure = self.content_cache.get(self.template_context['file_path'])
+
+        # 2. Применяем каждую дельту
+        for delta in self.template_context['pending_deltas']:
+            success = self._apply_single_delta(current_structure, delta)
+            if not success:
+                return False  # Откатываем если ошибка
+
+        # 3. Сериализуем и сохраняем
+        st_content = self.parser_service.serialize_st_structure(current_structure)
+        success = self.file_operations.write_file(
+            self.template_context['file_path'],
+            st_content
+        )
+
+        if success:
+            # 4. Очищаем очередь и обновляем кэш
+            self.template_context['pending_deltas'].clear()
+            self.content_cache.set(self.template_context['file_path'], current_structure)
+            self.template_context['last_saved_structure'] = current_structure.copy()
+
+        return success
+    def _apply_single_delta(self, structure, delta):
+        """Применяет одну дельту к структуре"""
+
+        # Находим целевой элемент
+        target_element = self._navigate_to_element(structure, delta.element_path)
+        if not target_element:
+            print(f"❌ Не найден элемент по пути: {delta.element_path}")
+            return False
+
+        # Выбираем обработчик в зависимости от операции
+        handlers = {
+            DeltaOperation.UPDATE_CONTENT: self._handle_update_content,
+            DeltaOperation.RENAME: self._handle_rename,
+            DeltaOperation.MOVE: self._handle_move,
+            DeltaOperation.DELETE: self._handle_delete,
+            DeltaOperation.CREATE: self._handle_create
+        }
+
+        handler = handlers.get(delta.operation)
+        if not handler:
+            print(f"❌ Неизвестная операция: {delta.operation}")
+            return False
+
+        return handler(target_element, delta.data)
+
+    def _handle_update_content(self, element, data):
+        """ВАША ОПЕРАЦИЯ - изменение контента шаблона"""
+        element['content'] = data['new_content']
+        return True
+
+    def _handle_rename(self, element, data):
+        """Переименование элемента"""
+        element['name'] = data['new_name']
+        return True
+
+    def _navigate_to_element(self, structure, element_path):
+        """Переходит по пути ['root', 'folder1', 'template'] в структуре"""
+        current = structure
+
+        for step in element_path[1:]:  # Пропускаем 'root'
+            if 'children' not in current:
+                return None
+
+            # Ищем следующий шаг в детях
+            found = None
+            for child in current['children']:
+                if child.get('name') == step:
+                    found = child
+                    break
+
+            if not found:
+                return None
+
+            current = found
+
+        return current
 
     # Реализация undo/redo аналогично MarkdownEditor
     def can_undo(self) -> bool:
@@ -388,7 +499,7 @@ class STEditor(BaseFileEditor):
             self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
             return False
 
-    def save(self) -> bool:
+    def save_old2(self) -> bool:
         """
         Сохраняет содержимое редактора в текущий файл.
         """
@@ -418,6 +529,24 @@ class STEditor(BaseFileEditor):
         except Exception as e:
             self.error_occurred.emit(f"Ошибка сохранения файла: {e}", "error")
             return False
+
+    def save(self):
+        if not self.template_context:
+            return
+
+            # 1. Проверяем, изменился ли контент
+            new_content = self.get_content()
+            if new_content != self.template_context.get('original_content'):
+                # 2. Регистрируем дельту изменения контента
+                self.register_change(
+                    operation=DeltaOperation.UPDATE_CONTENT,
+                    element_path=self.template_context['element_path'],
+                    old_content=self.template_context.get('original_content'),
+                    new_content=new_content
+                )
+
+            # 3. Применяем ВСЕ накопленные дельты
+            return self._apply_pending_deltas()
 
     def save_as(self, new_file_path: Path = None) -> bool:
         """
