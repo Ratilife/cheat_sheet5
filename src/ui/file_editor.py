@@ -427,7 +427,7 @@ class FileEditorWindow(QMainWindow):
             # TODO: 29.09.2025 Реализуйте повтор в конкретных редакторах
             print("DEBUG: Действие 'Повторить'")
 
-    def on_display_content(self, content_type, content,path_file):
+    def on_display_content(self, content_type, content, path_file, metadata=None):
         """Отображает переданный контент в соответствующем редакторе.
 
             Проверяет видимость окна, создает редактор нужного типа с помощью
@@ -465,8 +465,19 @@ class FileEditorWindow(QMainWindow):
             print(f'content_type = {content_type}')
             #print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
 
+            print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
+
+            print(f'content: {content}')
+
             editor.set_content(content)
             editor.file_path = Path(path_file)
+
+            # Сохраняем полный контекст
+            editor.template_context = {'file_path': metadata['path'],
+                                       'template_id': metadata['template_id'],
+                                       'original_structure': metadata['original_structure'],
+                                       'element_path': metadata['element_path']
+                                       }
 
 
             #if content_type == 'markdown':
@@ -516,7 +527,8 @@ class FileEditorWindow(QMainWindow):
 
         if content:
             print('🙋🏻‍♂️ метод on_display_content() запустили через метод on_selection_changed()')
-            self.on_display_content(content_type=item_type, content=content, path_file=file_path)
+            template_context = self.controller.get_template_context(self.tab_widget)
+            #self.on_display_content(content_type=item_type, content=content, path_file=file_path, metadata=template_context)
 
     def _get_content_for_file(self, file_path, content_type):
         """Получает контент файла для отображения"""
