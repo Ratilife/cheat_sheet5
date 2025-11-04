@@ -1,4 +1,4 @@
-
+#selection_controller.py
 from PySide6.QtCore import QObject, Signal, Qt, QModelIndex
 from typing import Optional
 
@@ -13,7 +13,7 @@ class TreeSelectionController(QObject):
 
     # Основные сигналы
     content_for_sidepanel = Signal(str, str, str)  # content_type, content, path_file      запрашиваемый данные
-    content_for_editor = Signal(str, str, str)
+    content_for_editor = Signal(str, str, str, dict) # type, element_content, path, element_info
     selection_changed = Signal(dict)  # metadata: {type, name, path, has_content}                 выбранный параметр изменен
     error_occurred = Signal(str)  # error_message                                                 произошла ошибка
     content_for_element = Signal(str, str, str, dict)  # type, element_content, path, element_info
@@ -170,10 +170,22 @@ class TreeSelectionController(QObject):
             if source_name == "sidepanel":
                 self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
             elif source_name == "editor":
-                self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''))
+                template_context = self.get_template_context()
+                self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''), template_context)
 
         except Exception as e:
             self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
+    def get_template_context(self, tab_widget = None):
+        dict_selection_info = self.get_selection_info(tab_widget)
+        template_name = dict_selection_info['type']
+        file_path = dict_selection_info['path']
+        parent_path = dict_selection_info['parent_name']
+        template_id = f"{file_path}::{parent_path}::{template_name}"
+        template_context = {'file_path': file_path, 'template_id': template_id,
+                            'original_structure': self.content_cache.get('file_path'),
+                            'element_path': self._build_element_path(dict_selection_info)}
+
+        return template_context
 
     def _extract_element_content(self, metadata, item):
         """Извлекает контент только выбранного элемента"""
@@ -195,7 +207,7 @@ class TreeSelectionController(QObject):
 
         return target_element.get('content', '') if target_element else ''
 
-    def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
+    def _extract_content_Вопрос(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
         print(f'item.item_data: {item.item_data}')
         # 1. Пробуем из данных элемента
@@ -206,7 +218,7 @@ class TreeSelectionController(QObject):
 
         # 2. Контент не найден
         return None
-    def _extract_content_Вопрос(self, metadata: dict, item: object) -> Optional[str]:
+    def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
         print(f'item.item_data: {item.item_data}')
         # 1. Пробуем из данных элемента
@@ -226,3 +238,87 @@ class TreeSelectionController(QObject):
         # 3. Контент не найден
         return None
 
+
+    def get_selection_info(self, tab_widget) -> dict | None:
+        """Получает подробную информацию о текущем выделенном элементе"""
+        if not tab_widget:
+            print("DEBUG: Виджет вкладок не установлен")
+            return None
+
+        current_index = tab_widget.currentIndex()
+        if current_index < 0:
+            return None
+
+        tab_name = tab_widget.tabText(current_index)
+        tree_view = tab_widget.widget(current_index)
+
+        if not tree_view:
+            print(f"DEBUG: Не найден tree_view для вкладки '{tab_name}'")
+            return None
+
+        if not tree_view.currentIndex().isValid():
+            print(f"DEBUG: В дереве вкладки '{tab_name}' нет выделенного элемента")
+            return None
+
+        index = tree_view.currentIndex()
+        parent_index = index.parent()
+        model = tree_view.model()
+
+        if not model:
+            print(f"DEBUG: Модель не установлена для tree_view вкладки '{tab_name}'")
+            return None
+
+        # Получаем путь к файлу
+        file_path = None
+        if model.get_item_type(index) in ['file', 'markdown']:
+            file_path = model.get_item_path(index)
+        else:
+            file_root_info = self.get_file_root_from_selection(index)
+            if file_root_info:
+                file_path = file_root_info['path']
+
+        return {
+            'type': model.get_item_type(index),   # тип элемента
+            'path': file_path,                    # путь к элементу
+            'level': model.get_item_level(index), # уровень вложенности элемента в иерархии модели
+            'name': model.data(index, Qt.DisplayRole), # имя модели, где находится элемент
+            'model': model,    # модель, где находится элемент
+            'index': index, # индекс выбранного элемента
+            'parent_index': parent_index,  # индекс родителя
+            'parent_name': model.data(parent_index, Qt.DisplayRole), #  имя родителя
+            'parent_type': model.get_item_type(parent_index) if parent_index.isValid() else 'root',   # Тип родителя
+            'tab_name': tab_name,   # Имя вкладки
+            'tree_view': tree_view  # дерево
+        }
+
+    def get_file_root_from_selection(self, index):
+        """Находит корневой элемент файла по выбранному индексу"""
+        current_index = index
+        model = index.model()
+
+        while current_index.isValid():
+            item_path = model.get_item_path(current_index)
+            if item_path:
+                return {
+                    'index': current_index,
+                    'element': current_index.internalPointer(),
+                    'type': model.get_item_type(current_index),
+                    'name': model.data(current_index, Qt.DisplayRole),
+                    'path': item_path
+                }
+            current_index = current_index.parent()
+        return None
+
+    def _build_element_path(self, selection_info):
+        """Строит путь к элементу в структуре ['root', 'parent', 'element']"""
+        path = ['root']
+
+        # Используем существующую логику поиска родительской иерархии
+        current = selection_info['index']
+        while current.isValid():
+            name = current.data(Qt.DisplayRole)
+            if name:
+                path.insert(1, name)  # Добавляем в начало
+            current = current.parent()
+
+        return path
