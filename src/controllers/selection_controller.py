@@ -2,6 +2,7 @@
 from PySide6.QtCore import QObject, Signal, Qt, QModelIndex
 from typing import Optional
 
+
 from parsers.content_cache import ContentCache
 from tests.managers.working_with_cache import print_all_cache_entries
 
@@ -23,7 +24,10 @@ class TreeSelectionController(QObject):
         self.content_cache = content_cache
         self.current_source = ''  # Добавляем отслеживание источника
         self._connections = {}  # Словарь для хранения соединений
-
+        self._tab_widget = None
+    def set_tab_widget(self, tab_widget):
+        """Устанавливает tab_widget для внутреннего использования"""
+        self._tab_widget = tab_widget
     def connect_tree_view(self, tree_view, source_name):
         """Подключает контроллер к дереву"""
         self.current_source = source_name  # Запоминаем источник
@@ -157,6 +161,8 @@ class TreeSelectionController(QObject):
             # 1. Извлекаем контент
 
             content = self._extract_content(metadata, item)
+
+            print(f'✅️✅️метод _process_content() content: {content} ✅️✅️')
             if content is None:
                 self.error_occurred.emit(f"Контент недоступен для {metadata['name']}")
                 return
@@ -165,17 +171,21 @@ class TreeSelectionController(QObject):
             if source_name not in ['sidepanel', 'editor']:
                 self.error_occurred.emit(f"Неизвестный источник: {source_name}")
                 return
-
+            print("Я тут был!!!")
+            print(f'source_name: {source_name}')
             # 3. Отправка в соответствующий сигнал
             if source_name == "sidepanel":
                 self.content_for_sidepanel.emit(metadata['type'], content, metadata.get('path', ''))
             elif source_name == "editor":
-                template_context = self.get_template_context()
+                print('И тут был замечен')
+                print(f'👍👍👍content2 : {content}')
+
+                template_context = self.get_template_context(self._tab_widget)
                 self.content_for_editor.emit(metadata['type'], content, metadata.get('path', ''), template_context)
 
         except Exception as e:
             self.error_occurred.emit(f"Ошибка обработки контента: {str(e)}")
-    def get_template_context(self, tab_widget = None):
+    def get_template_context(self, tab_widget):
         dict_selection_info = self.get_selection_info(tab_widget)
         template_name = dict_selection_info['type']
         file_path = dict_selection_info['path']
