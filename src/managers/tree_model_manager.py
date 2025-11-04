@@ -153,6 +153,10 @@ class TreeModelManager(QObject):
         """Устанавливает локальный виджет вкладок для этого менеджера"""
         # ✅ Реализовано: 17.09.2025
         self._tab_widget = tab_widget
+        self.selection_controller.set_tab_widget(tab_widget)
+
+    def get_tab_widget(self):
+        return self._tab_widget
 
 
     def get_active_tab_name(self) -> str | None:
