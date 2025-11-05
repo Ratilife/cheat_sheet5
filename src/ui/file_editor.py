@@ -472,15 +472,18 @@ class FileEditorWindow(QMainWindow):
             editor.set_content(content)
             editor.file_path = Path(path_file)
 
-            # Сохраняем полный контекст
-            template_context = {
+            # Сохраняем полный контекст - ОБНОВЛЯЕМ, а не перезаписываем
+            if not hasattr(editor, 'template_context') or editor.template_context is None:
+                editor.template_context = {}
+
+            # Обновляем только нужные поля, сохраняя остальные
+            editor.template_context.update({
                 'file_path': metadata.get('file_path') if metadata else None,
                 'template_id': metadata.get('template_id') if metadata else None,
                 'original_structure': metadata.get('original_structure') if metadata else None,
-                'element_path': metadata.get('element_path') if metadata else []
-            }
-
-            editor.template_context = template_context
+                'element_path': metadata.get('element_path') if metadata else [],
+                'original_content': content  # ⬅️ тоже важно добавить!
+            })
 
 
             #if content_type == 'markdown':

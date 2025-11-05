@@ -5,7 +5,7 @@ from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit
 
 from observers.file_watcher import FileWatcher
-from operation.delta_operations import DeltaOperation
+from operation.delta_operations import DeltaOperation, Delta
 from src.editor.base_editor import BaseFileEditor
 from PySide6.QtCore import Signal, QTimer
 
@@ -39,6 +39,15 @@ class STEditor(BaseFileEditor):
         self._state_save_timer.setSingleShot(True) # Установка таймера как одноразового (он сработает только один раз после запуска)
         self._state_save_timer.timeout.connect(self.save_state) # Подключение сигнала timeout таймера к методу save_state
 
+        self.template_context = {
+                 'file_path': None,          # Путь к элементу модели дерева (файл), он же ключ к структуре элемента в кэш
+                 'template_id': None,        # определение шаблона, куда вносим данные.
+                 'original_structure': None, # данные из кэш, полная структуда,
+                 'original_content': None,   # контекст из кэш
+                 'element_path': [],         # что нужно вставить в структуру
+                 'pending_deltas': [],  # ⬅️ ОЧЕРЕДЬ НЕСОХРАНЕННЫХ ИЗМЕНЕНИЙ
+                 'last_saved_structure': None  # ⬅️ СТРУКТУРА НА МОМЕНТ ПОСЛЕДНЕГО СОХРАНЕНИЯ
+             }
 
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
@@ -283,7 +292,7 @@ class STEditor(BaseFileEditor):
 
         print(f"DEBUG: Определен язык: '{self.language}'")
 
-    def _apply_delta_to_structure(self, delta):
+    '''def _apply_delta_to_structure(self, delta):
         # TODO 🚧 В разработке: 03.11.2025 мертвый код
         # 1. Получаем актуальную структуру из кэша
         current_structure = self.content_cache.get(self.template_context['file_path'])
@@ -305,7 +314,7 @@ class STEditor(BaseFileEditor):
         # 5. Обновляем кэш
         self.content_cache.set(self.template_context['file_path'], current_structure)
 
-        return True
+        return True'''
 
     def _apply_pending_deltas(self):
         """Применяет все ожидающие дельты к структуре"""
@@ -323,7 +332,7 @@ class STEditor(BaseFileEditor):
                 return False  # Откатываем если ошибка
 
         # 3. Сериализуем и сохраняем
-        st_content = self.parser_service.serialize_st_structure(current_structure)
+        '''st_content = self.parser_service.serialize_st_structure(current_structure)
         success = self.file_operations.write_file(
             self.template_context['file_path'],
             st_content
@@ -333,9 +342,9 @@ class STEditor(BaseFileEditor):
             # 4. Очищаем очередь и обновляем кэш
             self.template_context['pending_deltas'].clear()
             self.content_cache.set(self.template_context['file_path'], current_structure)
-            self.template_context['last_saved_structure'] = current_structure.copy()
+            self.template_context['last_saved_structure'] = current_structure.copy()'''
 
-        return success
+        return None #success
     def _apply_single_delta(self, structure, delta):
         """Применяет одну дельту к структуре"""
 
@@ -344,6 +353,8 @@ class STEditor(BaseFileEditor):
         if not target_element:
             print(f"❌ Не найден элемент по пути: {delta.element_path}")
             return False
+        else:
+            print(f'target_element:  {target_element}')
 
         # Выбираем обработчик в зависимости от операции
         handlers = {
@@ -374,7 +385,8 @@ class STEditor(BaseFileEditor):
     def _navigate_to_element(self, structure, element_path):
         """Переходит по пути ['root', 'folder1', 'template'] в структуре"""
         current = structure
-
+        print(f'🔮🔮🔮зашли в метод _navigate_to_element() смотрим содержимое параметра structure: {structure}')
+        print(f'element_path : {element_path}')
         for step in element_path[1:]:  # Пропускаем 'root'
             if 'children' not in current:
                 return None
@@ -434,6 +446,14 @@ class STEditor(BaseFileEditor):
         except Exception as e:
             print(f"Ошибка отмены: {e}")
             return False
+
+    def register_change(self, operation, element_path, **data):
+        """Регистрирует любое изменение в очереди дельт"""
+        delta = Delta(operation, element_path, **data)
+        self.template_context['pending_deltas'].append(delta)
+
+        # Автоматически помечаем как измененный
+        self.is_modified = True
 
     def redo(self) -> bool:
         """Повторяет последнее отменённое действие редактирования текста.
@@ -539,6 +559,7 @@ class STEditor(BaseFileEditor):
         print(f'self.template_context из метода save: {self.template_context}')
         # 1. Проверяем, изменился ли контент
         new_content = self.get_content()
+        print(f'new_content: {new_content}')
         if new_content != self.template_context.get('original_content'):
             # 2. Регистрируем дельту изменения контента
             self.register_change(
