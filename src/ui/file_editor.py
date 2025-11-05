@@ -455,7 +455,7 @@ class FileEditorWindow(QMainWindow):
 
         try:
             print("👍 Работает метод on_display_content()")
-            # 1. Создаем appropriate редактор через фабрику
+            # 1. Создаем подходящий редактор через фабрику
             editor = EditorFactory.create_editor_for_type(content_type, self)
 
             if editor is None:
@@ -465,7 +465,7 @@ class FileEditorWindow(QMainWindow):
             print(f'content_type = {content_type}')
             #print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
 
-            print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
+            #print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
 
             print(f'content: {content}')
 
@@ -473,11 +473,16 @@ class FileEditorWindow(QMainWindow):
             editor.file_path = Path(path_file)
 
             # Сохраняем полный контекст
-            editor.template_context = {'file_path': metadata['path'],
-                                       'template_id': metadata['template_id'],
-                                       'original_structure': metadata['original_structure'],
-                                       'element_path': metadata['element_path']
-                                       }
+            template_context = {
+                'file_path': metadata.get('path') if metadata else None,
+                'template_id': metadata.get('template_id') if metadata else None,
+                'original_structure': metadata.get('original_structure') if metadata else None,
+                'element_path': metadata.get('element_path') if metadata else [],
+                'pending_deltas': [],
+                'last_saved_structure': None
+            }
+
+            editor.template_context = template_context
 
 
             #if content_type == 'markdown':
@@ -660,6 +665,49 @@ class FileEditorWindow(QMainWindow):
             self._update_toolbar_actions(editor.get_available_actions()) # TODO - ошибка тут: Ошибка возникает в методе _update_toolbar_actions при попытке очистить панель инструментов, которая уже была удалена. Проблема в том, что при смене редакторов вы пытаетесь обновить панель инструментов, но к этому моменту виджеты могут быть уже уничтожены.
         else:
             self._update_toolbar_actions([])  # Пустой список по умолчанию
+
+    def _set_current_editor_old3(self, editor: BaseFileEditor):
+        """Заменяет текущий редактор в пользовательском интерфейсе"""
+
+        # 1. Удаляем старый редактор
+        if hasattr(self, 'current_editor') and self.current_editor:
+            try:
+                # Отключаем сигналы
+                self.current_editor.modification_changed.disconnect()
+                self.current_editor.undo_available.disconnect()
+                self.current_editor.redo_available.disconnect()
+            except:
+                pass
+
+            # Удаляем виджет
+            old_editor_widget = self.current_editor.get_editor_widget()
+            if old_editor_widget:
+                self.editor_layout.removeWidget(old_editor_widget)
+                old_editor_widget.setParent(None)
+                old_editor_widget.deleteLater()
+
+        # 2. Сохраняем новый редактор
+        self.current_editor = editor
+
+        # 3. Добавляем новый редактор в layout
+        editor_widget = editor.get_editor_widget()
+        if editor_widget:
+            editor_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.editor_layout.addWidget(editor_widget)
+
+            # 4. Показываем виджет
+            editor_widget.show()
+
+        # 5. Подключаем сигналы
+        editor.modification_changed.connect(self._on_editor_modified)
+        if hasattr(editor, 'undo_available'):
+            editor.undo_available.connect(self._on_undo_available)
+        if hasattr(editor, 'redo_available'):
+            editor.redo_available.connect(self._on_redo_available)
+
+        # 6. Обновляем UI
+        self._update_window_title(editor.is_modified)
+        self._on_editor_modified(editor.is_modified)
 
     def _update_window_title(self, is_modified: bool):
         """
