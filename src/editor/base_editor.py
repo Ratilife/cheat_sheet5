@@ -39,7 +39,7 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         self._redo_stack = []  # Стек для повтора
         self._current_state = ""  # Текущее состояние
 
-        self.template_context = {
+        '''self.template_context = {
             'file_path': None,          # Путь к элементу модели дерева (файл), он же ключ к структуре элемента в кэш
             'template_id': None,        # определение шаблона, куда вносим данные.
             'original_structure': None, # данные из кэш, полная структуда,
@@ -47,7 +47,7 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
             'element_path': [],         # что нужно вставить в структуру
             'pending_deltas': [],  # ⬅️ ОЧЕРЕДЬ НЕСОХРАНЕННЫХ ИЗМЕНЕНИЙ
             'last_saved_structure': None  # ⬅️ СТРУКТУРА НА МОМЕНТ ПОСЛЕДНЕГО СОХРАНЕНИЯ
-        }
+        }'''
 
     @abstractmethod
     def can_undo(self) -> bool:
@@ -193,10 +193,3 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
         self.undo_available.emit(False)
         self.redo_available.emit(False)
 
-    def register_change(self, operation, element_path, **data):
-        """Регистрирует любое изменение в очереди дельт"""
-        delta = Delta(operation, element_path, **data)
-        self.template_context['pending_deltas'].append(delta)
-
-        # Автоматически помечаем как измененный
-        self.is_modified = True
