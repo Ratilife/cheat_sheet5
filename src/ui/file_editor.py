@@ -465,21 +465,19 @@ class FileEditorWindow(QMainWindow):
             print(f'content_type = {content_type}')
             #print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
 
-            #print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
+            print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
 
-            print(f'content: {content}')
+            #print(f'content: {content}')
 
             editor.set_content(content)
             editor.file_path = Path(path_file)
 
             # Сохраняем полный контекст
             template_context = {
-                'file_path': metadata.get('path') if metadata else None,
+                'file_path': metadata.get('file_path') if metadata else None,
                 'template_id': metadata.get('template_id') if metadata else None,
                 'original_structure': metadata.get('original_structure') if metadata else None,
-                'element_path': metadata.get('element_path') if metadata else [],
-                'pending_deltas': [],
-                'last_saved_structure': None
+                'element_path': metadata.get('element_path') if metadata else []
             }
 
             editor.template_context = template_context
@@ -533,7 +531,8 @@ class FileEditorWindow(QMainWindow):
         if content:
             print('🙋🏻‍♂️ метод on_display_content() запустили через метод on_selection_changed()')
             template_context = self.controller.get_template_context(self.tab_widget)
-            #self.on_display_content(content_type=item_type, content=content, path_file=file_path, metadata=template_context)
+            print(f'👻👻 Я печатаю на стороне метода on_selection_changed содержание переменной template_context : {template_context} 👻👻')
+            self.on_display_content(content_type=item_type, content=content, path_file=file_path, metadata=template_context)
 
     def _get_content_for_file(self, file_path, content_type):
         """Получает контент файла для отображения"""
