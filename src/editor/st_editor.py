@@ -39,6 +39,7 @@ class STEditor(BaseFileEditor):
         self._state_save_timer.setSingleShot(True) # Установка таймера как одноразового (он сработает только один раз после запуска)
         self._state_save_timer.timeout.connect(self.save_state) # Подключение сигнала timeout таймера к методу save_state
 
+
     def _init_ui(self) -> None:
         """Инициализация пользовательского интерфейса"""
         # Основной layout
@@ -58,6 +59,7 @@ class STEditor(BaseFileEditor):
 
         # Устанавливаем layout
         self.setLayout(layout)                  # Установка созданного слоя как основного слоя для текущего виджета
+
 
     def _setup_connections(self) -> None:
         """Настройка сигналов и соединений"""
@@ -312,7 +314,7 @@ class STEditor(BaseFileEditor):
             return True  # Нет изменений
 
         # 1. Получаем актуальную структуру
-        current_structure = self.content_cache.get(self.template_context['file_path'])
+        current_structure = self.template_context['original_structure']
 
         # 2. Применяем каждую дельту
         for delta in self.template_context['pending_deltas']:
@@ -534,19 +536,20 @@ class STEditor(BaseFileEditor):
         if not self.template_context:
             return
 
-            # 1. Проверяем, изменился ли контент
-            new_content = self.get_content()
-            if new_content != self.template_context.get('original_content'):
-                # 2. Регистрируем дельту изменения контента
-                self.register_change(
-                    operation=DeltaOperation.UPDATE_CONTENT,
-                    element_path=self.template_context['element_path'],
-                    old_content=self.template_context.get('original_content'),
-                    new_content=new_content
+        print(f'self.template_context из метода save: {self.template_context}')
+        # 1. Проверяем, изменился ли контент
+        new_content = self.get_content()
+        if new_content != self.template_context.get('original_content'):
+            # 2. Регистрируем дельту изменения контента
+            self.register_change(
+                operation=DeltaOperation.UPDATE_CONTENT,
+                element_path=self.template_context['element_path'],
+                old_content=self.template_context.get('original_content'),
+                new_content=new_content
                 )
 
-            # 3. Применяем ВСЕ накопленные дельты
-            return self._apply_pending_deltas()
+        # 3. Применяем ВСЕ накопленные дельты
+        return self._apply_pending_deltas()
 
     def save_as(self, new_file_path: Path = None) -> bool:
         """
