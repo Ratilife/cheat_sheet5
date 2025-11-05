@@ -192,7 +192,7 @@ class TreeSelectionController(QObject):
         parent_path = dict_selection_info['parent_name']
         template_id = f"{file_path}::{parent_path}::{template_name}"
         template_context = {'file_path': file_path, 'template_id': template_id,
-                            'original_structure': self.content_cache.get('file_path'),
+                            'original_structure': self.content_cache.get(file_path),
                             'element_path': self._build_element_path(dict_selection_info)}
 
         return template_context
@@ -230,6 +230,7 @@ class TreeSelectionController(QObject):
         return None
     def _extract_content(self, metadata: dict, item: object) -> Optional[str]:
         """Извлекает контент из различных источников"""
+        print("⭐⭐⭐⭐⭐зашел в метод _extract_content()⭐⭐⭐⭐⭐")
         print(f'item.item_data: {item.item_data}')
         # 1. Пробуем из данных элемента
         if len(item.item_data) > 2 and item.item_data[2]:
@@ -243,9 +244,23 @@ class TreeSelectionController(QObject):
             print(f'🤭 2. Пробуем из кэша (если есть путь) через метод _extract_content(): {cached_data}')
 
             if cached_data:
-                return cached_data.get('content', '') if isinstance(cached_data, dict) else str(cached_data)
+                print("👅 Контент найден 👅")
+                if isinstance(cached_data, tuple) and len(cached_data) > 1:
+                    # Берем второй элемент кортежа (словарь структуры)
+                    structure_dict = cached_data[1]
+                    if isinstance(structure_dict, dict):
+                        return structure_dict.get('content', 'пусто')
+
+                    # Оригинальная логика для словарей
+                elif isinstance(cached_data, dict):
+                    return cached_data.get('content', '')
+
+                    # Для других типов
+                else:
+                    return str(cached_data)
 
         # 3. Контент не найден
+        print("⭐⭐⭐⭐⭐Контент не найден⭐⭐⭐⭐⭐")
         return None
 
 
