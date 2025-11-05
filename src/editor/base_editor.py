@@ -43,6 +43,7 @@ class BaseFileEditor(QWidget, ABC, metaclass=Meta):
             'file_path': None,          # Путь к элементу модели дерева (файл), он же ключ к структуре элемента в кэш
             'template_id': None,        # определение шаблона, куда вносим данные.
             'original_structure': None, # данные из кэш, полная структуда,
+            'original_content': None,   # контекст из кэш
             'element_path': [],         # что нужно вставить в структуру
             'pending_deltas': [],  # ⬅️ ОЧЕРЕДЬ НЕСОХРАНЕННЫХ ИЗМЕНЕНИЙ
             'last_saved_structure': None  # ⬅️ СТРУКТУРА НА МОМЕНТ ПОСЛЕДНЕГО СОХРАНЕНИЯ
