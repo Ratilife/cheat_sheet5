@@ -1,5 +1,7 @@
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal, Qt
 from PySide6.QtWidgets import QTabWidget
+
+from operation.delta_operations import DeltaOperation
 from src.models.st_md_file_tree_model import STMDFileTreeModel
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.file_parser_service import FileParserService
@@ -8,6 +10,7 @@ from src.controllers.selection_controller import TreeSelectionController
 from src.operation.file_operations import FileOperations
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
+    request_active_editor = Signal()  # file_path, content_type
     def __init__(self, parser_service: FileParserService,
                  metadata_cache: MetadataCache,
                  content_cache:ContentCache,
@@ -25,6 +28,9 @@ class TreeModelManager(QObject):
         self.parser_service = parser_service
         self.metadata_cache = metadata_cache
         self.content_cache = content_cache
+        self._active_editor = None
+        # Подключаем обработчик ответа
+        self.request_active_editor.connect(self._on_request_active_editor)
 
 
 
@@ -408,6 +414,45 @@ class TreeModelManager(QObject):
             else:
                 print(f"❌ Не удалось создать папку '{name}'")
 
+    def _get_active_editor(self):
+        """Получает ссылку на активный редактор через различные способы"""
+
+        # Сначала проверяем локальную ссылку
+        if self._active_editor:
+            return self._active_editor
+
+        # Если нет локальной ссылки, запрашиваем через сигнал
+        editor = self._get_editor_via_signal()
+        if editor:
+            self._active_editor = editor  # Кэшируем на будущее
+            return editor
+
+        print("DEBUG: Не удалось получить активный редактор")
+        return None
+
+    def _get_editor_via_signal(self):
+        """Использует сигналы для получения редактора"""
+        # Эмитируем сигнал запроса
+        self.request_active_editor.emit()
+        # Возвращаем кэшированное значение (будет установлено в _on_request_active_editor)
+        return self._active_editor
+
+    def _on_request_active_editor(self):
+        """Обработчик сигнала запроса редактора"""
+        # Этот метод будет переопределен в FileEditorWindow
+        # для установки активного редактора
+        pass
+
+    def set_active_editor(self, editor):
+        """Устанавливает активный редактор (вызывается из FileEditorWindow)"""
+        self._active_editor = editor
+        print(f"DEBUG: Активный редактор установлен: {editor}")
+
+    def clear_active_editor(self):
+        """Очищает ссылку на активный редактор"""
+        self._active_editor = None
+        print("DEBUG: Ссылка на активный редактор очищена")
+
     def _find_parent_in_structure(self, info_item_dict: dict, element_dict:dict):
         # TODO 🚧 В разработке: 17.10.2025
         print("🔥🔥🔥🔥Заходим в кэш чтобы найти нужную структуру метод _find_parent_in_structure()🔥🔥🔥🔥")
@@ -535,6 +580,7 @@ class TreeModelManager(QObject):
         """Создает новую папку на основе выбранного элемента"""
         # TODO 🚧 В разработке: 14.10.2025
         self.creating_an_element(name_folder,'folder')
+        self.create_folder(name_folder)
 
 
     def get_structure_to_st_file(self, model, index):
@@ -542,3 +588,50 @@ class TreeModelManager(QObject):
         # 1) Изменяем текущую структуру модели дерева в структуру st-файла
         file_structure = self.parser_service.serialize_st_structure(model, index)
         return file_structure
+
+    def rename_element(self, new_name):
+        """Вызывается когда пользователь переименовал элемент в дереве"""
+        selection_info = self.get_selection_info()
+        if not selection_info:
+            return False
+
+        # Регистрируем дельту переименования
+        editor = self._get_active_editor()  # Нужно получить ссылку на редактор
+        if editor:
+            editor.register_change(
+                operation=DeltaOperation.RENAME,
+                element_path=selection_info['element_path'],
+                old_name=selection_info['name'],
+                new_name=new_name
+            )
+
+    def delete_element(self):
+        """Вызывается когда пользователь удалил элемент в дереве"""
+        selection_info = self.get_selection_info()
+        if not selection_info:
+            return False
+
+        editor = self._get_active_editor()  # TODO 06.11.2025 нужно создать метод self._get_active_editor()
+        if editor:
+            editor.register_change(
+                operation=DeltaOperation.DELETE,
+                element_path=selection_info['element_path']
+            )
+
+    def create_folder(self, name):
+        selection_info = self.get_selection_info()
+        if not selection_info:
+            return False
+        editor = self._get_active_editor()  # Нужно получить ссылку на редактор
+        print(f'нахожусь в методе create_folder(), переменная selection_info = {selection_info}')
+
+
+        if editor:
+            current_structure = self.content_cache.get(selection_info['path'])
+            print(f'current_structure: {current_structure}')
+            '''editor.register_change(
+                operation=DeltaOperation.RENAME,
+                element_path=selection_info['element_path'],
+                name=name,
+                current_structure=current_structure
+            )'''
