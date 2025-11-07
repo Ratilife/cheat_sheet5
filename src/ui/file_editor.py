@@ -158,6 +158,14 @@ class FileEditorWindow(QMainWindow):
 
         self.toolbar_to_tree_layout = self.toolbar_manager.get_above_tree_toolbar_editor()
 
+        # Подключаем обработчик запроса активного редактора
+        self.tree_model_manager.request_active_editor.disconnect()
+        self.tree_model_manager.request_active_editor.connect(self._provide_active_editor)
+
+        # Устанавливаем текущий редактор как активный
+        if hasattr(self, 'current_editor'):
+            self.tree_model_manager.set_active_editor(self.current_editor)
+
         # Получаем ВСЕ модели из менеджера
         self.all_models = tree_model_manager.get_model()  # Это словарь {tab_name: model}
 
@@ -194,6 +202,12 @@ class FileEditorWindow(QMainWindow):
 
         self._init_ui()
 
+    def _provide_active_editor(self):
+        """Предоставляет активный редактор по запросу TreeModelManager"""
+        if hasattr(self, 'current_editor') and self.current_editor:
+            self.tree_model_manager.set_active_editor(self.current_editor)
+        else:
+            self.tree_model_manager.clear_active_editor()
 
     def _connect_selection_signals(self):
         """Подключает сигналы контроллера выделения"""
@@ -646,22 +660,26 @@ class FileEditorWindow(QMainWindow):
         # 2. Сохраняем ссылку на новый редактор
         self.current_editor = editor
 
-        # 3. Добавляем виджет нового редактора в layout
+        # 3. Обновляем активный редактор в менеджере
+        if self.tree_model_manager:
+            self.tree_model_manager.set_active_editor(editor)
+
+        # 4. Добавляем виджет нового редактора в layout
         editor_widget = editor.get_editor_widget()
         self.editor_layout.addWidget(editor_widget)
 
-        # 4. Подключаем сигналы нового редактора
+        # 5. Подключаем сигналы нового редактора
         editor.modification_changed.connect(self._on_editor_modified)
         editor.undo_available.connect(self._on_undo_available)
         editor.redo_available.connect(self._on_redo_available)
         # Можно подключить другие сигналы: error_occurred, validation_finished
 
-        # 4. Обновляем состояние кнопок
+        # 6. Обновляем состояние кнопок
         self._on_editor_modified(editor.is_modified)
         self._on_undo_available(editor.can_undo())
         self._on_redo_available(editor.can_redo())
 
-        # 5. Обновляем UI в соответствии с состоянием нового редактора
+        # 7. Обновляем UI в соответствии с состоянием нового редактора
         self._update_window_title(editor.is_modified)
         if hasattr(editor, 'get_available_actions'):
             self._update_toolbar_actions(editor.get_available_actions()) # TODO - ошибка тут: Ошибка возникает в методе _update_toolbar_actions при попытке очистить панель инструментов, которая уже была удалена. Проблема в том, что при смене редакторов вы пытаетесь обновить панель инструментов, но к этому моменту виджеты могут быть уже уничтожены.
