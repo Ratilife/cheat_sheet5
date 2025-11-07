@@ -10,7 +10,7 @@ from src.controllers.selection_controller import TreeSelectionController
 from src.operation.file_operations import FileOperations
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
-    request_active_editor = Signal()  # file_path, content_type
+    request_active_editor = Signal()
     def __init__(self, parser_service: FileParserService,
                  metadata_cache: MetadataCache,
                  content_cache:ContentCache,
