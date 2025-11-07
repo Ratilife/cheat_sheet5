@@ -967,10 +967,12 @@ class FileEditorWindow(QMainWindow):
 
     def _handle_new_template(self):
         # TODO 🚧 В разработке: 14.10.2025
+        print('Зашли в метод _handle_new_template() класс FileEditorWindow')
         name_template, ok = QInputDialog.getText(self, "Имя шаблона", "Введите имя шаблона:")
         if not ok or not name_template.strip():
             return
         self.tree_model_manager.new_template(name_template)
+        print('вышли из метода _handle_new_template() класс FileEditorWindow')
 
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает указанный файл в соответствующем редакторе.

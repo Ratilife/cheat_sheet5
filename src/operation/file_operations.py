@@ -472,7 +472,7 @@ class FileOperations:
 
     def add_data_st_structure(self, data: tuple, new_element):
         # TODO 🚧 В разработке: 17.10.2025
-
+        print('Зашли в метод add_data_st_structure() класс FileOperation')
         # Количество элементов в кортеже
         name = ''
         structure = None
@@ -505,8 +505,7 @@ class FileOperations:
             element_type = data[2]  # переименовано
             insert = None  # для кортежа из 3 элементов insert не определен
 
-        print(
-            f"🔍 DEBUG: type='{element_type}', structure type={type(structure)}, insert type={type(insert) if insert else 'None'}")
+        print(f"🔍 DEBUG: type='{element_type}', structure type={type(structure)}, insert type={type(insert) if insert else 'None'}")
 
         if element_type in ['folder', 'template']:  # переименовано
             # Добавляем в детей родительского элемента
@@ -524,6 +523,7 @@ class FileOperations:
                     print(f'🟢 template добавлен в children: {new_template}')
                 else:
                     print(f'❌ Не могу добавить шаблон: insert={insert}')
+            print('Выход из метода add_data_st_structure() класс FileOperation')
             return structure
 
         elif element_type == 'file':  # переименовано
@@ -556,11 +556,12 @@ class FileOperations:
                     print(f'🟢 template добавлен в structure: {new_template}')
                 else:
                     print(f'❌ Неизвестный тип structure: {type(structure)}')
-
+            print('Выход из метода add_data_st_structure() класс FileOperation')
             return structure
 
         else:
             print(f"❌ Неизвестный тип: {element_type}")  # переименовано
+            print('Выход из метода add_data_st_structure() класс FileOperation')
             return structure
 
 

@@ -479,6 +479,7 @@ class TreeModelManager(QObject):
                 print(f"✅ Файл {file_path} успешно обновлен")
             else:
                 print(f"❌ Ошибка записи файла {file_path}")
+            print('Вышел из метода _find_parent_in_structure() из класса TreeModelManager')
 
 
     def creating_an_element(self, name, element) -> None:
@@ -500,6 +501,7 @@ class TreeModelManager(QObject):
         """
         # TODO 🚧 В разработке: 16.10.2025
         # Проверяем наличие tab_widget
+        print('Зашли в метод creating_an_element() класс TreeModelManager')
         if not self._tab_widget:
             print("❌ Tab widget не установлен в менеджере")
             return
@@ -570,11 +572,14 @@ class TreeModelManager(QObject):
             #current_structure = self.content_cache.get(str(file_path))
             #print(current_structure)
             self._find_parent_in_structure(info_item_dict, element_dict)
+            print('Вышел из метода creating_an_element() класс TreeModelManager')
 
     def new_template(self, name_template) -> None:
         """Создает новый шаблон на основе выбранного элемента"""
         # TODO 🚧 В разработке: 14.10.2025
+        print('Зашли в метод new_template() класс TreeModelManager')
         self.creating_an_element(name_template, 'template')
+        print('вышли из метода new_template класс TreeModelManager')
 
     def new_folder(self, name_folder):
         """Создает новую папку на основе выбранного элемента"""
