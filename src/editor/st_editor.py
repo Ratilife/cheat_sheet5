@@ -296,29 +296,7 @@ class STEditor(BaseFileEditor):
 
         print(f"DEBUG: Определен язык: '{self.language}'")
 
-    '''def _apply_delta_to_structure(self, delta):
-        # TODO 🚧 В разработке: 03.11.2025 мертвый код
-        # 1. Получаем актуальную структуру из кэша
-        current_structure = self.content_cache.get(self.template_context['file_path'])
 
-        # 2. Находим целевой элемент по пути
-        target_element = self._navigate_to_element(current_structure, delta['element_path'])
-
-        if not target_element:
-            return False
-
-        # 3. Применяем изменение
-        target_element['content'] = delta['new_content']
-
-        # 4. Сериализуем ТОЛЬКО если структура изменилась
-        if current_structure != self.template_context['original_structure']:
-            st_content = self.parser_service.serialize_st_structure(current_structure)
-            self.file_operations.write_file(self.template_context['file_path'], st_content)
-
-        # 5. Обновляем кэш
-        self.content_cache.set(self.template_context['file_path'], current_structure)
-
-        return True'''
 
     def _apply_pending_deltas(self):
         """Применяет все ожидающие дельты к структуре"""
