@@ -8,6 +8,8 @@ from src.managers.file_manager import FileManager
 from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
 from pathlib import Path
+from src.parsers.file_parser_service import FileParserService
+from parsers.content_cache import ContentCache
 
 
 class FileOperations:
@@ -178,7 +180,13 @@ class FileOperations:
         base_template = self._get_st_base(name_file)
         # 3. Запись на диск
         file_created = self.file_manager.write_file(file_path,base_template)
-        # 4. Возврат пути
+        # 4. Формирование структуры для кэш
+        parser = FileParserService()
+        structure = parser.parse_and_get_type(file_path)
+        # 5. Запись структуры в кэш
+        content_cache = ContentCache()
+        content_cache.set(file_path,structure)
+        # 6. Возврат пути
         if file_created:
             return file_path
         else:
