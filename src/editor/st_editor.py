@@ -348,7 +348,7 @@ class STEditor(BaseFileEditor):
             self.template_context['pending_deltas'].clear()
             self.content_cache = ContentCache()
             self.content_cache.set(self.template_context['file_path'], current_structure)
-            self.template_context['last_saved_structure'] = current_structure.copy()
+            self.template_context['last_saved_structure'] = current_structure
 
         return success
 
