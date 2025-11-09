@@ -620,17 +620,18 @@ class TreeModelManager(QObject):
         # Получаем метаданные и активный редактор
         metadata = self.selection_controller.get_template_context(self._tab_widget)
         editor = self._get_active_editor()
-
+        print(f'📞 metadata : {metadata}')
         if not editor:
             print("❌ Не найден активный редактор")
             return False
-        dp = DeltaProcessor()
+        self.dp = DeltaProcessor()
         # Обновляем контекст редактора
         template_context ={
             'file_path': metadata.get('file_path') if metadata else None,
             'template_id': metadata.get('template_id') if metadata else None,
             'original_structure': metadata.get('original_structure') if metadata else None,
             'element_path': metadata.get('element_path') if metadata else [],
+            'pending_deltas': [],
         }
 
         # Получаем полные данные элемента для отмены
@@ -640,20 +641,23 @@ class TreeModelManager(QObject):
             return False
 
         # Регистрируем дельту удаления
-        editor.register_change(
+        delta = self.dp.register_change(
             operation=DeltaOperation.DELETE,
-            element_path=selection_info['element_path'],
+            element_path=template_context['element_path'],
             element_type=selection_info['type'],
             element_name=selection_info['name'],
+            structure= template_context['original_structure'],
             element_data=element_data  # Сохраняем полные данные для возможной отмены
         )
 
         # Немедленно применяем дельты (удаление обычно требует немедленного действия)
-
-        success = dp.apply_pending_deltas(template_context)
+        template_context['pending_deltas'].append(delta)
+        print(f'template_context: {template_context}')
+        success = self.dp.apply_pending_deltas(template_context)
 
         if success:
             print(f"✅ Элемент '{selection_info['name']}' успешно удален")
+
         else:
             print(f"❌ Ошибка при удалении элемента '{selection_info['name']}'")
 
@@ -676,7 +680,7 @@ class TreeModelManager(QObject):
                 return None
 
             # Находим элемент в структуре
-            element = self._find_element_in_structure(structure, element_path)
+            element = self.dp.navigate_to_element_tuple(structure, element_path)
             print(f'element: {element}')
             if element:
                 return {
