@@ -983,6 +983,7 @@ class FileEditorWindow(QMainWindow):
         if not selection_info:
             return
         if selection_info['type'] == 'file':
+            # сюда добавить логику по удалению непосредственно файла
             return
         # Выполняем удаление через TreeModelManager
         success = self.tree_model_manager.delete_element()

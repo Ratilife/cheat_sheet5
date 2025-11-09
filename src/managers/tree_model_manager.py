@@ -617,10 +617,7 @@ class TreeModelManager(QObject):
         if not selection_info:
             return False
 
-        #  ✅ СНАЧАЛА УДАЛЯЕМ ИЗ МОДЕЛИ (чтобы пользователь сразу видел изменения)
-        model_success = self.delete_element_from_model(selection_info)
-        if not model_success:
-            return False
+
 
         # Получаем метаданные и активный редактор
         metadata = self.selection_controller.get_template_context(self._tab_widget)
@@ -655,6 +652,11 @@ class TreeModelManager(QObject):
             element_data=element_data  # Сохраняем полные данные для возможной отмены
         )
 
+        #  ✅ Удаляем из модели (визуальное обновление)
+        model_success = self.delete_element_from_model(selection_info)
+        if not model_success:
+            return False
+
         # Немедленно применяем дельты (удаление обычно требует немедленного действия)
         template_context['pending_deltas'].append(delta)
         print(f'template_context: {template_context}')
@@ -672,6 +674,12 @@ class TreeModelManager(QObject):
         """Получает полные данные элемента для возможности отмены удаления"""
         try:
             print('Зашли в метод _get_element_data_for_deletion()')
+
+            # 🔽 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ВАЛИДНОСТИ
+            if not selection_info or 'path' not in selection_info:
+                print("❌ Невалидная информация о выделении")
+                return None
+
             file_path = selection_info['path']
             print(f'selection_info: {selection_info}')
             #element_path = selection_info['element_path']
