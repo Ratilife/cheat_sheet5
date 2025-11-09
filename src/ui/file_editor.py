@@ -977,38 +977,24 @@ class FileEditorWindow(QMainWindow):
         print('вышли из метода _handle_new_template() класс FileEditorWindow')
 
     def _on_delete_element(self):
+        """Обработчик удаления элемента"""
         # Получаем информацию о выделении перед удалением
         selection_info = self.tree_model_manager.get_selection_info()
         if not selection_info:
             return
-
-        file_path = selection_info['path']
-        current_tab_name = self.tab_widget.tabText(self.tab_widget.currentIndex())
-
-        # Выполняем удаление
+        if selection_info['type'] == 'file':
+            return
+        # Выполняем удаление через TreeModelManager
         success = self.tree_model_manager.delete_element()
 
-        # Обновляем модель после удаления
         if success:
-            # 🔽 ПРОСТОЙ СПОСОБ: Используем встроенные методы обновления
-            self._refresh_current_tab_model(current_tab_name)
+            # ✅ Модель уже обновлена внутри delete_element()
+            # Просто показываем сообщение
+            self.statusBar().showMessage(f"Элемент удален", 3000)
+        else:
+            self.statusBar().showMessage("Ошибка при удалении элемента", 5000)
 
-    def _refresh_current_tab_model(self, tab_name: str):
-        """Обновляет модель текущей вкладки"""
-        try:
-            # Просим TreeModelManager обновить модель для этой вкладки
-            if hasattr(self.tree_model_manager, 'refresh_tab_model'):
-                self.tree_model_manager.refresh_tab_model(tab_name)
-            else:
-                # Альтернативный способ: переключаем вкладку, чтобы вызвать обновление
-                current_index = self.tab_widget.currentIndex()
-                self.tab_widget.setCurrentIndex(-1)  # Сбрасываем
-                self.tab_widget.setCurrentIndex(current_index)  # Возвращаем
 
-            print(f"DEBUG: Модель обновлена для вкладки {tab_name}")
-
-        except Exception as e:
-            print(f"Ошибка при обновлении модели: {e}")
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает указанный файл в соответствующем редакторе.
 

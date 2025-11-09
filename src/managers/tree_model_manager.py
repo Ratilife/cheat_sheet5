@@ -617,6 +617,11 @@ class TreeModelManager(QObject):
         if not selection_info:
             return False
 
+        #  ✅ СНАЧАЛА УДАЛЯЕМ ИЗ МОДЕЛИ (чтобы пользователь сразу видел изменения)
+        model_success = self.delete_element_from_model(selection_info)
+        if not model_success:
+            return False
+
         # Получаем метаданные и активный редактор
         metadata = self.selection_controller.get_template_context(self._tab_widget)
         editor = self._get_active_editor()
@@ -694,6 +699,29 @@ class TreeModelManager(QObject):
         except Exception as e:
             print(f"❌ Ошибка получения данных элемента: {e}")
             return None
+
+    def delete_element_from_model(self, selection_info: dict) -> bool:
+        """Непосредственно удаляет элемент из модели дерева"""
+        try:
+            model = selection_info['model']
+            index = selection_info['index']
+            parent_index = selection_info['parent_index']
+
+            # Удаляем элемент из модели
+            success = model.removeRow(index.row(), parent_index)
+
+            if success:
+                print(f"✅ Элемент '{selection_info['name']}' удален из модели")
+                # Принудительно обновляем view
+                model.layoutChanged.emit()
+            else:
+                print(f"❌ Не удалось удалить элемент из модели")
+
+            return success
+
+        except Exception as e:
+            print(f"❌ Ошибка удаления из модели: {e}")
+            return False
 
     def _find_element_in_structure_old(self, structure, element_path: list):
         """Находит элемент в структуре по пути"""
