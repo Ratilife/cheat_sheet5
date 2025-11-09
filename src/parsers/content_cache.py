@@ -94,7 +94,7 @@ class ContentCache:
             self._cache.clear()
             self._current_size = 0
 
-    def set(self, file_path: str, content: dict, size: int = None):
+    def set(self, file_path: str, content: Any, size: int = None):
         """
          Сохраняет результат парсинга файла в кэш с автоматическим LRU-вытеснением.
 

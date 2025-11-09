@@ -9,7 +9,7 @@ from src.dialogs.dialog_manager import DialogManager
 from src.global_var.config import update_root_folder, get_bookmarks,get_for_program_path
 from pathlib import Path
 from src.parsers.file_parser_service import FileParserService
-from parsers.content_cache import ContentCache
+from src.utils.cache_manager import get_content_cache
 
 
 class FileOperations:
@@ -180,17 +180,62 @@ class FileOperations:
         base_template = self._get_st_base(name_file)
         # 3. Запись на диск
         file_created = self.file_manager.write_file(file_path,base_template)
-        # 4. Формирование структуры для кэш
-        parser = FileParserService()
-        structure = parser.parse_and_get_type(file_path)
-        # 5. Запись структуры в кэш
-        content_cache = ContentCache()
-        content_cache.set(file_path,structure)
-        # 6. Возврат пути
+
+
+        # 4. Возврат пути
         if file_created:
             return file_path
         else:
             raise Exception("Не удалось создать файл")
+
+    def add_new_st_file_cache(self,file_path):
+        # 1. Формирование структуры для кэш
+        parser = FileParserService()
+        structure = parser.parse_and_get_type(file_path)
+        print(f"🔍 DEBUG: parse_and_get_type вернул: {structure} (тип: {type(structure)})")
+
+        # 2. Запись структуры в кэш
+        content_cache = get_content_cache()
+        content_cache.set(file_path, structure)
+        print(f'🧱🧱Находимся в методе create_new_st_file() {content_cache.get(file_path)} 🧱🧱')
+
+    def create_new_st_file_old(self, name_file, tab_name: str) -> str:
+        """Создает новый ST-файл и возвращает путь к нему"""
+        # TODO 🚧 В разработке: 08.10.2025
+        try:
+            # 1. Генерация пути
+            file_path = self._create_file_path("st", name_file, tab_name)
+            if not file_path:
+                return ""
+
+            # 2. Создание шаблона
+            base_template = self._get_st_base(name_file)
+
+            # 3. Запись на диск
+            file_created = self.file_manager.write_file(file_path, base_template)
+
+            if file_created:
+                # 4. Формирование структуры для кэша
+                parser = FileParserService()
+                structure = parser.parse_and_get_type(file_path)
+                print(f"🔍 DEBUG: parse_and_get_type вернул: {structure} (тип: {type(structure)})")
+
+                # 5. Запись структуры в кэш
+                content_cache = get_content_cache()
+                content_cache.set(file_path, structure)
+                print(f'🧱🧱Находимся в методе create_new_st_file() {content_cache.get(file_path)} 🧱🧱')
+
+                # 6. ВАЖНО: Принудительно обновляем кэш файловой системы
+                import time
+                time.sleep(0.1)  # Небольшая задержка для файловой системы
+
+                return file_path
+            else:
+                raise Exception("Не удалось создать файл")
+
+        except Exception as e:
+            print(f"❌ Ошибка при создании ST-файла: {e}")
+            raise
 
     def create_new_md_file_old(self, name_file, tab_name: str)-> str:
         """Создает новый MD-файл и возвращает путь к нему"""

@@ -942,6 +942,7 @@ class FileEditorWindow(QMainWindow):
         active_tab_name = self._set_active_tab()
         file_path = self.file_operations.create_new_st_file(name, active_tab_name)
         self.tree_model_manager.add_files_to_tab(active_tab_name, [file_path])
+        self.file_operations.add_new_st_file_cache(file_path)
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)
 
