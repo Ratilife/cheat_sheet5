@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
                                QMenu, QLabel, QPushButton, )
 from PySide6.QtGui import QAction, QCursor
 
-from src.parsers.content_cache import ContentCache
+from src.utils.cache_manager import get_content_cache
 from src.managers.dynamic_tabs import DynamicTabManager
 from src.observers.file_watcher import FileWatcher
 from src.observers.my_base_observer import MyBaseObserver
@@ -239,7 +239,7 @@ class SidePanel(QWidget):
         # ✅ Реализовано: 20.08.2025
         # 1. Создаем кэш (синглтон)
         self.metadata_cache = MetadataCache()
-        self.content_cache = ContentCache()  # Инициализация кэша
+        self.content_cache = get_content_cache() # Инициализация кэша
 
         # 2. Создаем парсер сервис
         self.parser_service = FileParserService()
