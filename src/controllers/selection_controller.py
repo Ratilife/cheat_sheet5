@@ -193,7 +193,7 @@ class TreeSelectionController(QObject):
         template_id = f"{file_path}::{parent_path}::{template_name}"
         template_context = {'file_path': file_path, 'template_id': template_id,
                             'original_structure': self.content_cache.get(file_path),
-                            'element_path': self._build_element_path(dict_selection_info)}
+                            'element_path': self.build_element_path(dict_selection_info)}
 
         return template_context
 
@@ -334,7 +334,7 @@ class TreeSelectionController(QObject):
             current_index = current_index.parent()
         return None
 
-    def _build_element_path(self, selection_info):
+    def build_element_path(self, selection_info):
         """Строит путь к элементу в структуре ['root', 'parent', 'element']"""
         path = ['root']
 
