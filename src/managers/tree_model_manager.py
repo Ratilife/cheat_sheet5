@@ -8,6 +8,7 @@ from src.parsers.file_parser_service import FileParserService
 from src.parsers.content_cache import ContentCache
 from src.controllers.selection_controller import TreeSelectionController
 from src.operation.file_operations import FileOperations
+from utils.delta_processor import DeltaProcessor
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
     request_active_editor = Signal()
@@ -616,14 +617,143 @@ class TreeModelManager(QObject):
         if not selection_info:
             return False
 
-        editor = self._get_active_editor()  # TODO 06.11.2025 нужно создать метод self._get_active_editor()
+        # Получаем метаданные и активный редактор
+        metadata = self.selection_controller.get_template_context(self._tab_widget)
+        editor = self._get_active_editor()
+
+        if not editor:
+            print("❌ Не найден активный редактор")
+            return False
+        dp = DeltaProcessor()
+        # Обновляем контекст редактора
+        template_context ={
+            'file_path': metadata.get('file_path') if metadata else None,
+            'template_id': metadata.get('template_id') if metadata else None,
+            'original_structure': metadata.get('original_structure') if metadata else None,
+            'element_path': metadata.get('element_path') if metadata else [],
+        }
+
+        # Получаем полные данные элемента для отмены
+        element_data = self._get_element_data_for_deletion(selection_info)
+        if not element_data:
+            print("❌ Не удалось получить данные элемента для удаления")
+            return False
+
+        # Регистрируем дельту удаления
+        editor.register_change(
+            operation=DeltaOperation.DELETE,
+            element_path=selection_info['element_path'],
+            element_type=selection_info['type'],
+            element_name=selection_info['name'],
+            element_data=element_data  # Сохраняем полные данные для возможной отмены
+        )
+
+        # Немедленно применяем дельты (удаление обычно требует немедленного действия)
+
+        success = dp.apply_pending_deltas(template_context)
+
+        if success:
+            print(f"✅ Элемент '{selection_info['name']}' успешно удален")
+        else:
+            print(f"❌ Ошибка при удалении элемента '{selection_info['name']}'")
+
+        return success
+
+    def _get_element_data_for_deletion(self, selection_info: dict) -> dict:
+        """Получает полные данные элемента для возможности отмены удаления"""
+        try:
+            print('Зашли в метод _get_element_data_for_deletion()')
+            file_path = selection_info['path']
+            print(f'selection_info: {selection_info}')
+            #element_path = selection_info['element_path']
+            # ПОЛУЧАЕМ element_path через метод контроллера
+            element_path = self.selection_controller.build_element_path(selection_info)
+            print(f'element_path {element_path}')
+            # Получаем структуру из кэша
+            structure = self.content_cache.get(file_path)
+            print(f'structure: {structure}')
+            if not structure:
+                return None
+
+            # Находим элемент в структуре
+            element = self._find_element_in_structure(structure, element_path)
+            print(f'element: {element}')
+            if element:
+                return {
+                    'content': element.get('content', ''),
+                    'children': element.get('children', []),
+                    'type': element.get('type', ''),
+                    'name': element.get('name', ''),
+                    'attributes': element.get('attributes', {})
+                }
+            return None
+        except Exception as e:
+            print(f"❌ Ошибка получения данных элемента: {e}")
+            return None
+
+    def _find_element_in_structure_old(self, structure, element_path: list):
+        """Находит элемент в структуре по пути"""
+        print("Зашли в метод _find_element_in_structure")
+        if not element_path or element_path[0] != 'root':
+            print("В методе _find_element_in_structure не чего не получилось")
+            return None
+
+        current = structure
+        # Пропускаем 'root' и идем по пути
+        for step in element_path[1:]:
+            if isinstance(current, tuple) and len(current) == 2:
+                # Кортеж формата ('file', data_dict)
+                current = current[1].get('structure', [])
+
+            if isinstance(current, list):
+                found = None
+                for item in current:
+                    if item.get('name') == step:
+                        found = item
+                        break
+                if not found:
+                    return None
+                current = found
+            elif isinstance(current, dict) and 'children' in current:
+                found = None
+                for child in current['children']:
+                    if child.get('name') == step:
+                        found = child
+                        break
+                if not found:
+                    return None
+                current = found
+            else:
+                return None
+        print(f"Вышли из метода _find_element_in_structure current: {current}")
+        return current
+
+    def delete_element_old(self):
+        """Вызывается когда пользователь удалил элемент в дереве"""
+        selection_info = self.get_selection_info()
+        if not selection_info:
+            return False
+
+        metadata = self.selection_controller.get_template_context(self._tab_widget)
+        editor = self._get_active_editor()
+        editor.template_context.update({
+            'file_path': metadata.get('file_path') if metadata else None,
+            'template_id': metadata.get('template_id') if metadata else None,
+            'original_structure': metadata.get('original_structure') if metadata else None,
+            'element_path': metadata.get('element_path') if metadata else [],
+        })
         if editor:
             editor.register_change(
                 operation=DeltaOperation.DELETE,
-                element_path=selection_info['element_path']
+                element_path=selection_info['element_path'],
+                old_content=editor.self.template_context.get('original_content'),
+                new_content=None,
+                type_element=selection_info['type']
             )
+            #editor.set_apply_pending_deltas()
 
     def create_folder(self, name):
+        # TODO - 09.11.2025 - разобраться с закаментированным кодом это мертвый код
         selection_info = self.get_selection_info()
         if not selection_info:
             return False
