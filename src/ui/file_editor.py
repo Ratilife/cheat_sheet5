@@ -895,6 +895,7 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_md_file.connect(self._handle_new_md_file)
         self.toolbar_manager.new_folder.connect(self._handle_new_folder)
         self.toolbar_manager.new_template.connect(self._handle_new_template)
+        self.toolbar_manager.delete_element.connect(self._on_delete_element)
 
 
         # Подключаем сигналы сохранения из toolbar
@@ -974,6 +975,9 @@ class FileEditorWindow(QMainWindow):
             return
         self.tree_model_manager.new_template(name_template)
         print('вышли из метода _handle_new_template() класс FileEditorWindow')
+
+    def _on_delete_element(self):
+        self.tree_model_manager.delete_element()
 
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает указанный файл в соответствующем редакторе.
