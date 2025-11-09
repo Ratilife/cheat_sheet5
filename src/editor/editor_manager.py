@@ -2,7 +2,7 @@
 # src/editor/editor_manager.py
 from PySide6.QtCore import QObject, Signal
 from .editor_factory import EditorFactory
-from src.parsers.content_cache import ContentCache
+from src.utils.cache_manager  import get_content_cache
 from src.parsers.metadata_cache import MetadataCache
 from src.parsers.background_parser import BackgroundParser,Priority
 
@@ -16,7 +16,7 @@ class EditorManager(QObject):
     def __init__(self):
         super().__init__()
         self.editor_factory = EditorFactory()
-        self.content_cache = ContentCache()
+        self.content_cache = get_content_cache()
         self.metadata_cache = MetadataCache()
         self.current_editor = None
         self.current_file_path = None
