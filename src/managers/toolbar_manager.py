@@ -23,7 +23,7 @@ class ToolbarManager(QObject):
     new_folder = Signal()
     new_template = Signal()
     save_file = Signal()
-    save_file_as = Signal()
+    delete_element = Signal()
     delete_action = Signal()
     cut_action = Signal()
     copy_action = Signal()
@@ -154,11 +154,11 @@ class ToolbarManager(QObject):
 
         # Кнопка Сохранить как
         self.ui.create_button(
-            name="new_save_as_btn",
-            text="💽",
-            tooltip="Сохранить как"
+            name="delete_element_btn",
+            text="🗑️",
+            tooltip="Удалить элемент"
         )
-        self.ui.buttons["new_save_as_btn"].clicked.connect(lambda: self.save_file_as.emit())
+        self.ui.buttons["delete_element_btn"].clicked.connect(lambda: self.delete_element.emit())
 
         # Кнопка Удалть редактор
         self.ui.create_button(
@@ -209,7 +209,7 @@ class ToolbarManager(QObject):
         # панель над деревом файлов в модуле file_editor.py
         self._above_tree_toolbar_editor = self.ui.create_toolbar(
             name="above_tree_toolbar_editor",
-            buttons=["new_st_btn", "new_md_btn", "new_folder_btn", "new_template_btn", "new_save_as_btn"],
+            buttons=["new_st_btn", "new_md_btn", "new_folder_btn", "new_template_btn", "delete_element_btn"],
         )
 
         # панель над текстовым редактором в модуле file_editor.py
