@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal, Qt
@@ -15,6 +16,7 @@ import traceback
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
     request_active_editor = Signal()
+    close_editor_for_file = Signal(str)  # Сигнал: путь к файлу, который нужно закрыть
     def __init__(self, parser_service: FileParserService,
                  metadata_cache: MetadataCache,
                  content_cache:ContentCache,
@@ -755,17 +757,131 @@ class TreeModelManager(QObject):
                 'selection_info': selection_info  # Сохраняем для дальнейшего использования
             }
 
-            # TODO: Следующие шаги (будем реализовывать дальше):
-            # - Закрытие файла в редакторе (если открыт)
-            # - Удаление из модели дерева
-            # - Удаление файла с диска
-            # - Удаление из кэша
+            # 8. Закрытие файла в редакторе (если открыт)
+            if file_info['is_open']:
+                print(f"DEBUG: delete_file: закрываем файл '{file_name}' в редакторе")
 
-            print(f"DEBUG: delete_file: подготовка завершена для файла '{file_name}'")
-            print(f"DEBUG: delete_file: file_info = {file_info}")
+                # 8.1. Если есть несохраненные изменения - предупреждаем
+                if file_info['has_unsaved_changes']:
+                    print(f"⚠️ delete_file: файл '{file_name}' имеет несохраненные изменения, но удаление подтверждено")
 
-            # Пока возвращаем False, так как фактическое удаление еще не реализовано
-            return False
+                # 8.2. Останавливаем отслеживание файла (если используется FileWatcher)
+                editor = file_info['editor']
+                if editor and hasattr(editor, '_stop_watching_file'):
+                    try:
+                        editor._stop_watching_file()
+                        print(f"✅ delete_file: остановлено отслеживание файла '{file_name}'")
+                    except Exception as e:
+                        print(f"⚠️ delete_file: ошибка при остановке отслеживания: {e}")
+
+                # 8.3. Очищаем ссылку на редактор в TreeModelManager
+                self.clear_active_editor()
+                print(f"✅ delete_file: ссылка на редактор очищена в TreeModelManager")
+
+                # 8.4. Очищаем путь к файлу в редакторе (если возможно)
+                if editor and hasattr(editor, 'file_path'):
+                    editor.file_path = None
+                    print(f"✅ delete_file: путь к файлу очищен в редакторе")
+
+                # 8.5. Сбрасываем флаг модификации (если возможно)
+                if editor and hasattr(editor, 'is_modified'):
+                    editor.is_modified = False
+                    print(f"✅ delete_file: флаг модификации сброшен")
+
+                # 8.6. Эмитируем сигнал для уведомления FileEditorWindow о необходимости закрыть редактор
+                self.close_editor_for_file.emit(file_path)
+                print(f"✅ delete_file: отправлен сигнал close_editor_for_file для файла '{file_name}'")
+            else:
+                print(f"✅ delete_file: файл '{file_name}' не открыт в редакторе, пропускаем закрытие")
+
+            # 9. Удаление из модели дерева
+            print(f"DEBUG: delete_file: удаляем файл '{file_name}' из модели дерева")
+
+            # Используем существующий метод delete_element_from_model
+            model_success = self.delete_element_from_model(selection_info)
+
+            if model_success:
+                print(f"✅ delete_file: файл '{file_name}' успешно удален из модели дерева")
+                # Принудительно обновляем view (если нужно)
+                model = selection_info.get('model')
+                if model:
+                    model.layoutChanged.emit()
+            else:
+                print(f"❌ delete_file: ошибка при удалении файла '{file_name}' из модели дерева")
+                # Можно вернуть False здесь, если хотите прервать при ошибке модели
+                # return False
+
+            # 10. Удаление файла с диска
+            print(f"DEBUG: delete_file: удаляем файл '{file_name}' с диска")
+
+            # Проверяем, существует ли файл на диске
+            if file_info['exists']:
+                try:
+                    # Используем os.remove() для удаления файла
+                    os.remove(file_path)
+                    print(f"✅ delete_file: файл '{file_name}' успешно удален с диска")
+                except PermissionError as e:
+                    # Файл занят другим процессом или нет прав доступа
+                    error_msg = f"Нет прав доступа для удаления файла '{file_name}': {e}"
+                    print(f"❌ delete_file: {error_msg}")
+                    # Можно вернуть False здесь, если хотите прервать процесс
+                    # return False
+                except FileNotFoundError:
+                    # Файл уже удален (может быть удален внешним процессом)
+                    print(f"⚠️ delete_file: файл '{file_name}' уже не существует на диске")
+                except OSError as e:
+                    # Другие ошибки файловой системы
+                    error_msg = f"Ошибка при удалении файла '{file_name}': {e}"
+                    print(f"❌ delete_file: {error_msg}")
+                    # Можно вернуть False здесь, если хотите прервать процесс
+                    # return False
+                except Exception as e:
+                    # Неожиданные ошибки
+                    error_msg = f"Неожиданная ошибка при удалении файла '{file_name}': {e}"
+                    print(f"❌ delete_file: {error_msg}")
+
+                    traceback.print_exc()
+                    # Можно вернуть False здесь, если хотите прервать процесс
+                    # return False
+            else:
+                print(f"⚠️ delete_file: файл '{file_name}' не существует на диске, пропускаем удаление")
+
+            # 11. Удаление из кэшей
+            print(f"DEBUG: delete_file: удаляем файл '{file_name}' из кэшей")
+
+            try:
+                # 11.1. Удаление из content_cache (кэш содержимого файла)
+                if self.content_cache:
+                    # Используем метод invalidate() который правильно обрабатывает размер кэша
+                    self.content_cache.invalidate(file_path)
+                    print(f"✅ delete_file: файл '{file_name}' удален из content_cache")
+                else:
+                    print(f"⚠️ delete_file: content_cache не доступен")
+
+                # 11.2. Удаление из metadata_cache (кэш метаданных файла)
+                if self.metadata_cache:
+                    self.metadata_cache.invalidate(file_path)
+                    print(f"✅ delete_file: файл '{file_name}' удален из metadata_cache")
+                else:
+                    print(f"⚠️ delete_file: metadata_cache не доступен")
+
+            except Exception as e:
+                # Ошибки при удалении из кэша не критичны, но логируем
+                error_msg = f"Ошибка при удалении файла '{file_name}' из кэша: {e}"
+                print(f"⚠️ delete_file: {error_msg}")
+
+                traceback.print_exc()
+                # Продолжаем выполнение, так как удаление из кэша не критично
+
+            # 12. Итоговое сообщение и возврат результата
+            # Итоговый результат: успех, если модель удалена
+            # (удаление с диска и из кэша могут быть пропущены без критических ошибок)
+            if model_success:
+                print(f"✅ delete_file: файл '{file_name}' успешно удален (модель обновлена)")
+            else:
+                print(f"❌ delete_file: файл '{file_name}' не удален из модели")
+
+            return model_success
 
         except Exception as e:
             print(f"❌ delete_file: ошибка при подготовке к удалению файла: {e}")

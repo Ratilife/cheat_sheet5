@@ -904,6 +904,9 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_template.connect(self._handle_new_template)
         self.toolbar_manager.delete_element.connect(self._on_delete_element)
 
+        # Подключаем сигнал закрытия редактора при удалении файла
+        if self.tree_model_manager:
+            self.tree_model_manager.close_editor_for_file.connect(self._on_close_editor_for_file)
 
         # Подключаем сигналы сохранения из toolbar
         self.toolbar_manager.save_file.connect(self._on_save_action)
@@ -1011,12 +1014,12 @@ class FileEditorWindow(QMainWindow):
             if user_confirmed:
                 # Пользователь подтвердил удаление (нажал "Да")
                 print(f"DEBUG: Пользователь подтвердил удаление файла: {file_name}")
-                # TODO: Вызвать метод удаления файла (следующий шаг)
-                # success = self.tree_model_manager.delete_file(selection_info)
-                # if success:
-                #     self.statusBar().showMessage(f"Файл '{file_name}' удален", 3000)
-                # else:
-                #     self.statusBar().showMessage("Ошибка при удалении файла", 5000)
+
+                success = self.tree_model_manager.delete_file(selection_info)
+                if success:
+                     self.statusBar().showMessage(f"Файл '{file_name}' удален", 3000)
+                else:
+                     self.statusBar().showMessage("Ошибка при удалении файла", 5000)
             else:
                 # Пользователь отменил удаление (нажал "Нет" или закрыл диалог)
                 print(f"DEBUG: Пользователь отменил удаление файла: {file_name}")
@@ -1034,6 +1037,44 @@ class FileEditorWindow(QMainWindow):
         else:
             self.statusBar().showMessage("Ошибка при удалении элемента", 5000)
 
+    def _on_close_editor_for_file(self, file_path: str):
+        """
+        Обработчик сигнала закрытия редактора для удаленного файла.
+
+        Вызывается из TreeModelManager при удалении файла, который был открыт в редакторе.
+        Очищает редактор, если удаляемый файл совпадает с файлом в текущем редакторе.
+
+        Args:
+            file_path: Путь к удаленному файлу
+        """
+        try:
+            # Проверяем, есть ли текущий редактор
+            if not hasattr(self, 'current_editor') or not self.current_editor:
+                print(f"DEBUG: _on_close_editor_for_file: редактор не открыт, пропускаем")
+                return
+
+            # Проверяем, открыт ли в редакторе именно этот файл
+            if not hasattr(self.current_editor, 'file_path') or not self.current_editor.file_path:
+                print(f"DEBUG: _on_close_editor_for_file: в редакторе нет открытого файла")
+                return
+
+            # Сравниваем пути (нормализованные для разных форматов)
+            editor_path = Path(self.current_editor.file_path).resolve()
+            deleted_path = Path(file_path).resolve()
+
+            if editor_path == deleted_path:
+                print(f"DEBUG: _on_close_editor_for_file: закрываем редактор для удаленного файла: {file_path}")
+                # Очищаем редактор
+                self._clear_editor()
+                print(f"✅ _on_close_editor_for_file: редактор успешно очищен")
+            else:
+                print(
+                    f"DEBUG: _on_close_editor_for_file: файл в редакторе ({editor_path}) не совпадает с удаленным ({deleted_path})")
+
+        except Exception as e:
+            print(f"❌ _on_close_editor_for_file: ошибка при закрытии редактора: {e}")
+            import traceback
+            traceback.print_exc()
 
     def open_file_in_editor(self, file_path:str)-> None:
         """Открывает указанный файл в соответствующем редакторе.
