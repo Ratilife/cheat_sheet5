@@ -4,6 +4,8 @@ from typing import Optional
 from enum import Enum, auto
 
 
+
+
 class MessageType(Enum):
     INFO = auto()      # Информационные сообщения (нейтральные)
     WARNING = auto()   # Предупреждения (потенциальные проблемы)
@@ -25,6 +27,7 @@ class DialogManager:
         self.parent_window = parent_window
         self.console_output = console_output
         self.gui_output = gui_output
+
 
     def show_message(
             self,

@@ -9,9 +9,10 @@ from editor.st_editor import STEditor
 from src.observers.my_base_observer import MyBaseObserver
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QMainWindow, QTreeView, QTabWidget, QVBoxLayout, QWidget, QSplitter,
-                               QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QInputDialog)
+                               QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QInputDialog, QMessageBox)
 from operation.file_operations import FileOperations
 from tests.managers.working_with_cache import get_cache
+from dialogs.dialog_manager import DialogManager
 
 
 class FileEditorWindowObserver(MyBaseObserver):
@@ -36,6 +37,12 @@ class FileEditorWindow(QMainWindow):
         self.observer = FileEditorWindowObserver()
 
         self.file_operations = FileOperations()
+        # Создаем менеджер диалогов для UI
+        self.dialog_manager = DialogManager(
+            parent_window=self,  # Родительское окно для центрирования диалогов
+            console_output=False,  # Не выводим в консоль (только GUI)
+            gui_output=True  # Показываем диалоги в GUI
+        )
 
         self.template_name = "Тут будет текст"
         self.setWindowTitle("Редактор файлов")
@@ -983,8 +990,40 @@ class FileEditorWindow(QMainWindow):
         if not selection_info:
             return
         if selection_info['type'] == 'file':
-            # сюда добавить логику по удалению непосредственно файла
-            return
+            # Получаем имя файла для отображения в диалоге
+            file_name = selection_info.get('name', 'файл')
+            file_path = selection_info.get('path', '')
+            # Формируем текст вопроса для диалога
+            question_text = (
+                f"Вы уверены, что хотите удалить файл?\n\n"
+                f"Файл: {file_name}\n"
+                f"Путь: {file_path}\n\n"
+                f"⚠️ Внимание: Это действие необратимо!"
+            )
+            # Показываем диалог подтверждения через DialogManager
+            user_confirmed = self.dialog_manager.show_question(
+                question=question_text,
+                title="Подтверждение удаления файла",
+                default_button=QMessageBox.StandardButton.No  # По умолчанию "Нет" (безопаснее)
+            )
+
+            # Проверяем ответ пользователя
+            if user_confirmed:
+                # Пользователь подтвердил удаление (нажал "Да")
+                print(f"DEBUG: Пользователь подтвердил удаление файла: {file_name}")
+                # TODO: Вызвать метод удаления файла (следующий шаг)
+                # success = self.tree_model_manager.delete_file(selection_info)
+                # if success:
+                #     self.statusBar().showMessage(f"Файл '{file_name}' удален", 3000)
+                # else:
+                #     self.statusBar().showMessage("Ошибка при удалении файла", 5000)
+            else:
+                # Пользователь отменил удаление (нажал "Нет" или закрыл диалог)
+                print(f"DEBUG: Пользователь отменил удаление файла: {file_name}")
+                self.statusBar().showMessage("Удаление отменено", 2000)
+
+            return  # Выходим из метода, так как для файлов логика другая
+
         # Выполняем удаление через TreeModelManager
         success = self.tree_model_manager.delete_element()
 

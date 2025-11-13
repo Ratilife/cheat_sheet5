@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Signal, Qt
 from PySide6.QtWidgets import QTabWidget
 
@@ -9,6 +11,7 @@ from src.parsers.content_cache import ContentCache
 from src.controllers.selection_controller import TreeSelectionController
 from src.operation.file_operations import FileOperations
 from utils.delta_processor import DeltaProcessor
+import traceback
 class TreeModelManager(QObject):
     model_updated = Signal(str, str)  # tab_name, file_path
     request_active_editor = Signal()
@@ -617,8 +620,6 @@ class TreeModelManager(QObject):
         if not selection_info:
             return False
 
-
-
         # Получаем метаданные и активный редактор
         metadata = self.selection_controller.get_template_context(self._tab_widget)
         editor = self._get_active_editor()
@@ -670,6 +671,106 @@ class TreeModelManager(QObject):
 
         return success
 
+    def delete_file(self, selection_info: dict) -> bool:
+        """
+        Удаляет файл с диска, из модели дерева и из кэша.
+
+        Args:
+            selection_info: Словарь с информацией о выделенном файле.
+                           Должен содержать ключи: 'type', 'path', 'name',
+                           'model', 'index', 'parent_index', 'tab_name'
+
+        Returns:
+            bool: True если файл успешно удален, False в случае ошибки
+        """
+        # TODO 🚧 В разработке: [дата]
+
+        try:
+            # 1. Проверка валидности selection_info
+            if not selection_info:
+                print("❌ delete_file: selection_info пустой или None")
+                return False
+
+            # 2. Проверка типа элемента
+            element_type = selection_info.get('type')
+            if element_type != 'file':
+                print(f"❌ delete_file: тип элемента '{element_type}' не является 'file'")
+                return False
+
+            # 3. Получение пути к файлу
+            file_path = selection_info.get('path')
+            if not file_path:
+                print("❌ delete_file: путь к файлу не найден в selection_info")
+                return False
+
+            # Преобразуем в Path для удобной работы
+            file_path_obj = Path(file_path)
+
+            # 4. Получение имени файла для сообщений
+            file_name = selection_info.get('name', file_path_obj.name)
+
+            print(f"DEBUG: delete_file: начинаем удаление файла '{file_name}'")
+            print(f"DEBUG: delete_file: путь к файлу: {file_path}")
+
+            # 5. Проверка существования файла на диске
+            if not file_path_obj.exists():
+                print(f"⚠️ delete_file: файл '{file_name}' не существует на диске")
+                print(f"DEBUG: delete_file: путь '{file_path}' не найден")
+                # Продолжаем удаление из модели и кэша, даже если файл уже удален
+                # Это позволяет очистить "висячие" элементы в дереве
+            else:
+                print(f"✅ delete_file: файл '{file_name}' существует на диске")
+
+            # 6. Проверка, открыт ли файл в редакторе
+            editor = self._get_active_editor()
+            file_is_open = False
+            has_unsaved_changes = False
+
+            if editor and hasattr(editor, 'file_path') and editor.file_path:
+                # Сравниваем пути (нормализованные для разных форматов)
+                editor_path = Path(editor.file_path)
+                if editor_path.resolve() == file_path_obj.resolve():
+                    file_is_open = True
+                    # Проверяем, есть ли несохраненные изменения
+                    if hasattr(editor, 'is_modified'):
+                        has_unsaved_changes = editor.is_modified
+
+                    print(f"⚠️ delete_file: файл '{file_name}' открыт в редакторе")
+                    if has_unsaved_changes:
+                        print(f"⚠️ delete_file: в файле есть несохраненные изменения")
+                else:
+                    print(f"✅ delete_file: файл '{file_name}' не открыт в текущем редакторе")
+            else:
+                print(f"✅ delete_file: активный редактор не найден или файл не открыт")
+
+            # 7. Сохраняем информацию для последующего использования
+            file_info = {
+                'path': file_path,
+                'path_obj': file_path_obj,
+                'name': file_name,
+                'exists': file_path_obj.exists(),
+                'is_open': file_is_open,
+                'has_unsaved_changes': has_unsaved_changes,
+                'editor': editor if file_is_open else None,
+                'selection_info': selection_info  # Сохраняем для дальнейшего использования
+            }
+
+            # TODO: Следующие шаги (будем реализовывать дальше):
+            # - Закрытие файла в редакторе (если открыт)
+            # - Удаление из модели дерева
+            # - Удаление файла с диска
+            # - Удаление из кэша
+
+            print(f"DEBUG: delete_file: подготовка завершена для файла '{file_name}'")
+            print(f"DEBUG: delete_file: file_info = {file_info}")
+
+            # Пока возвращаем False, так как фактическое удаление еще не реализовано
+            return False
+
+        except Exception as e:
+            print(f"❌ delete_file: ошибка при подготовке к удалению файла: {e}")
+            traceback.print_exc()
+            return False
     def _get_element_data_for_deletion(self, selection_info: dict) -> dict:
         """Получает полные данные элемента для возможности отмены удаления"""
         try:
