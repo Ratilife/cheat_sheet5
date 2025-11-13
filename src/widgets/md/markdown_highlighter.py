@@ -11,6 +11,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text):
         """Переопределенный метод для подсветки текста"""
         # Применение регулярных выражений
+        print(f"DEBUG HIGHLIGHTER: highlightBlock вызван! Текст: '{text[:30]}...'")
         for pattern, fmt in self.styles.rules:
             expression = QRegularExpression(pattern)
             match_iterator = expression.globalMatch(text)

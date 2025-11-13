@@ -246,9 +246,6 @@ class MarkdownEditor(BaseFileEditor):
             # Обновляем просмотрщик (БЕЗ установки флага модификации)
             self._viewer.set_content(current_markdown)
 
-            # 4. ОПЦИОНАЛЬНО: синхронизация прокрутки
-            self._sync_editor_and_preview()
-
         except Exception as e:
         # В случае ошибки показываем сообщение
             print(f"Ошибка обновления Markdown: {e}")
@@ -272,9 +269,11 @@ class MarkdownEditor(BaseFileEditor):
                 lambda: self._perform_actual_sync(source)
             )
             self._sync_timer.start(50)  # 50ms
-
-        finally:
+        except Exception as e:
+            # ⭐ Если ошибка при настройке таймера, сбрасываем флаг
+            print(f"Ошибка настройки синхронизации: {e}")
             self._is_syncing = False
+
 
     def _perform_actual_sync(self, source):
         """Выполняет фактическую синхронизацию"""
@@ -293,7 +292,15 @@ class MarkdownEditor(BaseFileEditor):
             editor_max = max(editor.maximum(), 1)  # Защита от деления на 0
             percent = editor_pos / editor_max
 
-            preview.setValue(int(percent * preview.maximum()))
+            # ⭐ ВРЕМЕННО БЛОКИРУЕМ СИГНАЛЫ, чтобы избежать циклов
+            preview.blockSignals(True)
+            try:
+                preview.setValue(int(percent * preview.maximum()))
+            finally:
+                preview.blockSignals(False)
+
+            # ⭐ СБРАСЫВАЕМ ФЛАГ СИНХРОНИЗАЦИИ ПОСЛЕ ЗАВЕРШЕНИЯ
+            self._is_syncing = False
 
         except Exception as e:
             print(f"Ошибка синхронизации: {e}")
