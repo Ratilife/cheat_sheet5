@@ -88,20 +88,8 @@ class TreeModelManager(QObject):
     def add_files_to_tab(self, tab_name: str, file_paths: list[str]) -> bool:
         """Добавляет список файлов в указанную вкладку этого менеджера.
 
-                Для каждого пути в списке файлов метод пытается получить данные файла
-                с помощью внутреннего метода _get_file_data. Если данные успешно
-                получены и файл успешно добавлен в модель вкладки (через метод add_file),
-                обновляется внутренняя карта связи файлов и вкладок (_file_to_tabs).
-                Возвращает True, если хотя бы один файл был успешно добавлен.
-
-                Args:
-                    tab_name (str): Имя вкладки, в которую нужно добавить файлы.
-                    file_paths (list[str]): Список строк с путями к файлам для добавления.
-
-                Returns:
-                    bool: True, если хотя бы один файл был успешно добавлен, иначе False.
         """
-        # ✅ Реализовано: 17.09.2025
+        # ✅ Реализовано: 14.11.2025
         if tab_name not in self._tab_models:
             print(f"ERROR: Вкладка '{tab_name}' не найдена в этом менеджере")
             return False
@@ -111,14 +99,34 @@ class TreeModelManager(QObject):
 
         for file_path in file_paths:
             data = self._get_file_data(file_path)
-            if data and model.add_file(file_path, data):
-                # Локальные связи
-                if file_path not in self._file_to_tabs:
-                    self._file_to_tabs[file_path] = []
-                if tab_name not in self._file_to_tabs[file_path]:
-                    self._file_to_tabs[file_path].append(tab_name)
-                success_count += 1
+            # ✅ add_file() не возвращает значение,
+            # поэтому проверяем успешность добавления по факту
+            if data:
+                try:
+                    model.add_file(file_path, data)
+                    # Проверяем, что файл действительно добавлен в модель
+                    # (ищем по пути в корневых элементах)
+                    file_added = any(
+                        item.item_data[2] == file_path
+                        for item in model.root_item.child_items
+                        if len(item.item_data) > 2
+                    )
 
+                    if file_added:
+                        # Сохраняем связи файл ↔ вкладка
+                        if file_path not in self._file_to_tabs:
+                            self._file_to_tabs[file_path] = []
+                        if tab_name not in self._file_to_tabs[file_path]:
+                            self._file_to_tabs[file_path].append(tab_name)
+
+                        # ✅ Эмитируем сигнал для обновления View
+                        self.model_updated.emit(tab_name, file_path)
+
+                        success_count += 1
+
+
+                except Exception as e:
+                    print(f"ERROR: Ошибка при добавлении файла {file_path}: {e}")
         print(f"DEBUG: Добавлено {success_count} файлов в менеджер {id(self)}")
         return success_count > 0
 
