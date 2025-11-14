@@ -330,6 +330,41 @@ class FileEditorWindow(QMainWindow):
 
         # Также можно показать сообщение о том, что выбрана папка
         self.statusBar().showMessage("Выбрана папка - редактор очищен")
+
+    def _on_model_updated_old(self, tab_name, file_path):
+        """Обработчик обновления модели - автоматическая синхронизация!"""
+        print(f"DEBUG: Модель обновлена - вкладка: {tab_name}, файл: {file_path}")
+
+        try:
+            # ✅ Получаем модель напрямую из менеджера
+            if not self.tree_model_manager:
+                return
+
+            model = self.tree_model_manager.get_model(tab_name)
+            if not model:
+                print(f"DEBUG: Модель для вкладки '{tab_name}' не найдена")
+                return
+
+            # ✅ Обновляем all_models
+            self.all_models[tab_name] = model
+
+            # ✅ Получаем правильный tree_view
+            if tab_name not in self.tree_views:
+                print(f"DEBUG: tree_view для вкладки '{tab_name}' не найден")
+                return
+
+            tree_view = self.tree_views[tab_name]
+
+            # ✅ Принудительно обновляем View
+            tree_view.viewport().update()
+
+            # ✅ Или обновляем модель полностью
+            model.layoutChanged.emit()
+
+        except Exception as e:
+            print(f"Ошибка в _on_model_updated: {e}")
+            import traceback
+            traceback.print_exc()
     def _on_model_updated(self, tab_name, file_path):
         """Обработчик обновления модели - автоматическая синхронизация!"""
         # TODO 🚧 В разработке: 02.09.2025 не понял этот метод
@@ -964,6 +999,7 @@ class FileEditorWindow(QMainWindow):
             return None
         active_tab_name = self._set_active_tab()
         file_path = self.file_operations.create_new_md_file(name, active_tab_name)
+        self.file_operations.add_new_md_file_cache(file_path)
         self.tree_model_manager.add_files_to_tab(active_tab_name, [file_path])
         # Автоматически открываем новый файл в редакторе
         self.open_file_in_editor(file_path)
