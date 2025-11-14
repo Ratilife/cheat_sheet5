@@ -188,6 +188,17 @@ class FileOperations:
         else:
             raise Exception("Не удалось создать файл")
 
+    def add_new_md_file_cache(self, file_path):
+        # 1. Формирование структуры для кэш
+        parser = FileParserService()
+        file_type, parsed_data = parser.parse_and_get_type(file_path)
+        print(f"🔍 DEBUG: parse_and_get_type вернул: {parsed_data} (тип: {type(parsed_data)})")
+
+        # 2. Запись структуры в кэш
+        content_cache = get_content_cache()
+        content_cache.set(file_path, parsed_data)
+        print(f'🧱🧱Находимся в методе add_new_md_file_cache() {content_cache.get(file_path)} 🧱🧱')
+
     def add_new_st_file_cache(self,file_path):
         # 1. Формирование структуры для кэш
         parser = FileParserService()
