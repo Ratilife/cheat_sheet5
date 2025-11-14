@@ -703,7 +703,7 @@ class TreeModelManager(QObject):
 
             # 2. Проверка типа элемента
             element_type = selection_info.get('type')
-            if element_type != 'file':
+            if element_type not in ('file', 'markdown'):
                 print(f"❌ delete_file: тип элемента '{element_type}' не является 'file'")
                 return False
 

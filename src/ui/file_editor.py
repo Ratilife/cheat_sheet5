@@ -1028,7 +1028,9 @@ class FileEditorWindow(QMainWindow):
         selection_info = self.tree_model_manager.get_selection_info()
         if not selection_info:
             return
-        if selection_info['type'] == 'file':
+        print(f'🤩🤩 type: {selection_info['type']}')
+        print(f' {selection_info}')
+        if selection_info['type'] in ('file', 'markdown'):
             # Получаем имя файла для отображения в диалоге
             file_name = selection_info.get('name', 'файл')
             file_path = selection_info.get('path', '')
