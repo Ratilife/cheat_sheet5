@@ -199,11 +199,6 @@ class TreeModelManager(QObject):
         metadata = self.metadata_cache.get(file_path)
         if not metadata:
             metadata = self.parser_service.parse_metadata(file_path)
-            self.metadata_cache.set(
-                file_path,
-                metadata,
-                file_type=metadata.get('type')
-            )
 
         return metadata
 

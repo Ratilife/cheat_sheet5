@@ -500,6 +500,27 @@ class SidePanel(QWidget):
         else:
             print("❌ tree_model_manager не найден!")
 
+        # 3. Запускаем фоновый полный парсинг для файлов без content_cache
+        if hasattr(self, 'background_parser') and hasattr(self, 'content_cache'):
+            from src.parsers.background_parser import Priority
+
+            for file_path in files:
+                # Проверяем, есть ли полные данные в content_cache
+                cached_content = self.content_cache.get(file_path)
+                if not cached_content:
+                    print(f"🔄 DEBUG: Файл {file_path} отсутствует в content_cache, запускаем фоновый парсинг")
+                    try:
+                        self.background_parser.add_task(file_path, Priority.VISIBLE)
+                        print(f"✅ Задача парсинга добавлена для {file_path}")
+                    except Exception as e:
+                        print(f"❌ Ошибка при добавлении задачи парсинга для {file_path}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print(f"ℹ️ DEBUG: Файл {file_path} уже в content_cache, пропускаем парсинг")
+        else:
+            print("⚠️ DEBUG: background_parser или content_cache не инициализированы")
+
     def _on_parsing_done(self, file_path: str, parsed_data: dict,*args, **kwargs):
         """Обработчик завершения фонового парсинга"""
         print(f"🚨🚨🚨 _on_parsing_done ВЫЗВАН! args: {args}, kwargs: {kwargs}")
