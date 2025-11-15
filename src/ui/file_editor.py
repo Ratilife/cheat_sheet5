@@ -938,6 +938,7 @@ class FileEditorWindow(QMainWindow):
         self.toolbar_manager.new_folder.connect(self._handle_new_folder)
         self.toolbar_manager.new_template.connect(self._handle_new_template)
         self.toolbar_manager.delete_element.connect(self._on_delete_element)
+        self.toolbar_manager.delete_element_model.connect(self._on_delete_element_model)
 
         # Подключаем сигнал закрытия редактора при удалении файла
         if self.tree_model_manager:
@@ -1075,6 +1076,32 @@ class FileEditorWindow(QMainWindow):
         else:
             self.statusBar().showMessage("Ошибка при удалении элемента", 5000)
 
+    def _on_delete_element_model(self):
+        # Получаем информацию о выделении перед удалением
+        selection_info = self.tree_model_manager.get_selection_info()
+        if not selection_info:
+            return
+        if selection_info['type'] in ('file', 'markdown'):
+            # Получаем имя файла для отображения в диалоге
+            file_name = selection_info.get('name', 'файл')
+            file_path = selection_info.get('path', '')
+            # Формируем текст вопроса для диалога
+            question_text = (
+                f"Вы уверены, что хотите удалить файл из модели дерива?\n\n"
+                f"Файл: {file_name}\n"
+                f"Путь: {file_path}\n\n"
+                f"⚠️ Внимание: Это действие необратимо!"
+            )
+            # Показываем диалог подтверждения через DialogManager
+            user_confirmed = self.dialog_manager.show_question(
+                question=question_text,
+                title="Подтверждение удаления файла",
+                default_button=QMessageBox.StandardButton.No  # По умолчанию "Нет" (безопаснее)
+            )
+            # Проверяем ответ пользователя
+            if user_confirmed:
+                # Пользователь подтвердил удаление (нажал "Да")
+                success = self.tree_model_manager.delete_file_model(selection_info)
     def _on_close_editor_for_file(self, file_path: str):
         """
         Обработчик сигнала закрытия редактора для удаленного файла.
