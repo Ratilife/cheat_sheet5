@@ -24,6 +24,7 @@ class ToolbarManager(QObject):
     new_template = Signal()
     save_file = Signal()
     delete_element = Signal()
+    delete_element_model = Signal()
     delete_action = Signal()
     cut_action = Signal()
     copy_action = Signal()
@@ -161,17 +162,25 @@ class ToolbarManager(QObject):
         # Кнопка Сохранить как
         self.ui.create_button(
             name="delete_element_btn",
-            text="🗑️",
+            text="❌",
             tooltip="Удалить элемент"
         )
         self.ui.buttons["delete_element_btn"].clicked.connect(lambda: self.delete_element.emit())
 
-        # Кнопка Удалть редактор
+        # Кнопка удалить из модели
+
+        self.ui.create_button(
+            name="delete_model_element_btn",
+            text="🗑️",
+            tooltip="Удалить элемент из модели дерева"
+        )
+        self.ui.buttons["elete_model_element_btn"].clicked.connect(lambda: self.delete_element_model.emit())
+        # Кнопка Удалить редактор
         self.ui.create_button(
             name="delete_btn",
             icon=QIcon.fromTheme("edit-delete"),
             text="",
-            tooltip="Удалть"
+            tooltip="Удалить"
         )
         self.ui.buttons["delete_btn"].clicked.connect(lambda: self.delete_action)
 
@@ -208,14 +217,15 @@ class ToolbarManager(QObject):
         # панель над деревом файлов в модуле side_panel.py
         self._title_layout = self.ui.create_toolbar(
             name="title_layout",
-            buttons=["collapse_btn", "expand_btn", "load_btn", "edit_btn",
+            buttons=["load_btn", "edit_btn",
                      "spacer",
                      "collapse_panel_btn", "close_panel_btn"]
         )
         # панель над деревом файлов в модуле file_editor.py
         self._above_tree_toolbar_editor = self.ui.create_toolbar(
             name="above_tree_toolbar_editor",
-            buttons=["new_st_btn", "new_md_btn", "new_folder_btn", "new_template_btn", "delete_element_btn"],
+            buttons=["new_st_btn", "new_md_btn", "new_folder_btn", "new_template_btn", "delete_element_btn",
+                     "delete_model_element_btn"],
         )
 
         # панель над текстовым редактором в модуле file_editor.py
