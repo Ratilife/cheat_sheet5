@@ -811,7 +811,6 @@ class TreeModelManager(QObject):
                     model.layoutChanged.emit()
             else:
                 print(f"❌ delete_file: ошибка при удалении файла '{file_name}' из модели дерева")
-                # Можно вернуть False здесь, если хотите прервать при ошибке модели
                 # return False
 
             # 10. Удаление файла с диска
@@ -852,29 +851,9 @@ class TreeModelManager(QObject):
             # 11. Удаление из кэшей
             print(f"DEBUG: delete_file: удаляем файл '{file_name}' из кэшей")
 
-            try:
-                # 11.1. Удаление из content_cache (кэш содержимого файла)
-                if self.content_cache:
-                    # Используем метод invalidate() который правильно обрабатывает размер кэша
-                    self.content_cache.invalidate(file_path)
-                    print(f"✅ delete_file: файл '{file_name}' удален из content_cache")
-                else:
-                    print(f"⚠️ delete_file: content_cache не доступен")
-
-                # 11.2. Удаление из metadata_cache (кэш метаданных файла)
-                if self.metadata_cache:
-                    self.metadata_cache.invalidate(file_path)
-                    print(f"✅ delete_file: файл '{file_name}' удален из metadata_cache")
-                else:
-                    print(f"⚠️ delete_file: metadata_cache не доступен")
-
-            except Exception as e:
-                # Ошибки при удалении из кэша не критичны, но логируем
-                error_msg = f"Ошибка при удалении файла '{file_name}' из кэша: {e}"
-                print(f"⚠️ delete_file: {error_msg}")
-
-                traceback.print_exc()
-                # Продолжаем выполнение, так как удаление из кэша не критично
+            file_path = selection_info.get('path')
+            file_name = selection_info.get('name', Path(file_path).name if file_path else 'unknown')
+            self._remove_file_from_caches(file_path, file_name)
 
             # 12. Итоговое сообщение и возврат результата
             # Итоговый результат: успех, если модель удалена
@@ -890,6 +869,70 @@ class TreeModelManager(QObject):
             print(f"❌ delete_file: ошибка при подготовке к удалению файла: {e}")
             traceback.print_exc()
             return False
+
+    def delete_file_model(self, selection_info: dict) -> bool:
+        # Используем существующий метод delete_element_from_model
+        model_success = self.delete_element_from_model(selection_info)
+        #  Получение пути к файлу
+        file_path = selection_info.get('path')
+        if not file_path:
+            print("❌ delete_file: путь к файлу не найден в selection_info")
+            return False
+
+        #  Получение имени файла для сообщений
+        file_name = selection_info.get('name')
+
+        if model_success:
+            print(f"✅ delete_file: файл '{file_name}' успешно удален из модели дерева")
+            # Принудительно обновляем view (если нужно)
+            model = selection_info.get('model')
+            if model:
+                model.layoutChanged.emit()
+
+
+        else:
+            print(f"❌ delete_file: ошибка при удалении файла '{file_name}' из модели дерева")
+            # return False
+
+        # Удаление из кэшей
+        print(f"DEBUG: delete_file: удаляем файл '{file_name}' из кэшей")
+
+        file_path = selection_info.get('path')
+        file_name = selection_info.get('name')
+        if file_path:
+            self._remove_file_from_caches(file_path, file_name)
+
+    def _remove_file_from_caches(self, file_path: str, file_name: str) -> None:
+        """
+        Удаляет файл из всех кэшей (content_cache и metadata_cache).
+
+        Args:
+            file_path: Полный путь к файлу
+            file_name: Имя файла для логгирования
+        """
+        print(f"DEBUG: delete_file: удаляем файл '{file_name}' из кэшей")
+
+        try:
+            # Удаление из content_cache (кэш содержимого файла)
+            if self.content_cache:
+                # Используем метод invalidate() который правильно обрабатывает размер кэша
+                self.content_cache.invalidate(file_path)
+                print(f"✅ delete_file: файл '{file_name}' удален из content_cache")
+            else:
+                print(f"⚠️ delete_file: content_cache не доступен")
+
+            # Удаление из metadata_cache (кэш метаданных файла)
+            if self.metadata_cache:
+                self.metadata_cache.invalidate(file_path)
+                print(f"✅ delete_file: файл '{file_name}' удален из metadata_cache")
+            else:
+                print(f"⚠️ delete_file: metadata_cache не доступен")
+
+        except Exception as e:
+            # Ошибки при удалении из кэша не критичны, но логируем
+            error_msg = f"Ошибка при удалении файла '{file_name}' из кэша: {e}"
+            print(f"⚠️ delete_file: {error_msg}")
+            traceback.print_exc()
     def _get_element_data_for_deletion(self, selection_info: dict) -> dict:
         """Получает полные данные элемента для возможности отмены удаления"""
         try:
