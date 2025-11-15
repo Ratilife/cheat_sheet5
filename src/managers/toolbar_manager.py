@@ -29,12 +29,18 @@ class ToolbarManager(QObject):
     copy_action = Signal()
     paste_action = Signal()
 
-    def __init__(self,tree_manager=None, close=None, showMinimized=None  ):
+    def __init__(self,tree_manager=None, close=None, showMinimized=None, tab_manager=None):
         super().__init__()
         self.ui = UIManager()  # Создаем экземпляр UIManager
         self.tree_manager = tree_manager
         self.close = close
         self.showMinimized = showMinimized
+
+        if tab_manager is not None:
+            self.tab_manager = tab_manager
+        else:
+            self.tab_manager = DynamicTabManager()
+
         self._setup_buttons()
         self._setup_toolbars()
         #self._connect_tree_manager()
@@ -99,7 +105,7 @@ class ToolbarManager(QObject):
             fixed_height=20
         )
         self.ui.buttons["edit_btn"].clicked.connect(
-            lambda: self.editor_toggled.emit(True)  # TODO - нет подключения к этому сигналу
+            lambda: self.editor_toggled.emit(True)
         )
         # Кнопка загрузить файл
         self.ui.create_button(
@@ -109,8 +115,8 @@ class ToolbarManager(QObject):
             fixed_width=20,
             fixed_height=20
         )
-        self.tab_manager = DynamicTabManager()
-        self.ui.buttons["load_btn"].clicked.connect(self.tab_manager.launch_download_for_active_tab)   #TODO 17/09/2025 изменить переписуем TreeModelManager
+        #self.tab_manager = DynamicTabManager()
+        self.ui.buttons["load_btn"].clicked.connect(self.tab_manager.launch_download_for_active_tab)
 
         # Кнопка Создать st-файл
         self.ui.create_button(
