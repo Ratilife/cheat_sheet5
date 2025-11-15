@@ -190,7 +190,9 @@ class SidePanel(QWidget):
         # Создаем toolbar manager
         self.toolbar_manager = ToolbarManager( tree_manager=self.tree_model_manager,
                                                close=self.close,
-                                               showMinimized=self.showMinimized)
+                                               showMinimized=self.showMinimized,
+                                               tab_manager = self.tab_manager
+                                             )
 
         # Создаем панель заголовка
         title_layout = self.toolbar_manager.get_title_layout()
@@ -283,7 +285,7 @@ class SidePanel(QWidget):
                 print(f"Type of tab_created: {type(self.tab_manager.tab_created)}")
                 print(f"Has connect: {hasattr(self.tab_manager.tab_created, 'connect')}")
 
-                #self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
+                self.tab_manager.tab_created.connect(self._on_fill_tab_tree)
                 #print("tab_created подключен!")
 
             if hasattr(self, 'background_parser'):
@@ -464,6 +466,39 @@ class SidePanel(QWidget):
 
             traceback.print_exc()
 
+    def _on_files_loaded(self, tab_name: str, files: list):
+        """Обработчик загрузки файлов через кнопку load_btn"""
+        print(f"🔍 DEBUG: Загружены файлы для вкладки '{tab_name}': {files}")
+
+        if not files:
+            return
+
+        # 1. Обновляем self.tab_names
+        if tab_name not in self.tab_names:
+            self.tab_names[tab_name] = []
+
+        # Добавляем новые файлы (избегаем дубликатов)
+        for file_path in files:
+            if file_path not in self.tab_names[tab_name]:
+                self.tab_names[tab_name].append(file_path)
+
+        # 2. Добавляем файлы в модель дерева
+        if hasattr(self, 'tree_model_manager'):
+            # Проверяем, существует ли модель для этой вкладки
+            if tab_name in self.tree_model_manager._tab_models:
+                # Модель уже существует - добавляем файлы
+                success = self.tree_model_manager.add_files_to_tab(tab_name, files)
+                if success:
+                    print(f"✅ Файлы добавлены в модель для вкладки '{tab_name}'")
+                else:
+                    print(f"❌ Не удалось добавить файлы в модель для вкладки '{tab_name}'")
+            else:
+                # Модель еще не создана - создаем её
+                print(f"⚠️ Модель для вкладки '{tab_name}' еще не создана, создаем...")
+                self._load_tab_data(tab_name)
+        else:
+            print("❌ tree_model_manager не найден!")
+
     def _on_parsing_done(self, file_path: str, parsed_data: dict,*args, **kwargs):
         """Обработчик завершения фонового парсинга"""
         print(f"🚨🚨🚨 _on_parsing_done ВЫЗВАН! args: {args}, kwargs: {kwargs}")
@@ -475,6 +510,8 @@ class SidePanel(QWidget):
         if not updated:
             print(f"Предупреждение: файл {file_path} не найден в активных моделях")
             print(f"DEBUG: Файл {file_path} Существует в кэше: {file_path in self.content_cache._cache}")
+
+
     def _on_model_updated(self, tab_name: str, file_path: str):
         """Обновляет view для конкретной вкладки после изменения модели"""
         print(f"DEBUG✅: _on_model_updated вызывается для вкладки {tab_name}, файла {file_path}")
