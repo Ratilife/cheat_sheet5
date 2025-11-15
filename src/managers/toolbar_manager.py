@@ -174,7 +174,7 @@ class ToolbarManager(QObject):
             text="🗑️",
             tooltip="Удалить элемент из модели дерева"
         )
-        self.ui.buttons["elete_model_element_btn"].clicked.connect(lambda: self.delete_element_model.emit())
+        self.ui.buttons["delete_model_element_btn"].clicked.connect(lambda: self.delete_element_model.emit())
         # Кнопка Удалить редактор
         self.ui.create_button(
             name="delete_btn",
