@@ -146,3 +146,102 @@ class DynamicTabManager(QObject):
         return tab_info['tab_name'], files
 
     # 🔽Конец добавления методов 17.09.2025🔽
+
+    def get_active_tab_info_test(self) -> dict | None:
+        """Возвращает информацию об активной вкладке окна, с которым работает пользователь"""
+
+        print("🚩🚩🚩=" * 60)
+        print("🔍 DEBUG: get_active_tab_info() вызван")
+
+        # Проверка 1: Сколько виджетов зарегистрировано?
+        print(f"📊 Зарегистрировано виджетов: {len(self.tab_widgets)}")
+        print(f"📋 Ключи виджетов: {list(self.tab_widgets.keys())}")
+        print(f"📋 widget_priorities: {self.widget_priorities}")
+
+        # Проверка 2: Детальная информация о каждом виджете
+        for widget_name, tab_widget in self.tab_widgets.items():
+            print(f"\n🔹 Виджет '{widget_name}':")
+            print(f"   - tab_widget существует: {tab_widget is not None}")
+            if tab_widget:
+                print(f"   - isVisible(): {tab_widget.isVisible()}")
+                print(f"   - count(): {tab_widget.count()}")
+                print(f"   - currentIndex(): {tab_widget.currentIndex()}")
+                print(f"   - window(): {tab_widget.window()}")
+                print(
+                    f"   - window().isVisible(): {tab_widget.window().isVisible() if tab_widget.window() else 'None'}")
+
+        # 1. Получаем активное окно приложения
+        active_window = QApplication.activeWindow()
+        print(f"\n🪟 Активное окно: {active_window}")
+        if active_window:
+            print(f"   - Тип: {type(active_window)}")
+            print(f"   - Заголовок: {active_window.windowTitle()}")
+            print(f"   - isVisible(): {active_window.isVisible()}")
+
+        # 2. Если есть активное окно, ищем в нем tab_widget
+        if active_window:
+            print("\n🔎 Ищем tab_widget в активном окне...")
+            found_in_active = False
+            for widget_name, tab_widget in self.tab_widgets.items():
+                if not tab_widget or not tab_widget.isVisible():
+                    print(f"   ❌ '{widget_name}': пропущен (tab_widget=None или не видим)")
+                    continue
+
+                tab_widget_window = tab_widget.window()
+                print(f"   🔹 '{widget_name}':")
+                print(f"      - tab_widget.window(): {tab_widget_window}")
+                print(f"      - Окна совпадают: {tab_widget_window == active_window}")
+                print(f"      - count(): {tab_widget.count()}")
+
+                if (tab_widget_window == active_window and tab_widget.count() > 0):
+                    current_index = tab_widget.currentIndex()
+                    print(f"      - currentIndex(): {current_index}")
+                    if current_index >= 0:
+                        result = {
+                            'widget_name': widget_name,
+                            'tab_name': tab_widget.tabText(current_index),
+                            'tab_widget': tab_widget,
+                            'window': tab_widget_window
+                        }
+                        print(f"   ✅ НАЙДЕНО! Возвращаем: {result}")
+                        print("=" * 60)
+                        return result
+                    else:
+                        print(f"      ❌ currentIndex() < 0")
+                else:
+                    print(f"      ❌ Не подходит (окна не совпадают или count() == 0)")
+            print("   ❌ Не найдено подходящего виджета в активном окне")
+
+        # 3. Если активного окна нет или в нем не нашли tab_widget,
+        # используем окно, которое было зарегистрировано последним
+        print("\n🔎 Пробуем найти по приоритетам (fallback)...")
+        for widget_name in reversed(self.widget_priorities):
+            tab_widget = self.tab_widgets.get(widget_name)
+            print(f"   🔹 Проверяем '{widget_name}':")
+            if not tab_widget:
+                print(f"      ❌ tab_widget = None")
+                continue
+            print(f"      - isVisible(): {tab_widget.isVisible()}")
+            print(f"      - count(): {tab_widget.count()}")
+
+            if (tab_widget and tab_widget.isVisible() and tab_widget.count() > 0):
+                current_index = tab_widget.currentIndex()
+                print(f"      - currentIndex(): {current_index}")
+                if current_index >= 0:
+                    result = {
+                        'widget_name': widget_name,
+                        'tab_name': tab_widget.tabText(current_index),
+                        'tab_widget': tab_widget,
+                        'window': tab_widget.window()
+                    }
+                    print(f"   ✅ НАЙДЕНО (fallback)! Возвращаем: {result}")
+                    print("=" * 60)
+                    return result
+                else:
+                    print(f"      ❌ currentIndex() < 0")
+            else:
+                print(f"      ❌ Не подходит")
+
+        print("❌ НЕ НАЙДЕНО! Возвращаем None")
+        print("=" * 60)
+        return None
