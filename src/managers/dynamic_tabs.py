@@ -10,6 +10,7 @@ class DynamicTabManager(QObject):
         # 🏆task: Открыть боковую панель из стартовой панели;
     # Объявление сигнала
     tab_created = Signal(str, QTreeView)  # Сигнал передает имя вкладки и дерево
+    files_loaded = Signal(str, list)  #  сигнал (tab_name, files)
     def __init__(self, parent: QWidget = None):
         # TODO 🚧 В разработке: 08.08.2025
         super().__init__(parent)
@@ -143,6 +144,8 @@ class DynamicTabManager(QObject):
             return None
 
         files = self.file_operations.load_st_md_files(tab_info['tab_name'])
+        if files:
+            self.files_loaded.emit(tab_info['tab_name'], files)
         return tab_info['tab_name'], files
 
     # 🔽Конец добавления методов 17.09.2025🔽

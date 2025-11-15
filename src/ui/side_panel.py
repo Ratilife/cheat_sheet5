@@ -298,6 +298,7 @@ class SidePanel(QWidget):
                 print("model_updated подключен!")
 
             self.toolbar_manager.editor_toggled.connect(self._open_editor)
+            self.tab_manager.files_loaded.connect(self._on_files_loaded)
 
         except Exception as e:
             print(f"ОШИБКА при подключении сигналов: {e}")
