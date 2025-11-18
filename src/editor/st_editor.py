@@ -5,10 +5,11 @@ from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit
 
 from observers.file_watcher import FileWatcher
-from operation.delta_operations import DeltaOperation, Delta
+from operation.delta_operations import DeltaOperation
 from src.editor.base_editor import BaseFileEditor
 from PySide6.QtCore import Signal, QTimer
 from utils.delta_processor import DeltaProcessor
+from src.widgets.st.st_highlighter import STHighlighter
 
 
 class STEditor(BaseFileEditor):
@@ -62,8 +63,12 @@ class STEditor(BaseFileEditor):
         self._text_edit = QTextEdit()           # Создание экземпляра QTextEdit для редактирования текста
         self._text_edit.setAcceptRichText(False)  # Режим plain text, отключение поддержки форматированного текста, редактор будет работать только с простым текстом
 
-        # TODO: Здесь позже добавим подсветку синтаксиса
-        # self._highlighter = STHighlighter(self._text_edit.document())
+
+        # Создаем подсветку синтаксиса
+        self._highlighter = STHighlighter(
+            self._text_edit.document(),  # Передаем документ
+            language=None  # Язык определится позже
+        )
 
         # Добавляем редактор в layout
         layout.addWidget(self._text_edit)       # Добавление виджета текстового редактора в вертикальный слой
@@ -264,35 +269,71 @@ class STEditor(BaseFileEditor):
 
     def _identify_language(self, content: str) -> None:
         """
-         Определяет язык программирования по первой строке содержимого.
-         Ищет маркер @@ и извлекает текст после него до первого пробела.
+        Определяет язык программирования по первой строке содержимого template.
 
-         Args:
-             content: Содержимое файла для анализа
+        Ищет маркер @@ в первой строке и извлекает язык после него.
+        Поддерживает различные варианты написания языков.
+        По умолчанию распознается язык 1C, если маркер не найден.
 
-         Returns:
-             str: Название языка в нижнем регистре или пустая строка если не найден
-         """
+        Поддерживаемые маркеры:
+        - Java: "@@java"
+        - Python: "@@python"
+        - C#: "@@c#", "@@C#", "@@Csharp", "@@csharp"
+        - 1C: "@@1С", "@@1с", "@@1One", "@@1one" (по умолчанию если маркер отсутствует)
+        - Текст: "@@text", "@@Text", "@@TEXT"
+
+        Формат маркера: @@[ИмяЯзыка] [пробел] [код...]
+
+        Args:
+            content: str - Содержимое template элемента для анализа
+
+        Returns:
+            None - устанавливает self.language в нормализованное значение языка
+        """
         # TODO 🚧 В разработке: 06.10.2025
 
-        language = ""
+        language = '1c'  # ⭐ По умолчанию язык 1C
 
-        # Получаем первую строку
+        if not content or not content.strip():
+            # Если содержимое пустое - язык по умолчанию
+            self.language = language
+            print(f"DEBUG: Определен язык (по умолчанию): '{self.language}'")
+            return
+
+        # Получаем первую строку содержимого
         first_line = content.split('\n')[0].strip()
 
-        # Ищем маркер @@
+        # Ищем маркер @@ в первой строке
         if '@@' in first_line:
-            # Берем часть строки после @@
-            after_marker = first_line.split('@@', 1)[1].strip()
+            # Разделяем строку на части до и после маркера
+            parts = first_line.split('@@', 1)
 
-            if after_marker:
-                # Берем первое слово после маркера (до первого пробела)
-                language = after_marker.split()[0]
+            if len(parts) == 2:
+                # Берем часть после маркера
+                after_marker = parts[1].strip()
 
-        # Приводим к нижнему регистру
-        self.language = language.lower()
+                if after_marker:
+                    # Извлекаем маркер языка (до первого пробела или конца строки)
+                    # Маркер может быть: "java", "python", "c#", "1С", "1one", "text" и т.д.
+                    language_marker = after_marker.split()[0] if ' ' in after_marker else after_marker
 
-        print(f"DEBUG: Определен язык: '{self.language}'")
+                    # Нормализуем маркер к стандартному значению
+                    language = self._normalize_language(language_marker)
+
+                    print(f"DEBUG: Найден маркер '@@{language_marker}' → нормализован в '{language}'")
+                else:
+                    # Маркер @@ найден, но после него ничего нет - по умолчанию 1C
+                    print(f"DEBUG: Маркер '@@' найден, но язык не указан → используется '{language}'")
+            else:
+                # Маркер @@ найден, но формат некорректный - по умолчанию 1C
+                print(f"DEBUG: Некорректный формат маркера → используется '{language}'")
+        else:
+            # Маркер @@ не найден - по умолчанию 1C
+            print(f"DEBUG: Маркер '@@' не найден → используется '{language}' (по умолчанию)")
+
+        # Устанавливаем язык в self.language
+        self.language = language
+        print(f"DEBUG: Итоговый определенный язык: '{self.language}'")
 
     def _apply_pending_deltas(self):
         self.dp.apply_pending_deltas(self.template_context)
@@ -532,6 +573,10 @@ class STEditor(BaseFileEditor):
         # Определяем язык для подсветки по первой строке
         self._identify_language(content) # Вызывает внутренний метод для определения языка подсветки синтаксиса на основе переданного содержимого
 
+        # Устанавливаем язык в подсветке
+        if self._highlighter:
+            self._highlighter.set_language(self.language)  # Например, '1c', 'python'
+
     def get_content(self) -> str:
         """
         Возвращает текущее содержимое редактора.
@@ -583,3 +628,76 @@ class STEditor(BaseFileEditor):
             self.error_occurred.emit(f"Ошибка загрузки файла: {e}", "error")
             return False
 
+    def _normalize_language(self, language_marker: str) -> str:
+        """
+        Нормализует маркер языка к стандартному значению.
+
+        Args:
+            language_marker: str - маркер языка после @@ (например: "java", "C#", "1С", "1one")
+
+        Returns:
+            str: Нормализованное значение языка:
+                 - '1c' для языка 1C
+                 - 'python' для Python
+                 - 'csharp' для C#
+                 - 'java' для Java
+                 - 'text' для простого текста
+                 - '1c' по умолчанию (если маркер не распознан)
+        """
+        if not language_marker:
+            return '1c'  # По умолчанию
+
+
+        # Приводим к нижнему регистру для сравнения
+        marker_lower = language_marker.lower()
+
+        # Словарь для нормализации различных вариантов написания
+        language_map = {
+            # Java
+            'java': 'java',
+
+            # Python
+            'python': 'python',
+
+            # C# - различные варианты написания
+            'c#': 'csharp',
+            'с#': 'csharp',  # Кириллическая С
+            'csharp': 'csharp',
+            'сsharp': 'csharp',  # Кириллическая С
+            'c sharp': 'csharp',
+            'с sharp': 'csharp',  # Кириллическая С
+
+            # 1C - различные варианты написания
+            '1c': '1c',
+            '1с': '1c',  # Кириллическая С
+            '1С': '1c',  # Кириллическая С (большая)
+            '1one': '1c',
+            '1One': '1c',
+            '1ONE': '1c',
+            '1c/bsl': '1c',
+            'bsl': '1c',
+
+            # Простой текст
+            'text': 'text',
+            'txt': 'text',
+            'plain': 'text',
+        }
+
+        # Ищем точное совпадение
+        if marker_lower in language_map:
+            return language_map[marker_lower]
+
+        # Проверяем варианты с пробелами и специальными символами
+        marker_normalized = marker_lower.replace(' ', '').replace('_', '').replace('-', '')
+
+        # Проверяем нормализованный маркер
+        if marker_normalized in language_map:
+            return language_map[marker_normalized]
+
+        # Проверяем частичное совпадение (например, если маркер начинается с варианта)
+        for key, value in language_map.items():
+            if marker_normalized.startswith(key) or key.startswith(marker_normalized):
+                return value
+
+        # Если не нашли совпадение - по умолчанию 1C
+        return '1c'
