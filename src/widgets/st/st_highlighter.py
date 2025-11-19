@@ -2,7 +2,7 @@ from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor
 from PySide6.QtCore import Qt
 from antlr4 import InputStream
 from antlr4 import Token
-from ANTLR4.one_c_grammar import BSLLexer
+from ANTLR4.one_c_grammar.BSLLexer import BSLLexer
 class STHighlighter(QSyntaxHighlighter):
     """
         Класс для подсветки синтаксиса в .st файлах.
@@ -26,7 +26,10 @@ class STHighlighter(QSyntaxHighlighter):
         # Общие цвета для всех языков
         self.color_map = {
             # 1C/BSL
-            '1c': {'DOT': 'red',
+        '1c': {
+        'LINE_COMMENT': 'green',
+        'WHITE_SPACE': None,
+        'DOT': 'red',
         'LBRACK': 'red',
         'RBRACK': 'red',
         'LPAREN': 'red',
@@ -43,17 +46,27 @@ class STHighlighter(QSyntaxHighlighter):
         'GREATER_OR_EQUAL': 'red',
         'GREATER': 'red',
         'MUL': 'red',
-        'QUOTIENT': 'red',
+        'QUOTIENT':'red',
         'MODULO': 'red',
         'QUESTION': 'red',
-        'AMPERSAND': 'brown',
-        'PREPROC_DELETE': 'red',
-        'PREPROC_INSERT': 'red',
-        'PREPROC_ENDINSERT': 'red',
+        'AMPERSAND': 'red',
+        'PREPROC_DELETE': None,
+        'PREPROC_INSERT': None,
+        'PREPROC_ENDINSERT': None,
+        'HASH': None,
+        'BAR': None,
+        'TILDA': None,
         'TRUE': 'red',
         'FALSE': 'red',
         'UNDEFINED': 'red',
         'NULL': 'red',
+        'DECIMAL': None,
+        'DATETIME': None,
+        'FLOAT': None,
+        'STRING': 'black',
+        'STRINGSTART': None,
+        'STRINGTAIL': None,
+        'STRINGPART': None,
         'PROCEDURE_KEYWORD': 'red',
         'FUNCTION_KEYWORD': 'red',
         'ENDPROCEDURE_KEYWORD': 'red',
@@ -79,7 +92,7 @@ class STHighlighter(QSyntaxHighlighter):
         'CONTINUE_KEYWORD': 'red',
         'RAISE_KEYWORD': 'red',
         'VAR_KEYWORD': 'red',
-        'NOT_KEYWORD': 'red',
+        'NOT_KEYWORD':'red',
         'OR_KEYWORD': 'red',
         'AND_KEYWORD': 'red',
         'NEW_KEYWORD': 'red',
@@ -89,37 +102,43 @@ class STHighlighter(QSyntaxHighlighter):
         'ADDHANDLER_KEYWORD': 'red',
         'REMOVEHANDLER_KEYWORD': 'red',
         'ASYNC_KEYWORD': 'red',
-
-        'DECIMAL': '#9400D3',
-        'FLOAT': '#9400D3',
-        'STRING': 'black',
-        'UNKNOWN': '#9400D3',
-        'IDENTIFIER': 'blue',
-        'LINE_COMMENT': 'green',
-        'PREPROC_USE_KEYWORD': 'brown',
-        'PREPROC_REGION': 'brown',
-        'PREPROC_END_REGION': 'red',
-        'PREPROC_NOT_KEYWORD': 'red',
-        'PREPROC_OR_KEYWORD': 'red',
-        'PREPROC_AND_KEYWORD': 'red',
-        'PREPROC_IF_KEYWORD': 'red',
-        'PREPROC_THEN_KEYWORD': 'red',
-        'PREPROC_ELSIF_KEYWORD': 'red',
-        'PREPROC_ENDIF_KEYWORD': 'red',
-        'PREPROC_ELSE_KEYWORD': 'red',
-        'PREPROC_MOBILEAPPCLIENT_SYMBOL': 'red',
-        'PREPROC_MOBILEAPPSERVER_SYMBOL': 'red',
-        'PREPROC_MOBILECLIENT_SYMBOL': 'red',
-        'PREPROC_THICKCLIENTORDINARYAPPLICATION_SYMBOL': 'red',
-        'PREPROC_THICKCLIENTMANAGEDAPPLICATION_SYMBOL': 'red',
-        'PREPROC_EXTERNALCONNECTION_SYMBOL': 'red',
-        'PREPROC_THINCLIENT_SYMBOL': 'red',
-        'PREPROC_WEBCLIENT_SYMBOL': 'red',
-        'PREPROC_ATCLIENT_SYMBOL': 'red',
-        'PREPROC_CLIENT_SYMBOL': 'red',
-        'PREPROC_ATSERVER_SYMBOL': 'red',
-        'PREPROC_SERVER_SYMBOL': 'red',
-        'PREPROC_MOBILE_STANDALONE_SERVER': 'red',
+        'IDENTIFIER': None,
+        'UNKNOWN': None,
+        'PREPROC_EXCLAMATION_MARK': 'blue',
+        'PREPROC_LPAREN': 'blue',
+        'PREPROC_RPAREN': 'blue',
+        'PREPROC_STRING': 'blue',
+        'PREPROC_NATIVE': 'blue',
+        'PREPROC_USE_KEYWORD': 'blue',
+        'PREPROC_REGION': 'blue',
+        'PREPROC_END_REGION': 'blue',
+        'PREPROC_NOT_KEYWORD': 'blue',
+        'PREPROC_OR_KEYWORD': 'blue',
+        'PREPROC_AND_KEYWORD': 'blue',
+        'PREPROC_IF_KEYWORD': 'blue',
+        'PREPROC_THEN_KEYWORD': 'blue',
+        'PREPROC_ELSIF_KEYWORD': 'blue',
+        'PREPROC_ENDIF_KEYWORD': 'blue',
+        'PREPROC_ELSE_KEYWORD': 'blue',
+        'PREPROC_MOBILEAPPCLIENT_SYMBOL': 'blue',
+        'PREPROC_MOBILEAPPSERVER_SYMBOL': 'blue',
+        'PREPROC_MOBILECLIENT_SYMBOL': 'blue',
+        'PREPROC_THICKCLIENTORDINARYAPPLICATION_SYMBOL': 'blue',
+        'PREPROC_THICKCLIENTMANAGEDAPPLICATION_SYMBOL': 'blue',
+        'PREPROC_EXTERNALCONNECTION_SYMBOL': 'brown',
+        'PREPROC_THINCLIENT_SYMBOL': 'brown',
+        'PREPROC_WEBCLIENT_SYMBOL': 'brown',
+        'PREPROC_ATCLIENT_SYMBOL': 'brown',
+        'PREPROC_CLIENT_SYMBOL': 'brown',
+        'PREPROC_ATSERVER_SYMBOL':'brown',
+        'PREPROC_SERVER_SYMBOL': 'brown',
+        'PREPROC_MOBILE_STANDALONE_SERVER': 'brown',
+        'PREPROC_LINUX': 'brown',
+        'PREPROC_WINDOWS': 'brown',
+        'PREPROC_MACOS': 'brown',
+        'PREPROC_IDENTIFIER': 'brown',
+        'PREPROC_NEWLINE': 'brown',
+        'PREPROC_ANY': 'brown',
         'ANNOTATION_ATSERVERNOCONTEXT_SYMBOL': 'brown',
         'ANNOTATION_ATCLIENTATSERVERNOCONTEXT_SYMBOL': 'brown',
         'ANNOTATION_ATCLIENTATSERVER_SYMBOL': 'brown',
@@ -130,15 +149,72 @@ class STHighlighter(QSyntaxHighlighter):
         'ANNOTATION_AROUND_SYMBOL': 'brown',
         'ANNOTATION_CHANGEANDVALIDATE_SYMBOL': 'brown',
         'ANNOTATION_CUSTOM_SYMBOL': 'brown',
-        'ANNOTATION_WHITE_SPACE': 'brown',
         'ANNOTATION_UNKNOWN': 'brown',
-        },
+        'PREPROC_ENDDELETE': 'brown',
+        'PREPROC_DELETE_ANY': 'brown',
+        'AWAIT_KEYWORD': 'red',
+    },
             # Python
             'python': {}, # Будет заполнено позже
             # C#
             'csharp': {},
             # Java
             'java': {}
+        }
+
+        self.keywords_map = {
+            # Процедуры и функции
+            'Процедура': 'PROCEDURE_KEYWORD',
+            'КонецПроцедуры': 'ENDPROCEDURE_KEYWORD',
+            'Функция': 'FUNCTION_KEYWORD',
+            'КонецФункции': 'ENDFUNCTION_KEYWORD',
+            'Экспорт': 'EXPORT_KEYWORD',
+            'Знач': 'VAL_KEYWORD',
+
+            # Условные операторы
+            'Если': 'IF_KEYWORD',
+            'ИначеЕсли': 'ELSIF_KEYWORD',
+            'Иначе': 'ELSE_KEYWORD',
+            'Тогда': 'THEN_KEYWORD',
+            'КонецЕсли': 'ENDIF_KEYWORD',
+
+            # Циклы
+            'Пока': 'WHILE_KEYWORD',
+            'Цикл': 'DO_KEYWORD',
+            'КонецЦикла': 'ENDDO_KEYWORD',
+            'Для': 'FOR_KEYWORD',
+            'По': 'TO_KEYWORD',
+            'Каждого': 'EACH_KEYWORD',
+            'Из': 'IN_KEYWORD',
+
+            # Обработка исключений
+            'Попытка': 'TRY_KEYWORD',
+            'Исключение': 'EXCEPT_KEYWORD',
+            'КонецПопытки': 'ENDTRY_KEYWORD',
+
+            # Управление выполнением
+            'Возврат': 'RETURN_KEYWORD',
+            'Продолжить': 'CONTINUE_KEYWORD',
+            'Прервать': 'BREAK_KEYWORD',
+            'ВызватьИсключение': 'RAISE_KEYWORD',
+            'Перейти': 'GOTO_KEYWORD',
+
+            # Прочие
+            'Перем': 'VAR_KEYWORD',
+            'Не': 'NOT_KEYWORD',
+            'Или': 'OR_KEYWORD',
+            'И': 'AND_KEYWORD',
+            'Новый': 'NEW_KEYWORD',
+            'Выполнить': 'EXECUTE_KEYWORD',
+            'ДобавитьОбработчик': 'ADDHANDLER_KEYWORD',
+            'УдалитьОбработчик': 'REMOVEHANDLER_KEYWORD',
+            'Асинхронный': 'ASYNC_KEYWORD',
+
+            # Логические значения
+            'Истина': 'TRUE',
+            'Ложь': 'FALSE',
+            'Неопределено': 'UNDEFINED',
+            'NULL': 'NULL',
         }
 
     def set_language(self, language: str):
@@ -190,7 +266,7 @@ class STHighlighter(QSyntaxHighlighter):
         Пересчитывает кэш токенов для всего документа.
         Вызывается при изменении документа или языка.
         """
-        print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self.document_text)}")
+        print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
         # Очищаем старый кэш
         self._tokens_by_line = {}
 
@@ -211,7 +287,7 @@ class STHighlighter(QSyntaxHighlighter):
 
         try:
             # Создаём входной поток для всего документа
-            input_stream = InputStream(document_text)
+            input_stream = InputStream(self._document_text)
             lexer = BSLLexer(input_stream)
 
             # Лексируем весь документ
@@ -228,6 +304,16 @@ class STHighlighter(QSyntaxHighlighter):
                     if token_type == '<INVALID>':
                         token_type = None
 
+                lexeme = (token.text or '').lower()
+                if lexeme in self.keywords_map:
+                    token_type = self.keywords_map[lexeme]
+
+                line_number = token.line
+
+                if line_number not in self._tokens_by_line:
+                    self._tokens_by_line[line_number] = []
+                self._tokens_by_line[line_number].append((token, token_type))
+
                 #  Сохраняем кортеж (токен, тип) вместо просто токена
                 if line_number not in self._tokens_by_line:
                     self._tokens_by_line[line_number] = []
@@ -237,11 +323,11 @@ class STHighlighter(QSyntaxHighlighter):
 
                 # Переходим к следующему токену
                 token = lexer.nextToken()
-
         except Exception as e:
-            # Обработка ошибок лексера
-            print(f"Ошибка при построении кэша токенов: {e}")
-            self._tokens_by_line = {}  # Очищаем кэш при ошибке
+            import traceback
+            traceback.print_exc()
+            raise
+            #self._tokens_by_line = {}  # Очищаем кэш при ошибке
 
     def highlightBlock(self, text: str):
         """

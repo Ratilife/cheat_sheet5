@@ -521,7 +521,7 @@ class FileEditorWindow(QMainWindow):
             print(f'content_type = {content_type}')
             #print(f'Устанавливаем контент в редактор и путь к файлу \n 🔥🔥🔥🔥\n {content} \n 🔥🔥🔥🔥')
 
-            print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
+            #print(f'🔧🔧🔧metadata: {metadata} 🔧🔧🔧')
 
             #print(f'content: {content}')
 
