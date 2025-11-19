@@ -18,6 +18,8 @@ class STHighlighter(QSyntaxHighlighter):
         super().__init__(parent)
         self.language = language  # Язык по умолчанию
         self._init_color_map()  # Инициализация цветов
+        self._tokens_by_line = {}  # dict[int, list[Token]]
+        self._document_text = ""  # Текущий текст документа для отслеживания изменений
 
     def _init_color_map(self):
         """Инициализация цветовой схемы для токенов"""
@@ -178,6 +180,69 @@ class STHighlighter(QSyntaxHighlighter):
         if old_language != self.language:
             self.rehighlight()  # ← Ключевой момент!
 
+        if old_language != self.language:
+            self._rebuild_tokens_cache()  # Пересчитываем кэш
+            self.rehighlight()  # Переподсвечиваем
+
+
+    def _rebuild_tokens_cache(self):
+        """
+        Пересчитывает кэш токенов для всего документа.
+        Вызывается при изменении документа или языка.
+        """
+        print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self.document_text)}")
+        # Очищаем старый кэш
+        self._tokens_by_line = {}
+
+        # Если язык не установлен - выходим
+        if not self.language or self.language != '1c':
+            return
+
+        # Получаем весь текст документа
+        if not self.document():
+            return
+
+        document_text = self.document().toPlainText()
+        self._document_text = document_text  # Сохраняем для сравнения
+
+        # Если документ пуст - выходим
+        if not document_text.strip():
+            return
+
+        try:
+            # Создаём входной поток для всего документа
+            input_stream = InputStream(document_text)
+            lexer = BSLLexer(input_stream)
+
+            # Лексируем весь документ
+            token = lexer.nextToken()
+
+            while token.type != Token.EOF:
+                # Получаем номер строки токена (ANTLR нумерует с 1)
+                line_number = token.line
+
+                # Получаем символическое имя токена сразу
+                token_type = None
+                if token.type >= 0 and token.type < len(lexer.symbolicNames):
+                    token_type = lexer.symbolicNames[token.type]
+                    if token_type == '<INVALID>':
+                        token_type = None
+
+                #  Сохраняем кортеж (токен, тип) вместо просто токена
+                if line_number not in self._tokens_by_line:
+                    self._tokens_by_line[line_number] = []
+
+                # Добавляем токен в список для его строки
+                self._tokens_by_line[line_number].append(token)
+
+                # Переходим к следующему токену
+                token = lexer.nextToken()
+
+        except Exception as e:
+            # Обработка ошибок лексера
+            print(f"Ошибка при построении кэша токенов: {e}")
+            self._tokens_by_line = {}  # Очищаем кэш при ошибке
+
     def highlightBlock(self, text: str):
         """
         Автоматически вызывается Qt для каждой строки текста.
@@ -199,6 +264,31 @@ class STHighlighter(QSyntaxHighlighter):
         elif self.language == 'java':
             self._apply_java_highlighting(text)
 
+    def setDocument(self, doc):
+        """
+        Переопределяем метод для пересчёта кэша при смене документа.
+        """
+        # Вызываем родительский метод
+        super().setDocument(doc)
+
+        # Если документ установлен - пересчитываем кэш
+        if doc:
+            self._rebuild_tokens_cache()
+
+    def rehighlight(self):
+        """
+        Переопределяем для пересчёта кэша перед переподсветкой.
+        """
+        # Проверяем, изменился ли текст документа
+        if self.document():
+            current_text = self.document().toPlainText()
+            if current_text != self._document_text:
+                # Текст изменился - пересчитываем кэш
+                self._rebuild_tokens_cache()
+
+        # Вызываем родительский метод для переподсветки
+        super().rehighlight()
+
     def _apply_token_format(self, token, token_type: str, lang: str):
         """
         Применяет форматирование к токену
@@ -216,11 +306,22 @@ class STHighlighter(QSyntaxHighlighter):
         color = QColor(self.color_map[lang][token_type])
         fmt.setForeground(color)
 
-        # ⭐ ИСПРАВЛЕНИЕ: Позиция токена должна быть относительно начала текущего блока
-        # В highlightBlock() мы обрабатываем только одну строку (блок)
-        # token.column уже является позицией от начала строки
-        start_pos = token.column  # Позиция от начала текущей строки
-        length = len(token.text)  # Длина токена
+        # ⭐ ВАЖНО: Позиция токена относительно начала текущего блока (строки)
+        # token.column - это позиция от начала строки (начинается с 0)
+        # Но нужно учесть, что в ANTLR column может быть с учётом табуляции
+
+        # Получаем позицию начала текущего блока в документе
+        block = self.currentBlock()
+        block_start = block.position()  # Позиция начала блока в документе
+
+        # Позиция токена в строке (от начала строки)
+        # В ANTLR column начинается с 0, но может быть с учётом табуляции
+        # Для простоты используем column напрямую
+        start_pos = token.column # Позиция от начала текущей строки
+
+        # Длина токена
+        length = len(token.text)
+
 
         # Проверяем, что токен находится в текущем блоке
         # (token.line должен совпадать с номером текущего блока)
@@ -263,7 +364,7 @@ class STHighlighter(QSyntaxHighlighter):
         # Просто возвращаем column как относительную позицию
         return token.column
 
-    def _apply_1c_highlighting(self, text: str):
+    def _apply_1c_highlighting_old(self, text: str):
         """Применяет подсветку для языка 1C/BSL"""
         if not text.strip():
             return  # Пустая строка - нечего подсвечивать
@@ -290,6 +391,35 @@ class STHighlighter(QSyntaxHighlighter):
         except Exception as e:
             # Обработка ошибок лексера (чтобы не сломать подсветку)
             print(f"Ошибка подсветки 1C: {e}")
+
+    def _apply_1c_highlighting(self, text: str):
+        """
+        Применяет подсветку для языка 1C/BSL используя кэш токенов.
+        """
+
+        # Получаем номер текущего блока (строки)
+        # Qt нумерует блоки с 0, но нам нужен номер строки (с 1)
+        current_block_number = self.currentBlock().blockNumber() + 1
+
+        # Получаем токены для этой строки из кэша
+        tokens_for_line = self._tokens_by_line.get(current_block_number, [])
+
+        # Если токенов нет - выходим
+        if not tokens_for_line:
+            return
+        print(f"[STHighlighter] highlight line {current_block_number}, tokens={len(tokens_for_line)}")
+        try:
+            # Проходим по всем токенам этой строки
+            for token, token_type in tokens_for_line:
+                # Пропускаем невалидные токены
+                if not token_type or token_type == '<INVALID>':
+                    continue
+                # Применяем форматирование
+                self._apply_token_format(token, token_type, '1c')
+
+        except Exception as e:
+            print(f"Ошибка при обработке токена: {e}")
+
 
     def _apply_python_highlighting(self, text: str):
         pass
