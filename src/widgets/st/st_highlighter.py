@@ -50,23 +50,23 @@ class STHighlighter(QSyntaxHighlighter):
         'MODULO': 'red',
         'QUESTION': 'red',
         'AMPERSAND': 'red',
-        'PREPROC_DELETE': None,
-        'PREPROC_INSERT': None,
-        'PREPROC_ENDINSERT': None,
-        'HASH': None,
-        'BAR': None,
-        'TILDA': None,
+        'PREPROC_DELETE': 'brown',
+        'PREPROC_INSERT': 'brown',
+        'PREPROC_ENDINSERT': 'brown',
+        'HASH': 'brown',
+        'BAR': 'black',
+        'TILDA': 'black',
         'TRUE': 'red',
         'FALSE': 'red',
         'UNDEFINED': 'red',
         'NULL': 'red',
-        'DECIMAL': None,
-        'DATETIME': None,
-        'FLOAT': None,
+        'DECIMAL': 'gray',
+        'DATETIME': 'gray',
+        'FLOAT': 'gray',
         'STRING': 'black',
-        'STRINGSTART': None,
-        'STRINGTAIL': None,
-        'STRINGPART': None,
+        'STRINGSTART': 'black',
+        'STRINGTAIL': 'black',
+        'STRINGPART': 'black',
         'PROCEDURE_KEYWORD': 'red',
         'FUNCTION_KEYWORD': 'red',
         'ENDPROCEDURE_KEYWORD': 'red',
@@ -102,29 +102,29 @@ class STHighlighter(QSyntaxHighlighter):
         'ADDHANDLER_KEYWORD': 'red',
         'REMOVEHANDLER_KEYWORD': 'red',
         'ASYNC_KEYWORD': 'red',
-        'IDENTIFIER': None,
-        'UNKNOWN': None,
-        'PREPROC_EXCLAMATION_MARK': 'blue',
-        'PREPROC_LPAREN': 'blue',
-        'PREPROC_RPAREN': 'blue',
-        'PREPROC_STRING': 'blue',
-        'PREPROC_NATIVE': 'blue',
-        'PREPROC_USE_KEYWORD': 'blue',
-        'PREPROC_REGION': 'blue',
-        'PREPROC_END_REGION': 'blue',
-        'PREPROC_NOT_KEYWORD': 'blue',
-        'PREPROC_OR_KEYWORD': 'blue',
-        'PREPROC_AND_KEYWORD': 'blue',
-        'PREPROC_IF_KEYWORD': 'blue',
-        'PREPROC_THEN_KEYWORD': 'blue',
-        'PREPROC_ELSIF_KEYWORD': 'blue',
-        'PREPROC_ENDIF_KEYWORD': 'blue',
-        'PREPROC_ELSE_KEYWORD': 'blue',
-        'PREPROC_MOBILEAPPCLIENT_SYMBOL': 'blue',
-        'PREPROC_MOBILEAPPSERVER_SYMBOL': 'blue',
-        'PREPROC_MOBILECLIENT_SYMBOL': 'blue',
-        'PREPROC_THICKCLIENTORDINARYAPPLICATION_SYMBOL': 'blue',
-        'PREPROC_THICKCLIENTMANAGEDAPPLICATION_SYMBOL': 'blue',
+        'IDENTIFIER': 'blue',
+        'UNKNOWN': 'blue',
+        'PREPROC_EXCLAMATION_MARK': 'brown',
+        'PREPROC_LPAREN': 'brown',
+        'PREPROC_RPAREN': 'brown',
+        'PREPROC_STRING': 'brown',
+        'PREPROC_NATIVE': 'brown',
+        'PREPROC_USE_KEYWORD': 'brown',
+        'PREPROC_REGION': 'brown',
+        'PREPROC_END_REGION': 'brown',
+        'PREPROC_NOT_KEYWORD': 'brown',
+        'PREPROC_OR_KEYWORD': 'brown',
+        'PREPROC_AND_KEYWORD': 'brown',
+        'PREPROC_IF_KEYWORD': 'brown',
+        'PREPROC_THEN_KEYWORD': 'brown',
+        'PREPROC_ELSIF_KEYWORD': 'brown',
+        'PREPROC_ENDIF_KEYWORD': 'brown',
+        'PREPROC_ELSE_KEYWORD': 'brown',
+        'PREPROC_MOBILEAPPCLIENT_SYMBOL': 'brown',
+        'PREPROC_MOBILEAPPSERVER_SYMBOL': 'brown',
+        'PREPROC_MOBILECLIENT_SYMBOL': 'brown',
+        'PREPROC_THICKCLIENTORDINARYAPPLICATION_SYMBOL': 'brown',
+        'PREPROC_THICKCLIENTMANAGEDAPPLICATION_SYMBOL': 'brown',
         'PREPROC_EXTERNALCONNECTION_SYMBOL': 'brown',
         'PREPROC_THINCLIENT_SYMBOL': 'brown',
         'PREPROC_WEBCLIENT_SYMBOL': 'brown',
@@ -153,7 +153,7 @@ class STHighlighter(QSyntaxHighlighter):
         'PREPROC_ENDDELETE': 'brown',
         'PREPROC_DELETE_ANY': 'brown',
         'AWAIT_KEYWORD': 'red',
-    },
+        },
             # Python
             'python': {}, # Будет заполнено позже
             # C#
@@ -222,26 +222,30 @@ class STHighlighter(QSyntaxHighlighter):
         Устанавливает язык программирования для подсветки синтаксиса.
 
         Этот метод:
-        1. Сохраняет язык в self.language
-        2. Нормализует язык (приводит к нижнему регистру)
-        3. Вызывает rehighlight() для переподсветки всего документа
-        4. Позволяет динамически менять язык подсветки
+        1. Нормализует язык (приводит к нижнему регистру)
+        2. Сохраняет язык в self.language
+        3. Если язык изменился:
+            - Пересчитывает кэш токенов (_rebuild_tokens_cache)
+            - Вызывает rehighlight() для переподсветки всего документа
 
         Args:
             language: str - название языка:
-                       - '1c' или 'bsl' для языка 1C/BSL
-                       - 'python' для Python
-                       - 'csharp' или 'cs' для C#
-                       - 'java' для Java
-                       - '' или None если язык не определен
+               - '1c' или 'bsl' для языка 1C/BSL
+               - 'python' для Python
+               - 'csharp' или 'cs' для C#
+               - 'java' для Java
+               - '' или None если язык не определен
         """
         # 1. Нормализация языка
         if language:
             language = language.lower()
-            # Можно сделать маппинг синонимов
+            # маппинг синонимов
             language_map = {
                 'bsl': '1c',
+                '1С': '1c',
+                '1с': '1c',
                 'cs': 'csharp',
+                'С#': 'csharp',
                 'c#': 'csharp'
             }
             language = language_map.get(language, language)
@@ -252,9 +256,9 @@ class STHighlighter(QSyntaxHighlighter):
         old_language = self.language
         self.language = language
 
-        # 3. Переподсветка, если язык изменился
+        '''# 3. Переподсветка, если язык изменился
         if old_language != self.language:
-            self.rehighlight()  # ← Ключевой момент!
+            self.rehighlight()  # ← Ключевой момент!'''
 
         if old_language != self.language:
             self._rebuild_tokens_cache()  # Пересчитываем кэш
@@ -314,12 +318,12 @@ class STHighlighter(QSyntaxHighlighter):
                     self._tokens_by_line[line_number] = []
                 self._tokens_by_line[line_number].append((token, token_type))
 
-                #  Сохраняем кортеж (токен, тип) вместо просто токена
+                '''#  Сохраняем кортеж (токен, тип) вместо просто токена
                 if line_number not in self._tokens_by_line:
                     self._tokens_by_line[line_number] = []
 
                 # Добавляем токен в список для его строки
-                self._tokens_by_line[line_number].append(token)
+                self._tokens_by_line[line_number].append(token)'''
 
                 # Переходим к следующему токену
                 token = lexer.nextToken()
@@ -339,6 +343,12 @@ class STHighlighter(QSyntaxHighlighter):
         """
         if not self.language:
             return  # Если язык не определен, не подсвечиваем
+
+        if self.document():
+            current_text = self.document().toPlainText()
+            if current_text != self._document_text:
+                # Текст изменился - пересчитываем кэш
+                self._rebuild_tokens_cache()
 
         # Вызываем соответствующий метод подсветки
         if self.language == '1c':
@@ -371,6 +381,12 @@ class STHighlighter(QSyntaxHighlighter):
             if current_text != self._document_text:
                 # Текст изменился - пересчитываем кэш
                 self._rebuild_tokens_cache()
+        # Проверяем актуальность кэша
+        if self.document():
+            current_text = self.document().toPlainText()
+            if current_text != self._document_text:
+                # Текст изменился - пересчитываем кэш
+                self._rebuild_tokens_cache()
 
         # Вызываем родительский метод для переподсветки
         super().rehighlight()
@@ -398,16 +414,31 @@ class STHighlighter(QSyntaxHighlighter):
 
         # Получаем позицию начала текущего блока в документе
         block = self.currentBlock()
-        block_start = block.position()  # Позиция начала блока в документе
+        #block_start = block.position()  # Позиция начала блока в документе
+        block_text = block.text()
 
         # Позиция токена в строке (от начала строки)
         # В ANTLR column начинается с 0, но может быть с учётом табуляции
         # Для простоты используем column напрямую
-        start_pos = token.column # Позиция от начала текущей строки
+        start_pos =  token.column if token.column is not None else 0
 
         # Длина токена
-        length = len(token.text)
+        length = len(token.text or "")
 
+        # Защита от некорректных значений
+        if start_pos < 0:
+            start_pos = 0
+
+        if start_pos >= len(block_text):
+            # Токен указывает за пределы строки — логируем и выходим
+            # print(f"[WARN] token.column вне строки: {start_pos}, длина блока: {len(block_text)}")
+            return
+
+        # Если токен "выходит" за пределы строки — подрежем
+        if start_pos + length > len(block_text):
+            length = len(block_text) - start_pos
+            if length <= 0:
+                return
 
         # Проверяем, что токен находится в текущем блоке
         # (token.line должен совпадать с номером текущего блока)
@@ -496,7 +527,13 @@ class STHighlighter(QSyntaxHighlighter):
         print(f"[STHighlighter] highlight line {current_block_number}, tokens={len(tokens_for_line)}")
         try:
             # Проходим по всем токенам этой строки
-            for token, token_type in tokens_for_line:
+            for item in tokens_for_line:
+                # Защита: проверяем структуру данных
+                if not isinstance(item, tuple) or len(item) != 2:
+                    print(f"[ERROR] Неправильная структура токена: {type(item)}, значение: {item}")
+                    continue  # Пропускаем некорректные элементы
+
+                token, token_type = item  # Распаковываем только после проверки
                 # Пропускаем невалидные токены
                 if not token_type or token_type == '<INVALID>':
                     continue
