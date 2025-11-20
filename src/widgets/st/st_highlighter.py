@@ -20,6 +20,12 @@ class STHighlighter(QSyntaxHighlighter):
         self._init_color_map()  # Инициализация цветов
         self._tokens_by_line = {}  # dict[int, list[Token]]
         self._document_text = ""  # Текущий текст документа для отслеживания изменений
+        # Подключаемся к сигналу изменения содержимого документа
+        if parent and hasattr(parent, 'document'):
+            doc = parent.document()
+            if doc:
+                # Сигнал срабатывает при любом изменении текста
+                doc.contentsChange.connect(self._on_document_changed)
 
     def _init_color_map(self):
         """Инициализация цветовой схемы для токенов"""
@@ -217,6 +223,27 @@ class STHighlighter(QSyntaxHighlighter):
             'NULL': 'NULL',
         }
 
+    def _on_document_changed(self, position: int, removed: int, added: int):
+        """
+        Вызывается при любом изменении текста в документе.
+        Здесь мы можем обновить кэш токенов, если язык '1c'.
+        """
+        # Проверяем, установлен ли язык
+        if not self.language or self.language != '1c':
+            self._tokens_by_line = {}
+            return
+
+        # Получаем текущий текст документа
+        if not self.document():
+            self._tokens_by_line = {}
+            return
+
+        current_text = self.document().toPlainText()
+
+        # Если текст изменился, пересчитываем кэш
+        if current_text != self._document_text:
+            self._document_text = current_text
+            self._rebuild_tokens_cache()
     def set_language(self, language: str):
         """
         Устанавливает язык программирования для подсветки синтаксиса.
@@ -256,21 +283,20 @@ class STHighlighter(QSyntaxHighlighter):
         old_language = self.language
         self.language = language
 
-        '''# 3. Переподсветка, если язык изменился
         if old_language != self.language:
-            self.rehighlight()  # ← Ключевой момент!'''
-
-        if old_language != self.language:
+            if self.document():
+                self._document_text = self.document().toPlainText()
             self._rebuild_tokens_cache()  # Пересчитываем кэш
             self.rehighlight()  # Переподсвечиваем
 
-
-    def _rebuild_tokens_cache(self):
+    def set_document_text(self, document_text :str):
+        self._document_text = document_text
+    def _rebuild_tokens_cache_old(self):
         """
         Пересчитывает кэш токенов для всего документа.
         Вызывается при изменении документа или языка.
         """
-        print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
+        #print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
         # Очищаем старый кэш
         self._tokens_by_line = {}
 
@@ -278,16 +304,21 @@ class STHighlighter(QSyntaxHighlighter):
         if not self.language or self.language != '1c':
             return
 
-        # Получаем весь текст документа
-        if not self.document():
+        # Если документ пуст - выходим
+        if not self._document_text.strip():
             return
 
-        document_text = self.document().toPlainText()
+        '''# Получаем весь текст документа
+        if not self.document():
+            return'''
+
+         # Сохраняем для сравнения
+        '''document_text = self.document().toPlainText()
         self._document_text = document_text  # Сохраняем для сравнения
 
         # Если документ пуст - выходим
         if not document_text.strip():
-            return
+            return'''
 
         try:
             # Создаём входной поток для всего документа
@@ -333,6 +364,58 @@ class STHighlighter(QSyntaxHighlighter):
             raise
             #self._tokens_by_line = {}  # Очищаем кэш при ошибке
 
+    def _rebuild_tokens_cache(self):
+        """
+        Пересчитывает кэш токенов для всего документа.
+        Вызывается при изменении документа или языка.
+        """
+        # print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
+        # Очищаем старый кэш
+        self._tokens_by_line = {}
+
+        # Если язык не установлен - выходим
+        if not self.language or self.language != '1c':
+            return
+
+        # Если документ пуст - выходим
+        if not self._document_text.strip():
+            return
+
+        # Не вызываем toPlainText() снова — используем self._document_text, который уже обновлён в _on_document_changed
+        try:
+            # Создаём входной поток для всего документа
+            input_stream = InputStream(self._document_text)
+            lexer = BSLLexer(input_stream)
+
+            # Лексируем весь документ
+            token = lexer.nextToken()
+
+            while token.type != Token.EOF:
+                # Получаем номер строки токена (ANTLR нумерует с 1)
+                line_number = token.line
+
+                # Получаем символическое имя токена сразу
+                token_type = None
+                if token.type >= 0 and token.type < len(lexer.symbolicNames):
+                    token_type = lexer.symbolicNames[token.type]
+                    if token_type == '<INVALID>':
+                        token_type = None
+
+                lexeme = (token.text or '').lower()
+                if lexeme in self.keywords_map:
+                    token_type = self.keywords_map[lexeme]
+
+                if line_number not in self._tokens_by_line:
+                    self._tokens_by_line[line_number] = []
+                self._tokens_by_line[line_number].append((token, token_type))
+
+                # Переходим к следующему токену
+                token = lexer.nextToken()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise
+
     def highlightBlock(self, text: str):
         """
         Автоматически вызывается Qt для каждой строки текста.
@@ -344,11 +427,11 @@ class STHighlighter(QSyntaxHighlighter):
         if not self.language:
             return  # Если язык не определен, не подсвечиваем
 
-        if self.document():
+        '''if self.document():
             current_text = self.document().toPlainText()
             if current_text != self._document_text:
                 # Текст изменился - пересчитываем кэш
-                self._rebuild_tokens_cache()
+                self._rebuild_tokens_cache()'''
 
         # Вызываем соответствующий метод подсветки
         if self.language == '1c':
@@ -376,17 +459,13 @@ class STHighlighter(QSyntaxHighlighter):
         Переопределяем для пересчёта кэша перед переподсветкой.
         """
         # Проверяем, изменился ли текст документа
-        if self.document():
+        '''if self.document():
             current_text = self.document().toPlainText()
             if current_text != self._document_text:
                 # Текст изменился - пересчитываем кэш
-                self._rebuild_tokens_cache()
-        # Проверяем актуальность кэша
-        if self.document():
-            current_text = self.document().toPlainText()
-            if current_text != self._document_text:
-                # Текст изменился - пересчитываем кэш
-                self._rebuild_tokens_cache()
+                self._rebuild_tokens_cache()'''
+
+
 
         # Вызываем родительский метод для переподсветки
         super().rehighlight()
@@ -523,25 +602,50 @@ class STHighlighter(QSyntaxHighlighter):
 
         # Если токенов нет - выходим
         if not tokens_for_line:
+            # Если нет токенов в кэше, попробуем лексировать непосредственно
+            self._fallback_1c_highlighting(text)
             return
-        print(f"[STHighlighter] highlight line {current_block_number}, tokens={len(tokens_for_line)}")
+
         try:
             # Проходим по всем токенам этой строки
             for item in tokens_for_line:
                 # Защита: проверяем структуру данных
                 if not isinstance(item, tuple) or len(item) != 2:
-                    print(f"[ERROR] Неправильная структура токена: {type(item)}, значение: {item}")
                     continue  # Пропускаем некорректные элементы
 
                 token, token_type = item  # Распаковываем только после проверки
                 # Пропускаем невалидные токены
                 if not token_type or token_type == '<INVALID>':
                     continue
+                    # ДИАГНОСТИКА: выводим информацию о токене
+                    print(
+                        f"Token: '{token.text}' | Type: {token_type} | Color: {self.color_map['1c'].get(token_type, 'DEFAULT')}")
                 # Применяем форматирование
                 self._apply_token_format(token, token_type, '1c')
 
         except Exception as e:
             print(f"Ошибка при обработке токена: {e}")
+
+    def _fallback_1c_highlighting(self, text: str):
+        """Резервный метод подсветки при проблемах с кэшем"""
+        try:
+            input_stream = InputStream(text)
+            lexer = BSLLexer(input_stream)
+
+            # Включаем режим восстановления после ошибок
+            lexer.removeErrorListeners()
+
+            token = lexer.nextToken()
+            while token.type != Token.EOF:
+                token_type = None
+                if 0 <= token.type < len(lexer.symbolicNames):
+                    token_type = lexer.symbolicNames[token.type]
+                    if token_type != '<INVALID>':
+                        self._apply_token_format(token, token_type, '1c')
+                token = lexer.nextToken()
+        except Exception:
+            # Игнорируем ошибки лексирования для проблемных строк
+            pass
 
 
     def _apply_python_highlighting(self, text: str):
