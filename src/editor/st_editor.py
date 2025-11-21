@@ -576,7 +576,7 @@ class STEditor(BaseFileEditor):
         # Устанавливаем язык в подсветке
         if self._highlighter:
             self._highlighter.set_language(self.language)  # Например, '1c', 'python'
-            self._highlighter.set_document_text(content)
+            #self._highlighter.set_document_text(content)
             self._highlighter.rehighlight()
 
     def get_content(self) -> str:

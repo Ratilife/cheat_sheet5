@@ -1,0 +1,38 @@
+[Документ изменён]  ------>  [_on_document_changed()]
+                                |
+                                v
+                        [Проверка: language == '1c'?]
+                                |
+                                v
+                        [Текст изменился?]  ------>  Да
+                                |                    |
+                                Нет                  |
+                                |                    v
+                                |              [_rebuild_tokens_cache()]
+                                |                    |
+                                |                    v
+                                |         [Лексирование всего текста]
+                                |                    |
+                                |                    v
+                                |         [Заполнение _tokens_by_line]
+                                |                    |
+                                |                    |
+                                |                    v
+                                |<---- [highlightBlock вызывается Qt]
+                                |
+                        [highlightBlock(text)]
+                                |
+                                v
+                    [_apply_1c_highlighting(text)]
+                                |
+                                v
+                [Получить номер строки (current_block_number)]
+                                |
+                                v
+              [Извлечь токены из _tokens_by_line[current_block_number]]
+                                |
+                                v
+                    [Применить формат к каждому токену в строке]
+                                |
+                                v
+                    [Подсветка завершена для строки]

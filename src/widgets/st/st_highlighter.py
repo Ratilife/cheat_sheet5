@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from antlr4 import InputStream
 from antlr4 import Token
 from ANTLR4.one_c_grammar.BSLLexer import BSLLexer
+import re
 class STHighlighter(QSyntaxHighlighter):
     """
         Класс для подсветки синтаксиса в .st файлах.
@@ -20,6 +21,13 @@ class STHighlighter(QSyntaxHighlighter):
         self._init_color_map()  # Инициализация цветов
         self._tokens_by_line = {}  # dict[int, list[Token]]
         self._document_text = ""  # Текущий текст документа для отслеживания изменений
+        # Словарь паттернов: {паттерн: тип_токена}
+        self._string_patterns = {
+            # r'""[^"]*""': 'STRING',  # Обрабатываем ""любой текст"" как строки
+            # Можно добавить другие паттерны:
+            # r'//.*$': 'LINE_COMMENT',  # для проблемных комментариев
+            # r'#.*$': 'PREPROCESSOR',   # для директив препроцессора
+        }
         # Подключаемся к сигналу изменения содержимого документа
         if parent and hasattr(parent, 'document'):
             doc = parent.document()
@@ -381,30 +389,40 @@ class STHighlighter(QSyntaxHighlighter):
         if not self._document_text.strip():
             return
 
-        # Не вызываем toPlainText() снова — используем self._document_text, который уже обновлён в _on_document_changed
+
         try:
+            # Заменяем строки по паттернам на плейсхолдеры
+            processed_text = self._document_text
+            placeholder_map = {}
+            placeholder_counter = 0
+
+            # Обрабатываем все паттерны
+            for pattern, token_type in self._string_patterns.items():
+                for match in re.finditer(pattern, processed_text):
+                    original_text = match.group()
+                    placeholder = f"__PATTERN_{placeholder_counter}__"
+
+                    # Заменяем только первое вхождение
+                    processed_text = processed_text.replace(original_text, placeholder, 1)
+                    placeholder_map[placeholder] = (original_text, token_type)
+                    placeholder_counter += 1
+
+
             # Создаём входной поток для всего документа
-            input_stream = InputStream(self._document_text)
+            input_stream = InputStream(processed_text)
             lexer = BSLLexer(input_stream)
 
             # Лексируем весь документ
             token = lexer.nextToken()
 
+
             while token.type != Token.EOF:
                 # Получаем номер строки токена (ANTLR нумерует с 1)
                 line_number = token.line
 
-                # Получаем символическое имя токена сразу
-                token_type = None
-                if token.type >= 0 and token.type < len(lexer.symbolicNames):
-                    token_type = lexer.symbolicNames[token.type]
-                    if token_type == '<INVALID>':
-                        token_type = None
+                token_type = self._get_token_type(token, lexer, placeholder_map)
 
-                lexeme = (token.text or '').lower()
-                if lexeme in self.keywords_map:
-                    token_type = self.keywords_map[lexeme]
-
+                # Добавляем токен в кэш
                 if line_number not in self._tokens_by_line:
                     self._tokens_by_line[line_number] = []
                 self._tokens_by_line[line_number].append((token, token_type))
@@ -479,10 +497,11 @@ class STHighlighter(QSyntaxHighlighter):
             token_type: str - символическое имя токена ('IDENTIFIER', 'PROCEDURE_KEYWORD', etc.)
             lang: str - язык ('1c', 'python', etc.)
         """
+        # 1. Проверяем, есть ли цвет для этого типа токена в карте цветов для языка
         if token_type not in self.color_map.get(lang, {}):
             return
 
-        # Создаем формат
+        # 2. Создаём формат (например, цвет текста)
         fmt = QTextCharFormat()
         color = QColor(self.color_map[lang][token_type])
         fmt.setForeground(color)
@@ -496,18 +515,19 @@ class STHighlighter(QSyntaxHighlighter):
         #block_start = block.position()  # Позиция начала блока в документе
         block_text = block.text()
 
+        # 3. Определяем позицию начала токена в строке
         # Позиция токена в строке (от начала строки)
         # В ANTLR column начинается с 0, но может быть с учётом табуляции
         # Для простоты используем column напрямую
         start_pos =  token.column if token.column is not None else 0
 
-        # Длина токена
+        #4. Длина токена — длина его текста
         length = len(token.text or "")
 
-        # Защита от некорректных значений
+        # 5. Защита от некорректных значений
         if start_pos < 0:
             start_pos = 0
-
+        # 6. Проверяем, чтобы токен не выходил за пределы строки
         if start_pos >= len(block_text):
             # Токен указывает за пределы строки — логируем и выходим
             # print(f"[WARN] token.column вне строки: {start_pos}, длина блока: {len(block_text)}")
@@ -515,20 +535,20 @@ class STHighlighter(QSyntaxHighlighter):
 
         # Если токен "выходит" за пределы строки — подрежем
         if start_pos + length > len(block_text):
-            length = len(block_text) - start_pos
+            length = len(block_text) - start_pos  # Обрезаем длину
             if length <= 0:
                 return
 
-        # Проверяем, что токен находится в текущем блоке
+        #7. Проверяем, что токен находится в текущем блоке
         # (token.line должен совпадать с номером текущего блока)
         current_block_number = self.currentBlock().blockNumber() + 1  # Qt нумерует с 0
 
         if token.line != current_block_number:
             # Токен из другой строки - пропускаем
             # (это не должно происходить, но для безопасности)
-            return
+            return  # Токен из другой строки — ошибка логики
 
-        # Применяем форматирование
+        # 8. Применяем формат к участку строки
         self.setFormat(start_pos, length, fmt)
 
     def _token_to_position(self, token):
@@ -560,67 +580,82 @@ class STHighlighter(QSyntaxHighlighter):
         # Просто возвращаем column как относительную позицию
         return token.column
 
-    def _apply_1c_highlighting_old(self, text: str):
-        """Применяет подсветку для языка 1C/BSL"""
-        if not text.strip():
-            return  # Пустая строка - нечего подсвечивать
+    def _apply_string_patterns(self, text: str):
+        """Обрабатывает строковые литералы по паттернам с соответствующими цветами"""
 
-        try:
-            input_stream = InputStream(text)
-            lexer = BSLLexer(input_stream)
-            token = lexer.nextToken()
 
-            while token.type != Token.EOF:
-                # Получаем символическое имя токена
-                if token.type >= 0 and token.type < len(lexer.symbolicNames):
-                    token_type = lexer.symbolicNames[token.type]
-                    if token_type and token_type != '<INVALID>':
-                        # Используем token_type
-                        pass
+        for pattern, token_type in self._string_patterns.items():
+            # Получаем цвет для этого типа токена
+            color_name = self.color_map.get('1c', {}).get(token_type)
+            if not color_name:
+                continue
 
-                # Проверяем на валидность
-                if token_type and token_type != '<INVALID>':
-                    # Применяем форматирование
-                    self._apply_token_format(token, token_type, '1c')
+            fmt = QTextCharFormat()
+            fmt.setForeground(QColor(color_name))
 
-                token = lexer.nextToken()
-        except Exception as e:
-            # Обработка ошибок лексера (чтобы не сломать подсветку)
-            print(f"Ошибка подсветки 1C: {e}")
+            # Ищем все совпадения с паттерном
+            for match in re.finditer(pattern, text):
+                start_pos = match.start()
+                matched_text = match.group()
+
+                # Применяем форматирование
+                self.setFormat(start_pos, len(matched_text), fmt)
+
+    def _get_token_type(self, token, lexer, placeholder_map):
+        """Определяет тип токена с учетом плейсхолдеров и ключевых слов"""
+        # 1. Проверяем, является ли токен плейсхолдером
+        if token.text in placeholder_map:
+            original_text, forced_token_type = placeholder_map[token.text]
+            return forced_token_type
+
+        # 2. Стандартная логика определения типа токена из лексера
+        token_type = None
+        if token.type >= 0 and token.type < len(lexer.symbolicNames):
+            token_type = lexer.symbolicNames[token.type]
+            if token_type == '<INVALID>':
+                token_type = None
+
+        # 3. Проверка на ключевые слова (только для идентификаторов)
+        if token_type == 'IDENTIFIER' and token.text in self.keywords_map:
+            token_type = self.keywords_map[token.text]
+
+        return token_type
 
     def _apply_1c_highlighting(self, text: str):
         """
         Применяет подсветку для языка 1C/BSL используя кэш токенов.
         """
+        # 1. Сначала обрабатываем строки по паттернам
+        self._apply_string_patterns(text)
 
-        # Получаем номер текущего блока (строки)
+        #1. Получаем номер текущего блока (строки)
         # Qt нумерует блоки с 0, но нам нужен номер строки (с 1)
         current_block_number = self.currentBlock().blockNumber() + 1
 
-        # Получаем токены для этой строки из кэша
+        #2. Получаем токены для этой строки из кэша
         tokens_for_line = self._tokens_by_line.get(current_block_number, [])
 
         # Если токенов нет - выходим
         if not tokens_for_line:
-            # Если нет токенов в кэше, попробуем лексировать непосредственно
+            #3. Если нет токенов в кэше, попробуем лексировать непосредственно
             self._fallback_1c_highlighting(text)
             return
 
         try:
-            # Проходим по всем токенам этой строки
+            #4. Проходим по всем токенам этой строки
             for item in tokens_for_line:
                 # Защита: проверяем структуру данных
                 if not isinstance(item, tuple) or len(item) != 2:
                     continue  # Пропускаем некорректные элементы
 
                 token, token_type = item  # Распаковываем только после проверки
-                # Пропускаем невалидные токены
+                #5. Пропускаем  токены без типа
                 if not token_type or token_type == '<INVALID>':
                     continue
                     # ДИАГНОСТИКА: выводим информацию о токене
                     print(
                         f"Token: '{token.text}' | Type: {token_type} | Color: {self.color_map['1c'].get(token_type, 'DEFAULT')}")
-                # Применяем форматирование
+                #6. Применяем форматирование
                 self._apply_token_format(token, token_type, '1c')
 
         except Exception as e:
@@ -637,11 +672,9 @@ class STHighlighter(QSyntaxHighlighter):
 
             token = lexer.nextToken()
             while token.type != Token.EOF:
-                token_type = None
-                if 0 <= token.type < len(lexer.symbolicNames):
-                    token_type = lexer.symbolicNames[token.type]
-                    if token_type != '<INVALID>':
-                        self._apply_token_format(token, token_type, '1c')
+                token_type = self._get_token_type(token, lexer, {})
+                if token_type != '<INVALID>':
+                    self._apply_token_format(token, token_type, '1c')
                 token = lexer.nextToken()
         except Exception:
             # Игнорируем ошибки лексирования для проблемных строк
