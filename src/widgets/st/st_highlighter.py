@@ -4,6 +4,24 @@ from antlr4 import InputStream
 from antlr4 import Token
 from ANTLR4.one_c_grammar.BSLLexer import BSLLexer
 import re
+
+from widgets.st.ignore_error_listener import IgnoreErrorListener
+
+import time
+from functools import wraps
+
+def measure_time(func_name):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            result = func(*args, **kwargs)
+            elapsed = time.time() - start
+            print(f"⏱️ {func_name}: {elapsed:.3f} сек")
+            return result
+        return wrapper
+    return decorator
+
 class STHighlighter(QSyntaxHighlighter):
     """
         Класс для подсветки синтаксиса в .st файлах.
@@ -34,6 +52,42 @@ class STHighlighter(QSyntaxHighlighter):
             if doc:
                 # Сигнал срабатывает при любом изменении текста
                 doc.contentsChange.connect(self._on_document_changed)
+
+    def process_complete_highlighting(self, language: str, text: str):
+        """
+        Полный процесс подсветки с измерением времени
+        Используйте этот метод вместо отдельных вызовов
+        """
+        total_start = time.time()
+
+        print(f"🚀 Начало полной подсветки")
+        print(f"  Язык: {language}")
+        print(f"  Текст: {len(text)} символов, {text.count(chr(10))} строк")
+
+        # Шаг 1: Установка языка
+        step_start = time.time()
+        self.set_language(language)
+        lang_time = time.time() - step_start
+        print(f"  ✅ Язык установлен: {lang_time:.3f} сек")
+
+        # Шаг 2: Установка текста
+        step_start = time.time()
+        self.set_document_text(text)
+        text_time = time.time() - step_start
+        print(f"  ✅ Текст установлен: {text_time:.3f} сек")
+
+        # Шаг 3: Подсветка
+        step_start = time.time()
+        self.rehighlight()
+        highlight_time = time.time() - step_start
+        print(f"  ✅ Подсветка выполнена: {highlight_time:.3f} сек")
+
+        # Итоги
+        total_time = time.time() - total_start
+        print(f"🎯 ПОЛНОЕ ВРЕМЯ: {total_time:.3f} сек")
+        print(f"📊 Блоков обработано: {self.document().blockCount() if self.document() else 'N/A'}")
+
+        return total_time
 
     def _init_color_map(self):
         """Инициализация цветовой схемы для токенов"""
@@ -252,6 +306,8 @@ class STHighlighter(QSyntaxHighlighter):
         if current_text != self._document_text:
             self._document_text = current_text
             self._rebuild_tokens_cache()
+
+
     def set_language(self, language: str):
         """
         Устанавливает язык программирования для подсветки синтаксиса.
@@ -298,86 +354,18 @@ class STHighlighter(QSyntaxHighlighter):
             self.rehighlight()  # Переподсвечиваем
 
     def set_document_text(self, document_text :str):
+        print(f"📄 Размер документа: {len(document_text)} символов, {document_text.count(chr(10))} строк")
         self._document_text = document_text
-    def _rebuild_tokens_cache_old(self):
-        """
-        Пересчитывает кэш токенов для всего документа.
-        Вызывается при изменении документа или языка.
-        """
-        #print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
-        # Очищаем старый кэш
-        self._tokens_by_line = {}
 
-        # Если язык не установлен - выходим
-        if not self.language or self.language != '1c':
-            return
 
-        # Если документ пуст - выходим
-        if not self._document_text.strip():
-            return
 
-        '''# Получаем весь текст документа
-        if not self.document():
-            return'''
-
-         # Сохраняем для сравнения
-        '''document_text = self.document().toPlainText()
-        self._document_text = document_text  # Сохраняем для сравнения
-
-        # Если документ пуст - выходим
-        if not document_text.strip():
-            return'''
-
-        try:
-            # Создаём входной поток для всего документа
-            input_stream = InputStream(self._document_text)
-            lexer = BSLLexer(input_stream)
-
-            # Лексируем весь документ
-            token = lexer.nextToken()
-
-            while token.type != Token.EOF:
-                # Получаем номер строки токена (ANTLR нумерует с 1)
-                line_number = token.line
-
-                # Получаем символическое имя токена сразу
-                token_type = None
-                if token.type >= 0 and token.type < len(lexer.symbolicNames):
-                    token_type = lexer.symbolicNames[token.type]
-                    if token_type == '<INVALID>':
-                        token_type = None
-
-                lexeme = (token.text or '').lower()
-                if lexeme in self.keywords_map:
-                    token_type = self.keywords_map[lexeme]
-
-                line_number = token.line
-
-                if line_number not in self._tokens_by_line:
-                    self._tokens_by_line[line_number] = []
-                self._tokens_by_line[line_number].append((token, token_type))
-
-                '''#  Сохраняем кортеж (токен, тип) вместо просто токена
-                if line_number not in self._tokens_by_line:
-                    self._tokens_by_line[line_number] = []
-
-                # Добавляем токен в список для его строки
-                self._tokens_by_line[line_number].append(token)'''
-
-                # Переходим к следующему токену
-                token = lexer.nextToken()
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise
-            #self._tokens_by_line = {}  # Очищаем кэш при ошибке
-
+    @measure_time("_rebuild_tokens_cache")
     def _rebuild_tokens_cache(self):
         """
         Пересчитывает кэш токенов для всего документа.
         Вызывается при изменении документа или языка.
         """
-        # print(f"[STHighlighter] rebuild cache, language={self.language}, doc_len={len(self._document_text)}")
+        start_total = time.time()
         # Очищаем старый кэш
         self._tokens_by_line = {}
 
@@ -412,11 +400,18 @@ class STHighlighter(QSyntaxHighlighter):
             input_stream = InputStream(processed_text)
             lexer = BSLLexer(input_stream)
 
+            # ⭐  Убираем стандартные обработчики ошибок
+            #lexer.removeErrorListeners()
+
+            # ⭐ Добавляем "тихий" обработчик
+            #lexer.addErrorListener(IgnoreErrorListener())
+
             # Лексируем весь документ
             token = lexer.nextToken()
 
-
+            token_count = 0
             while token.type != Token.EOF:
+                token_count += 1
                 # Получаем номер строки токена (ANTLR нумерует с 1)
                 line_number = token.line
 
@@ -429,10 +424,13 @@ class STHighlighter(QSyntaxHighlighter):
 
                 # Переходим к следующему токену
                 token = lexer.nextToken()
+            print(f"📊 Обработано токенов: {token_count}")
+            print(f"⏱️ Полное время лексирования: {time.time() - start_total:.3f} сек")
         except Exception as e:
             import traceback
             traceback.print_exc()
             raise
+
 
     def highlightBlock(self, text: str):
         """
@@ -472,6 +470,7 @@ class STHighlighter(QSyntaxHighlighter):
         if doc:
             self._rebuild_tokens_cache()
 
+
     def rehighlight(self):
         """
         Переопределяем для пересчёта кэша перед переподсветкой.
@@ -487,6 +486,7 @@ class STHighlighter(QSyntaxHighlighter):
 
         # Вызываем родительский метод для переподсветки
         super().rehighlight()
+
 
     def _apply_token_format(self, token, token_type: str, lang: str):
         """
@@ -551,6 +551,7 @@ class STHighlighter(QSyntaxHighlighter):
         # 8. Применяем формат к участку строки
         self.setFormat(start_pos, length, fmt)
 
+
     def _token_to_position(self, token):
         """
         Конвертирует токен ANTLR в позицию символа в текущем блоке Qt.
@@ -579,6 +580,7 @@ class STHighlighter(QSyntaxHighlighter):
         # (но в highlightBlock мы обрабатываем только текущую строку)
         # Просто возвращаем column как относительную позицию
         return token.column
+
 
     def _apply_string_patterns(self, text: str):
         """Обрабатывает строковые литералы по паттернам с соответствующими цветами"""
@@ -621,6 +623,7 @@ class STHighlighter(QSyntaxHighlighter):
 
         return token_type
 
+
     def _apply_1c_highlighting(self, text: str):
         """
         Применяет подсветку для языка 1C/BSL используя кэш токенов.
@@ -661,11 +664,16 @@ class STHighlighter(QSyntaxHighlighter):
         except Exception as e:
             print(f"Ошибка при обработке токена: {e}")
 
+
     def _fallback_1c_highlighting(self, text: str):
         """Резервный метод подсветки при проблемах с кэшем"""
         try:
             input_stream = InputStream(text)
             lexer = BSLLexer(input_stream)
+
+            # оптимизация ошибок
+            #lexer.removeErrorListeners()
+            #lexer.addErrorListener(IgnoreErrorListener())
 
             # Включаем режим восстановления после ошибок
             lexer.removeErrorListeners()

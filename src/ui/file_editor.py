@@ -483,6 +483,10 @@ class FileEditorWindow(QMainWindow):
             # TODO: 29.09.2025 Реализуйте повтор в конкретных редакторах
             print("DEBUG: Действие 'Повторить'")
 
+
+
+
+
     def on_display_content(self, content_type, content, path_file, metadata=None):
         """Отображает переданный контент в соответствующем редакторе.
 

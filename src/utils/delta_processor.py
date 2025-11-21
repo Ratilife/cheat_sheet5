@@ -24,7 +24,51 @@ class DeltaProcessor:
         delta = Delta(operation, element_path, **data)
         return delta
 
+    def _extract_content_from_structure(self, structure) -> str:
+        """
+        Извлекает текстовое содержимое из структуры данных.
 
+        Args:
+            structure: Структура данных после парсинга ST-файла
+
+        Returns:
+            str: Текстовое содержимое для отображения в редакторе
+        """
+        if structure is None:
+            return ""
+
+        # Обрабатываем разные форматы структуры
+        if isinstance(structure, tuple) and len(structure) == 2:
+            # Формат: ('file', {'structure': [...]})
+            file_type, content_dict = structure
+            if file_type == 'file' and isinstance(content_dict, dict):
+                structure = content_dict.get('structure', [])
+
+        elif isinstance(structure, dict):
+            # Формат: {'structure': [...]}
+            structure = structure.get('structure', [])
+
+        # Рекурсивно собираем контент из всех элементов
+        content_parts = []
+
+        def _extract_from_element(element):
+            if isinstance(element, dict):
+                # Если у элемента есть контент - добавляем его
+                if 'content' in element and element['content']:
+                    content_parts.append(element['content'])
+
+                # Рекурсивно обрабатываем детей
+                if 'children' in element:
+                    for child in element['children']:
+                        _extract_from_element(child)
+
+        # Обрабатываем корневую структуру
+        if isinstance(structure, list):
+            for element in structure:
+                _extract_from_element(element)
+
+        # Объединяем все части контента
+        return '\n'.join(content_parts)
     def apply_pending_deltas(self,template_context):
         """Применяет все ожидающие дельты к структуре"""
         # TODO 🚧 В разработке: 04.11.2025
@@ -76,7 +120,8 @@ class DeltaProcessor:
             self.content_cache = get_content_cache()
             self.content_cache.set(template_context['file_path'], current_structure)
             template_context['last_saved_structure'] = current_structure
-
+            template_context['original_structure'] = current_structure  # если нужно
+            template_context['original_content'] = self._extract_content_from_structure(current_structure)
         return success
 
     def apply_all_deltas(self, current_structure, template_context):
