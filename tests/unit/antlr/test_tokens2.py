@@ -84,7 +84,7 @@ def analyze_tokens(input_text):
 
 
 # Тестовые данные
-test_input = '{1, {1, {"Folder", 1, 0, "type", "name"}}}'
+test_input = '{1, {1, {"Folder", 1, 0, "", ""}}}'
 
 if __name__ == '__main__':
     stream, problems = analyze_tokens(test_input)
