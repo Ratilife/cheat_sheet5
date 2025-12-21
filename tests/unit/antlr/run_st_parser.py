@@ -5,13 +5,12 @@ import argparse
 import sys
 import os
 import time
-
-# Добавляем путь к корню проекта ПЕРЕД импортами
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-
 from antlr4 import FileStream, CommonTokenStream, ParseTreeWalker
-from src.ANTLR4.st_grammar.STFileLexer import STFileLexer
-from src.ANTLR4.st_grammar.STFileParser import STFileParser
+from ANTLR4.st_grammar.STFileLexer import STFileLexer
+from ANTLR4.st_grammar.STFileParser import STFileParser
+
+# Добавляем путь к корню проекта
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Запуск сгенерированного ANTLR4 Python-парсера.')
@@ -50,15 +49,9 @@ def main(argv):
     if args.tokens:
         token_stream.fill() # Заполнить поток, чтобы пройтись по всем токенам
         for token in token_stream.tokens:
-            if token.type == -1:  # EOF токен
+            if token.type == lexer.EOF:
                 break
-            # Безопасно получаем имя токена
-            token_name = f"<{token.type}>"
-            if token.type < len(lexer.symbolicNames) and lexer.symbolicNames[token.type] is not None:
-                token_name = lexer.symbolicNames[token.type]
-            elif token.type < len(lexer.literalNames) and lexer.literalNames[token.type] is not None:
-                token_name = lexer.literalNames[token.type]
-            print(f"{token.type} '{token.text}' <{token_name}> @{token.line}:{token.column}")
+            print(f"{token.type} '{token.text}' <{lexer.symbolicNames[token.type]}> @{token.line}:{token.column}")
         return 0
 
     # 4. Создать парсер

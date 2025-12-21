@@ -1,12 +1,12 @@
 import sys
 import os
 
-# Добавил путь к корню проекта ПЕРЕД импортами
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-
 from antlr4 import FileStream, CommonTokenStream, ParseTreeWalker, InputStream
 from src.ANTLR4.st_grammar.STFileLexer import STFileLexer
 from src.ANTLR4.st_grammar.STFileParser import STFileParser
+
+# Добавил путь к корню проекта
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
 
 test_input = '{1, {1, {"Folder", 1, 0, "type", "name"}}}'
 def basic_token_analysis(input_text):
@@ -28,14 +28,8 @@ def basic_token_analysis(input_text):
             print(f"[@{i}] <EOF>")
             break
 
-        # Безопасно получаем имя токена из лексических символов
-        token_type_name = None
-        if token.type < len(lexer.symbolicNames) and lexer.symbolicNames[token.type] is not None:
-            token_type_name = lexer.symbolicNames[token.type]
-        elif token.type < len(lexer.literalNames) and lexer.literalNames[token.type] is not None:
-            token_type_name = lexer.literalNames[token.type]
-        else:
-            token_type_name = f"<{token.type}>"  # Используем номер типа, если имя недоступно
+        # Получаем имя токена из лексических символов
+        token_type_name = lexer.symbolicNames[token.type]
 
         # Форматируем вывод
         line_info = f"строка {token.line}:{token.column}"
